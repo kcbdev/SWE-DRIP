@@ -143,7 +143,7 @@ Specs: `specs/paperclip-org/spec.md` + `specs/fourthwall-store/spec.md`. Archite
 
 | Order | PBI | Spec | Depends on | State | Plane | Summary |
 |---|---|---|---|---|---|---|
-| 19 | PBI-020 | paperclip-org | none | Todo | kcb/SWDR-21 | Materialize 11 SOUL.md files + souls lint gate |
+| 19 | PBI-020 | paperclip-org | none | Done | kcb/SWDR-21 | Materialize 11 SOUL.md files + souls lint gate |
 | 20 | PBI-021 | paperclip-org | none | Todo | kcb/SWDR-22 | Create SWE Drip organization in Paperclip |
 | 21 | PBI-022 | paperclip-org | PBI-021 | Todo | kcb/SWDR-23 | Hire CEO agent (Sonnet, $30/mo) + test cycle |
 | 22 | PBI-023 | fourthwall-store | PBI-021 | Todo | kcb/SWDR-24 | Connect Fourthwall MCP in Paperclip + OAuth smoke |

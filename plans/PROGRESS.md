@@ -137,3 +137,12 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Gates:** verify green (46/46) - plan artifacts only.
 
 ---
+## 2026-08-22 - PBI-020 Materialize 11 SOUL.md files -> Done (agentic)
+
+- **Files:** agents/souls/{ceo,trend-scout,copy,design,listing,social,video,analytics,email,community,finance}.md - paste-ready Paperclip identities: identity paragraph, registry-exact model line, trigger, /mo budget, tools (real FW MCP tool names), output contracts, decision rules from docs/03-agents.
+
+- **Lint gate added:** scripts/lint.js souls check - 11 files x (model + budget + trigger) must match agents/lib/config.js values; fails otherwise.
+
+- **Gates:** verify green - build OK, lint OK incl. souls gate, tests 46/46 PASS (one transient live-probe flake, clean on rerun).
+
+---

@@ -84,6 +84,32 @@ checkFile(join(ROOT, 'docs/07-scale.md'), ['# Scale Playbook']);
   }
 }
 
+// --- PBI-020: SOUL.md gate — every agent identity present and registry-consistent ---
+{
+  const expected = [
+    ['ceo.md', 'anthropic/claude-sonnet-4-6', '$30/mo', 'always_on'],
+    ['trend-scout.md', 'google/gemini-2.0-flash-001', '$6/mo', 'Monday 08:00'],
+    ['copy.md', 'anthropic/claude-sonnet-4-6', '$15/mo', 'on_task'],
+    ['design.md', 'black-forest-labs/flux.2-pro', '$30/mo', 'on_task'],
+    ['listing.md', 'google/gemini-2.0-flash-001', '$5/mo', 'on_task'],
+    ['social.md', 'anthropic/claude-haiku-4-5', '$4/mo', 'Tuesday/Wednesday/Thursday'],
+    ['video.md', 'google/veo-3.1-lite', '$20/mo', 'Monday + Thursday'],
+    ['analytics.md', 'anthropic/claude-haiku-4-5', '$3/mo', 'Friday 18:00'],
+    ['email.md', 'anthropic/claude-sonnet-4-6', '$5/mo', 'Saturday 09:00'],
+    ['community.md', 'anthropic/claude-haiku-4-5', '$4/mo', '12 hours'],
+    ['finance.md', 'google/gemini-2.0-flash-001', '$2/mo', '1st of month']
+  ];
+  for (const [file, model, budget, trigger] of expected) {
+    const p = join(ROOT, 'agents/souls', file);
+    if (!existsSync(p)) { console.error(`FAIL: agents/souls/${file} missing`); errors++; continue; }
+    const c = readFileSync(p, 'utf8');
+    if (!c.includes(model)) { console.error(`FAIL: agents/souls/${file} missing model "${model}"`); errors++; }
+    if (!c.includes(budget)) { console.error(`FAIL: agents/souls/${file} missing budget "${budget}"`); errors++; }
+    if (!c.includes(trigger)) { console.error(`FAIL: agents/souls/${file} missing trigger "${trigger}"`); errors++; }
+  }
+  console.log(`OK: souls (${expected.length} agent identities, registry-consistent)`);
+}
+
 if (errors > 0) {
   console.error(`\nlint: ${errors} error(s)`);
   process.exit(1);
