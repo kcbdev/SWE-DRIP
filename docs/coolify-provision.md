@@ -91,4 +91,25 @@ After deploy: `GET https://swedrip.kcb.ma/health` → `{"status":"ok"}` (TLS is 
 | `domains` not reachable | DNS `swedrip.kcb.ma` → `158.220.96.44` ok via wildcard `*.kcb.ma` → `kcb` server; if 404 check Traefik route `Host(\`swedrip.kcb.ma\`)` in `GET /api/v1/applications/vfsgl…` `fqdn` |
 | Env missing | Not set in Coolify UI | Set in `Environment Variables` tab, mark Secret, redeploy |
 
+## Paperclip (deployed 2026-08-22 — per antongulin/coolify-paperclip-deployer)
+
+Project `paperclip dmaobray09x3xj6xe1kb2zke` env `production 7qbvoavtkwej8iwfmumrosru` → app `paperclip ddglphkkmg5apsosgh7q1crj` — `https://paperclip.kcb.ma` — `paperclipai/paperclip#master` dockerfile port `3100` health **OFF** (guide #6), storage `persistent ddglph…-paperclip-data → /paperclip`, envs: `HOST=0.0.0.0`, `PAPERCLIP_HOME=/paperclip`, `PAPERCLIP_PUBLIC_URL=https://paperclip.kcb.ma` (matches FQDN exactly, guide #3), `BETTER_AUTH_SECRET=<64-hex>`, `PAPERCLIP_ALLOWED_HOSTNAMES=paperclip.kcb.ma`, `PAPERCLIP_TELEMETRY_DISABLED=1`.
+
+**Live:** container log `Server listening on 0.0.0.0:3100`; UI returns 200.
+
+**Onboard (Phase 8 — interactive, run via Coolify UI → paperclip → Terminal, no exec API on this instance):**
+```bash
+docker exec -it --user node $(docker ps -q --filter "publish=3100") pnpm paperclipai onboard
+# Quickstart → say NO to "start now" (already running) → copy CEO invite URL → open in browser
+```
+
+## Deployed state (verified live 2026-08-22)
+
+| App | URL | Status | Proof |
+|---|---|---|---|
+| swedrip | https://swedrip.kcb.ma | running:healthy | `GET /health` → 200 `{"status":"ok"}`, `GET /` → 200 HTML |
+| paperclip | https://paperclip.kcb.ma | running | `GET /` → 200 Paperclip UI; `Server listening on 0.0.0.0:3100` |
+
+**IPv6 gotcha (swedrip):** Alpine busybox `wget localhost` resolves `::1` first; nginx bound only `0.0.0.0:80` → Docker HEALTHCHECK connection-refused → rollback → `exited:unhealthy` → Traefik `503 no available server`. Fix: `listen [::]:80;` dual-stack + healthcheck targets `http://127.0.0.1/health`.
+
 See also `.coolify/app.json:1` for declarative capture and `docs/adrs/ADR-002.md:1` for decisions.

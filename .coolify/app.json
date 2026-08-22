@@ -51,24 +51,79 @@
   "volumes": {
     "note": "Reserved names for Paperclip — not yet attached in this PBI to avoid mount failure before Paperclip PBI lands; attach in Coolify → swedrip → Storages when Paperclip lands",
     "future": [
-      { "source": "paperclip-data", "target": "/app/data", "type": "named volume" },
-      { "source": "paperclip-workspace", "target": "/workspace", "type": "named volume" }
+      {
+        "source": "paperclip-data",
+        "target": "/app/data",
+        "type": "named volume"
+      },
+      {
+        "source": "paperclip-workspace",
+        "target": "/workspace",
+        "type": "named volume"
+      }
     ]
   },
   "env_vars": {
     "note": "Catalog — values stay in Coolify UI → swedrip → Environment Variables as Secret where marked; do not bake in image",
     "required": [
-      { "key": "OPENROUTER_API_KEY", "secret": true, "description": "OpenRouter single key (also OPENAI_API_KEY)" },
-      { "key": "OPENAI_API_KEY", "secret": true, "description": "Alias for OPENROUTER_API_KEY" },
-      { "key": "OPENAI_BASE_URL", "secret": false, "value": "https://openrouter.ai/api/v1", "description": "OpenRouter base" },
-      { "key": "DEFAULT_MODEL", "secret": false, "value": "anthropic/claude-sonnet-4-6", "description": "Default model" },
-      { "key": "WORKSPACE_PATH", "secret": false, "value": "/workspace", "description": "Shared volume path" },
-      { "key": "FOURTHWALL_MCP_TOKEN", "secret": true, "description": "FW MCP OAuth" },
-      { "key": "TELEGRAM_BOT_TOKEN", "secret": true, "description": "Telegram bot token" },
-      { "key": "TELEGRAM_CHAT_ID", "secret": true, "description": "Telegram chat id" },
-      { "key": "LOOPS_API_KEY", "secret": true, "description": "Loops.so" },
-      { "key": "BUFFER_ACCESS_TOKEN", "secret": true, "description": "Buffer" },
-      { "key": "PLANE_API_KEY", "secret": true, "description": "Plane" }
+      {
+        "key": "OPENROUTER_API_KEY",
+        "secret": true,
+        "description": "OpenRouter single key (also OPENAI_API_KEY)"
+      },
+      {
+        "key": "OPENAI_API_KEY",
+        "secret": true,
+        "description": "Alias for OPENROUTER_API_KEY"
+      },
+      {
+        "key": "OPENAI_BASE_URL",
+        "secret": false,
+        "value": "https://openrouter.ai/api/v1",
+        "description": "OpenRouter base"
+      },
+      {
+        "key": "DEFAULT_MODEL",
+        "secret": false,
+        "value": "anthropic/claude-sonnet-4-6",
+        "description": "Default model"
+      },
+      {
+        "key": "WORKSPACE_PATH",
+        "secret": false,
+        "value": "/workspace",
+        "description": "Shared volume path"
+      },
+      {
+        "key": "FOURTHWALL_MCP_TOKEN",
+        "secret": true,
+        "description": "FW MCP OAuth"
+      },
+      {
+        "key": "TELEGRAM_BOT_TOKEN",
+        "secret": true,
+        "description": "Telegram bot token"
+      },
+      {
+        "key": "TELEGRAM_CHAT_ID",
+        "secret": true,
+        "description": "Telegram chat id"
+      },
+      {
+        "key": "LOOPS_API_KEY",
+        "secret": true,
+        "description": "Loops.so"
+      },
+      {
+        "key": "BUFFER_ACCESS_TOKEN",
+        "secret": true,
+        "description": "Buffer"
+      },
+      {
+        "key": "PLANE_API_KEY",
+        "secret": true,
+        "description": "Plane"
+      }
     ]
   },
   "coolify_api": {
@@ -76,5 +131,42 @@
     "created_via": "POST /api/v1/applications/public 201 {uuid: vfsgl47pv5ew2hbrqxbjwmjq}",
     "patched": "PATCH /api/v1/applications/vfsgl47pv5ew2hbrqxbjwmjq health_check_enabled true",
     "verified": "GET /api/v1/applications/vfsgl47pv5ew2hbrqxbjwmjq → health_check_enabled true, fqdn https://swedrip.kcb.ma"
+  },
+  "paperclip": {
+    "project": {
+      "name": "paperclip",
+      "uuid": "dmaobray09x3xj6xe1kb2zke",
+      "environment": {
+        "name": "production",
+        "uuid": "7qbvoavtkwej8iwfmumrosru",
+        "id": 61
+      }
+    },
+    "application": {
+      "name": "paperclip",
+      "uuid": "ddglphkkmg5apsosgh7q1crj",
+      "fqdn": "https://paperclip.kcb.ma",
+      "git_repository": "https://github.com/paperclipai/paperclip",
+      "git_branch": "master",
+      "build_pack": "dockerfile",
+      "ports_exposes": "3100",
+      "health_check_enabled": false,
+      "storage": {
+        "type": "persistent",
+        "name": "ddglphkkmg5apsosgh7q1crj-paperclip-data",
+        "mount_path": "/paperclip",
+        "uuid": "mbsuzecznr2zevbm5iuambgl"
+      },
+      "envs_set": [
+        "HOST=0.0.0.0",
+        "PAPERCLIP_HOME=/paperclip",
+        "PAPERCLIP_PUBLIC_URL=https://paperclip.kcb.ma",
+        "BETTER_AUTH_SECRET=(64-hex, secret)",
+        "PAPERCLIP_ALLOWED_HOSTNAMES=paperclip.kcb.ma",
+        "PAPERCLIP_TELEMETRY_DISABLED=1"
+      ],
+      "status": "running — Server listening on 0.0.0.0:3100, UI 200 at https://paperclip.kcb.ma/",
+      "next": "Phase 8 onboard: docker exec -it --user node <container> pnpm paperclipai onboard → CEO invite URL (via Coolify UI Terminal — no exec API)"
+    }
   }
 }

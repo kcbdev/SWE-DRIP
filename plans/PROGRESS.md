@@ -75,3 +75,14 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Next:** PBI-003 `kcb/SWDR-3` (domain TLS) is now actionable (depends on PBI-002 `Done`); PBI-004 `kcb/SWDR-4` (verify/runbook) follows. Remaining PBIs `PBI-005…018` are `Todo` — not yet implemented, so not auto-Done (their file work is pending; will be `agentic` when their deterministic gates pass).
 
 ---
+
+## 2026-08-22 - Paperclip deployed on kcb (extra - per founder, antongulin guide)
+
+- **App:** Coolify project paperclip dmaobray09x3xj6xe1kb2zke env production 7qbvoavtkwej8iwfmumrosru -> app paperclip ddglphkkmg5apsosgh7q1crj - https://paperclip.kcb.ma - paperclipai/paperclip#master dockerfile port 3100
+- **Guide applied (antongulin/coolify-paperclip-deployer):** master branch OK; BETTER_AUTH_SECRET 64-hex generated via crypto.randomBytes(32); PAPERCLIP_PUBLIC_URL matches FQDN exactly; /paperclip persistent storage (type=persistent API quirk); health check OFF; deploy finished, container log: Server listening on 0.0.0.0:3100, UI 200
+- **swedrip IPv6 fix (7499ec2):** busybox wget localhost resolves ::1 while nginx bound 0.0.0.0:80 -> HEALTHCHECK connection refused -> exited:unhealthy -> Traefik 503 no available server. Fix: listen [::]:80 dual-stack + healthcheck targets http://127.0.0.1/health -> redeploy brrabcgtgozckziocjrrbynu finished -> running:healthy, GET /health 200 {status:ok}, GET / 200 HTML
+- **Both live:** swedrip.kcb.ma (running:healthy) + paperclip.kcb.ma (running)
+- **Next:** Paperclip Phase-8 onboard is interactive - run via Coolify UI Terminal (no exec API on this instance): docker exec -it --user node CONTAINER pnpm paperclipai onboard -> CEO invite URL
+- **Plane:** founder-directed extra beyond the 18-PBI plan; tracked here only
+
+---
