@@ -94,3 +94,9 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Commits:** this commit. Next actionable: PBI-005 (platform-workspace schemas) per plans/README.md order.
 
 ---
+## 2026-08-22 - MILESTONE: Paperclip CEO onboarded (founder-confirmed)
+
+- Founder ran Phase-8 onboard via Coolify UI Terminal, created admin account, Paperclip UI live at https://paperclip.kcb.ma.
+- Full infra story closed: swedrip.kcb.ma (running:healthy) + paperclip.kcb.ma (CEO active). SWE Drip agent factory now has its orchestration home per docs/02-stack + docs/03-agents.
+
+---
