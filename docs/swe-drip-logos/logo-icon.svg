@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img">
+  <title>SWE Drip — Icon mark</title>
+  <desc>SWE Drip icon: terminal prompt >_ on void black square, suitable for favicon and avatar use</desc>
+  <rect width="100" height="100" fill="#0D0D0D" rx="20"/>
+  <text
+    font-family="'JetBrains Mono', 'Courier New', monospace"
+    font-weight="700"
+    font-size="44"
+    text-anchor="middle"
+    x="50"
+    y="64"
+  >
+    <tspan fill="#00FF41" opacity="0.42">&gt;</tspan><tspan fill="#00FF41">_</tspan>
+  </text>
+</svg>

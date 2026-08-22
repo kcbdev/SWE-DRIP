@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" width="400" height="100" role="img">
+  <title>SWE Drip — Monochrome white</title>
+  <desc>SWE Drip brand logo monochrome white version on black, for single-colour print use</desc>
+  <rect width="400" height="100" fill="#0D0D0D" rx="10"/>
+  <text
+    font-family="'JetBrains Mono', 'Courier New', monospace"
+    font-weight="700"
+    font-size="30"
+    y="62"
+  >
+    <tspan fill="#FFFFFF" opacity="0.45" x="28">&gt;_ </tspan><tspan fill="#FFFFFF" letter-spacing="3">SWE DRIP</tspan>
+  </text>
+</svg>

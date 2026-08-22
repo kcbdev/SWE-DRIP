@@ -37,18 +37,18 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 5 | PBI-005 | platform-workspace | PBI-001 | Done | kcb/SWDR-5 | `schemas/design_brief.schema.json`, `schemas/listing_copy.schema.json`, `workspace/`, `scripts/seed-workspace.js`, `tests/platform-workspace.test.js` |
 | 6 | PBI-006 | platform-workspace | PBI-005 | Done | kcb/SWDR-6 | `agents/ceo/SKILL.md`, `program.md`, `scripts/append-program.js`, `scripts/compact-program.js`, `scripts/lint.js`, `tests/platform.test.js`, `AGENTS.md` §5 |
 | 6.5 | PBI-019 | llm-config | PBI-005 | Done | kcb/SWDR-20 | gents/lib/config.js, gents/lib/provider.js, 	ests/llm-config.test.js, .coolify/app.json |
-| 7 | PBI-007 | content-pipeline | PBI-005, PBI-006, PBI-019 | Todo | kcb/SWDR-8 | `agents/trend-scout/SOUL.md`, `agents/trend-scout/`, `workspace/fixtures/`, `tests/trend-scout.test.js` |
-| 8 | PBI-008 | content-pipeline | PBI-007 | Todo | kcb/SWDR-9 | `agents/copy/SOUL.md`, `agents/copy/`, `tests/copy-agent.test.js` |
-| 9 | PBI-009 | content-pipeline | PBI-008 | Todo | kcb/SWDR-10 | `agents/design/SOUL.md`, `agents/design/`, `workspace/designs/`, `tests/design-agent.test.js` |
-| 10 | PBI-010 | content-pipeline | PBI-009 | Todo | kcb/SWDR-11 | `agents/listing/SOUL.md`, `agents/listing/`, `tests/listing-agent.test.js` |
-| 11 | PBI-011 | distribution | PBI-010 | Todo | kcb/SWDR-12 | `agents/social/SOUL.md`, `agents/social/`, `workspace/social_state.json`, `tests/distribution-social.test.js` |
-| 12 | PBI-012 | distribution | PBI-010 | Todo | kcb/SWDR-13 | `agents/video/SOUL.md`, `agents/video/`, `workspace/reports/video_clips.json`, `tests/distribution-video.test.js` |
-| 13 | PBI-013 | distribution | PBI-011 | Todo | kcb/SWDR-14 | `agents/community/SOUL.md`, `agents/community/`, `workspace/community_log.json`, `workspace/fixtures/`, `tests/community.test.js` |
-| 14 | PBI-014 | operations | PBI-010, PBI-006 | Todo | kcb/SWDR-15 | `agents/analytics/SOUL.md`, `agents/analytics/`, `workspace/weekly_report.md`, `workspace/kill_list.md`, `tests/analytics.test.js` |
-| 15 | PBI-015 | operations | PBI-014 | Todo | kcb/SWDR-16 | `agents/email/SOUL.md`, `agents/finance/SOUL.md`, `agents/email/`, `agents/finance/`, `workspace/finance_report.md`, `tests/email-finance.test.js` |
-| 16 | PBI-016 | operations | PBI-014, PBI-015, PBI-006 | Todo | kcb/SWDR-17 | `agents/ceo/agent.js`, `scripts/compact-program.js`, `docs/adrs/ADR-003.md`, `tests/ceo-operations.test.js` |
-| 17 | PBI-017 | storefront | PBI-006, PBI-010 | Todo | kcb/SWDR-18 | `storefront/brutal.css`, `storefront/seo.js`, `scripts/lint.js`, `tests/storefront.test.js`, `tests/seo.test.js` |
-| 18 | PBI-018 | storefront | PBI-017, PBI-011, PBI-012 | Todo | kcb/SWDR-19 | `scripts/verify-launch.js`, `ph_hunt_draft.md`, `show_hn_draft.md`, `scripts/lint.js`, `package.json`, `tests/launch.test.js` |
+| 7 | PBI-007 | content-pipeline | PBI-005, PBI-006, PBI-019 | Superseded | kcb/SWDR-8 | `agents/trend-scout/SOUL.md`, `agents/trend-scout/`, `workspace/fixtures/`, `tests/trend-scout.test.js` |
+| 8 | PBI-008 | content-pipeline | PBI-007 | Superseded | kcb/SWDR-9 | `agents/copy/SOUL.md`, `agents/copy/`, `tests/copy-agent.test.js` |
+| 9 | PBI-009 | content-pipeline | PBI-008 | Superseded | kcb/SWDR-10 | `agents/design/SOUL.md`, `agents/design/`, `workspace/designs/`, `tests/design-agent.test.js` |
+| 10 | PBI-010 | content-pipeline | PBI-009 | Superseded | kcb/SWDR-11 | `agents/listing/SOUL.md`, `agents/listing/`, `tests/listing-agent.test.js` |
+| 11 | PBI-011 | distribution | PBI-010 | Superseded | kcb/SWDR-12 | `agents/social/SOUL.md`, `agents/social/`, `workspace/social_state.json`, `tests/distribution-social.test.js` |
+| 12 | PBI-012 | distribution | PBI-010 | Superseded | kcb/SWDR-13 | `agents/video/SOUL.md`, `agents/video/`, `workspace/reports/video_clips.json`, `tests/distribution-video.test.js` |
+| 13 | PBI-013 | distribution | PBI-011 | Superseded | kcb/SWDR-14 | `agents/community/SOUL.md`, `agents/community/`, `workspace/community_log.json`, `workspace/fixtures/`, `tests/community.test.js` |
+| 14 | PBI-014 | operations | PBI-010, PBI-006 | Superseded | kcb/SWDR-15 | `agents/analytics/SOUL.md`, `agents/analytics/`, `workspace/weekly_report.md`, `workspace/kill_list.md`, `tests/analytics.test.js` |
+| 15 | PBI-015 | operations | PBI-014 | Superseded | kcb/SWDR-16 | `agents/email/SOUL.md`, `agents/finance/SOUL.md`, `agents/email/`, `agents/finance/`, `workspace/finance_report.md`, `tests/email-finance.test.js` |
+| 16 | PBI-016 | operations | PBI-014, PBI-015, PBI-006 | Superseded | kcb/SWDR-17 | `agents/ceo/agent.js`, `scripts/compact-program.js`, `docs/adrs/ADR-003.md`, `tests/ceo-operations.test.js` |
+| 17 | PBI-017 | storefront | PBI-006, PBI-010 | Superseded | kcb/SWDR-18 | `storefront/brutal.css`, `storefront/seo.js`, `scripts/lint.js`, `tests/storefront.test.js`, `tests/seo.test.js` |
+| 18 | PBI-018 | storefront | PBI-017, PBI-011, PBI-012 | Superseded | kcb/SWDR-19 | `scripts/verify-launch.js`, `ph_hunt_draft.md`, `show_hn_draft.md`, `scripts/lint.js`, `package.json`, `tests/launch.test.js` |
 
 _Keep sorted by execution order; `State` moves Todo → In Progress → In Review → Done via `asdlc-execute`. SWDR-7 was a probe and deleted — PBI-007 maps to SWDR-8 (skip intentional)._
 
@@ -133,6 +133,38 @@ _Notes: PBI-011 and PBI-012 are parallel after PBI-010; PBI-013 waits PBI-011 to
 - 18 `Todo` issues created 2026-08-22 via `x-api-key` REST (`plane.kcb.ma/api/v1`) with `X-Workspace-slug: kcb` (probe SWDR-7 created+deleted, sequence skipped to SWDR-8)
 - Every `tasks/PBI-*.md` now carries `Plane: kcb/SWDR-N (Todo — <uuid>)` in its Context — see file headers
 - Future PBIs: run `asdlc-plane` pull before authoring (Backlog ignored) and push-create will append `Todo` issues skipping already-linked PBIs
+
+
+## Phase 7 — Paperclip org bootstrap + Fourthwall store (ADR-003, founder-directed)
+
+Specs: `specs/paperclip-org/spec.md` + `specs/fourthwall-store/spec.md`. Architecture decision: agents execute **inside the deployed Paperclip** (`paperclip.kcb.ma`, OpenRouter wired via env) under a new `SWE Drip` organization; store is **Fourthwall-hosted** operated via Fourthwall MCP (`https://mcp.fourthwall.com`, OAuth). PBIs 007–018 are superseded by this path (contracts absorbed into SOUL.md content); files remain as reference. See `docs/adrs/ADR-003.md`.
+
+### Execution order
+
+| Order | PBI | Spec | Depends on | State | Plane | Summary |
+|---|---|---|---|---|---|---|
+| 19 | PBI-020 | paperclip-org | none | Todo | kcb/SWDR-21 | Materialize 11 SOUL.md files + souls lint gate |
+| 20 | PBI-021 | paperclip-org | none | Todo | kcb/SWDR-22 | Create SWE Drip organization in Paperclip |
+| 21 | PBI-022 | paperclip-org | PBI-021 | Todo | kcb/SWDR-23 | Hire CEO agent (Sonnet, $30/mo) + test cycle |
+| 22 | PBI-023 | fourthwall-store | PBI-021 | Todo | kcb/SWDR-24 | Connect Fourthwall MCP in Paperclip + OAuth smoke |
+| 23 | PBI-024 | paperclip-org | 020, 023 | Todo | kcb/SWDR-25 | Hire pipeline workers (Trend/Copy/Design/Listing) |
+| 24 | PBI-025 | paperclip-org | 020, 023 | Todo | kcb/SWDR-26 | Hire distribution+ops workers (6) |
+| 25 | PBI-027 | fourthwall-store | PBI-023 | Todo | kcb/SWDR-28 | Storefront design live (Brutal theme, CSS, collections, online) |
+| 26 | PBI-028 | both | 024, 026/027 | Todo | kcb/SWDR-29 | First product E2E to live Fourthwall listing |
+
+### Dependency graph
+
+```
+PBI-020 (souls) ─────────┐
+PBI-021 (org) ─► PBI-022 (hire CEO)
+      └───────► PBI-023 (FW MCP + OAuth) ─► PBI-024 (pipeline hires) ─┐
+                              │             └► PBI-025 (dist+ops hires)│
+                              └► PBI-027 (storefront design)          ├► PBI-028 (first product E2E)
+                                            (PBI-025 also feeds E2E) ─┘
+```
+
+Manual-sort note: PBI-021..028 are Paperclip-UI/Fourthwall-dashboard operations — verification evidence is screenshots/task-board outputs attached to Plane issues (founder or agent-in-browser). PBI-020 is fully agentic.
+
 
 ## How to add a PBI (via asdlc-plan)
 

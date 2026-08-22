@@ -124,3 +124,16 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Gates:** verify green - build OK, lint OK, tests 46/46 PASS.
 
 ---
+## 2026-08-22 - Phase 7 planned: Paperclip org bootstrap + Fourthwall store (founder-directed)
+
+- **Specs:** specs/paperclip-org/spec.md (org + 11 agent hires in deployed Paperclip) + specs/fourthwall-store/spec.md (FW MCP native store, Brutal design, collections, first product).
+
+- **ADR-003:** Paperclip-native execution supersedes repo-native workers (PBI-007..018 marked Superseded, contracts absorbed into SOUL.md content).
+
+- **PBIs:** PBI-020 souls materialize (agentic) -> PBI-021 org -> PBI-022 hire CEO -> PBI-023 FW MCP+OAuth -> PBI-024 pipeline hires -> PBI-025 dist+ops hires -> PBI-027 storefront design -> PBI-028 first product E2E.
+
+- **Plane:** pushed as SWDR-21..28 Todo. OpenRouter confirmed live in Paperclip (OPENAI_API_KEY present, app running:unknown after restart).
+
+- **Gates:** verify green (46/46) - plan artifacts only.
+
+---

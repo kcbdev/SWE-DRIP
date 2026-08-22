@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" width="400" height="100" role="img">
+  <title>SWE Drip — Primary wordmark</title>
+  <desc>SWE Drip brand logo: terminal prompt >_ followed by SWE DRIP in JetBrains Mono Bold, terminal green on void black</desc>
+  <rect width="400" height="100" fill="#0D0D0D" rx="10"/>
+  <text
+    font-family="'JetBrains Mono', 'Courier New', monospace"
+    font-weight="700"
+    font-size="30"
+    y="62"
+  >
+    <tspan fill="#00FF41" opacity="0.52" x="28">&gt;_ </tspan><tspan fill="#00FF41" letter-spacing="3">SWE DRIP</tspan>
+  </text>
+</svg>
