@@ -1,6 +1,6 @@
 # Coolify provision — `kcb` → `swe-drip` → `swedrip` (swedrip.kcb.ma)
 
-> Live: `https://coolify.kcb.ma` API `COOLIFY_ACCESS_TOKEN` (`10|C7O...`). Project `swe-drip` `vztwc3dxianozufxinxm0cgp` env `production` `r5c2ohxgtq9irlvjiwbtzji1` on server `kcb.ma server` `e4cowswcks844wow04c084wg` destination `coolify` `i448wgc40wc4wg8oww0ww4os`. App `swedrip` `vfsgl47pv5ew2hbrqxbjwmjq` `https://swedrip.kcb.ma` `KCB/SWE-DRIP#master` `dockerfile` `80`.
+> Live: `https://coolify.kcb.ma` API `COOLIFY_ACCESS_TOKEN` (`10|C7O...`). Project `swe-drip` `vztwc3dxianozufxinxm0cgp` env `production` `r5c2ohxgtq9irlvjiwbtzji1` on server `kcb.ma server` `e4cowswcks844wow04c084wg` destination `coolify` `i448wgc40wc4wg8oww0ww4os`. App `swedrip` `vfsgl47pv5ew2hbrqxbjwmjq` `https://swedrip.kcb.ma` `kcbdev/SWE-DRIP#master` `dockerfile` `8080` (non-root, was 80).
 
 ## Create (already executed 2026-08-22 — idempotent)
 
@@ -21,22 +21,22 @@ curl -X POST https://coolify.kcb.ma/api/v1/applications/public \
     "server_uuid":"e4cowswcks844wow04c084wg",
     "environment_uuid":"r5c2ohxgtq9irlvjiwbtzji1",
     "destination_uuid":"i448wgc40wc4wg8oww0ww4os",
-    "git_repository":"https://github.com/kcbdev/SWE-DRIP",
+    "git_repository":"kcbdev/SWE-DRIP",
     "git_branch":"master",
     "build_pack":"dockerfile",
-    "ports_exposes":"80",
+    "ports_exposes":"8080",
     "name":"swedrip",
     "domains":"https://swedrip.kcb.ma"
   }'
 # → {uuid: vfsgl47pv5ew2hbrqxbjwmjq, domains: https://swedrip.kcb.ma}
 # Patched 2026-08-22: PATCH /api/v1/applications/vfsgl47… → git_repository https://github.com/kcbdev/SWE-DRIP (was KCB/SWE-DRIP, repo 404) after git push to kcbdev/SWE-DRIP master succeeded
 
-# 3. Health patch (done)
+# 3. Health patch (done — updated 2026-08-22 to 8080 for USER nginx non-root)
 curl -X PATCH https://coolify.kcb.ma/api/v1/applications/vfsgl47pv5ew2hbrqxbjwmjq \
   -H "Authorization: Bearer $COOLIFY_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"health_check_enabled":true,"health_check_path":"/health","health_check_port":"80","health_check_method":"GET","health_check_scheme":"http","health_check_return_code":200,"health_check_interval":30,"health_check_timeout":5,"health_check_retries":3,"health_check_start_period":10}'
-# → 200
+  -d '{"health_check_enabled":true,"health_check_path":"/health","health_check_port":"8080","health_check_method":"GET","health_check_scheme":"http","health_check_return_code":200,"health_check_interval":30,"health_check_timeout":5,"health_check_retries":3,"health_check_start_period":10, "ports_exposes":"8080"}'
+# → 200 (was 80, changed to 8080 for non-root; Traefik still terminates TLS and routes to 8080)
 ```
 
 ## Verify

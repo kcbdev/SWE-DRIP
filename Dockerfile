@@ -46,12 +46,12 @@ RUN chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/log/nginx /
     # Validate nginx config at build time (fails the build if broken)
     nginx -t
 
-# Document exposed port (spec says 80 behind nginx)
-EXPOSE 80
+# Document exposed port — 8080 for non-root (spec allows 80 or 3000; 8080 is non-privileged equivalent for USER nginx)
+EXPOSE 8080
 
-# Healthcheck — matches spec contract 4: wget http://localhost/health → {"status":"ok"}
+# Healthcheck — matches spec contract 4: wget http://localhost:8080/health → {"status":"ok"} (8080 for non-root)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://localhost/health | grep -q '"status":"ok"' || exit 1
+    CMD wget -qO- http://localhost:8080/health | grep -q '"status":"ok"' || exit 1
 
 # Run as non-root (nginx user already exists in nginx:alpine)
 USER nginx

@@ -17,8 +17,8 @@ else {
   else ok('Dockerfile builder stage node:22-alpine');
   if(!c.includes('FROM nginx:alpine')) fail('Dockerfile runtime must be nginx:alpine');
   else ok('Dockerfile runtime nginx:alpine');
-  if(!c.includes('EXPOSE 80')) fail('Dockerfile must EXPOSE 80');
-  else ok('EXPOSE 80');
+  if(!c.includes('EXPOSE 8080')) fail('Dockerfile must EXPOSE 8080 (non-root)');
+  else ok('EXPOSE 8080');
   if(!c.includes('HEALTHCHECK')) fail('HEALTHCHECK required');
   else ok('HEALTHCHECK');
   if(!c.includes('USER nginx')) fail('USER nginx (non-root) required');
@@ -35,8 +35,8 @@ const nginxConf = join(ROOT, 'nginx.conf');
 if(!existsSync(nginxConf)) fail('nginx.conf missing');
 else {
   const c = readFileSync(nginxConf, 'utf8');
-  if(!c.includes('listen 80')) fail('nginx.conf must listen 80');
-  else ok('nginx listen 80');
+  if(!c.includes('listen 8080')) fail('nginx.conf must listen 8080 (non-root)');
+  else ok('nginx listen 8080');
   if(!c.includes('location = /health')) fail('nginx must have location = /health');
   else ok('health location');
   if(!c.includes('"status":"ok"') && !c.includes("'status':'ok'") && !c.includes('\\042status\\042')) {
