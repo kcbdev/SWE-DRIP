@@ -35,8 +35,8 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 3 | PBI-003 | coolify-deploy | PBI-002 | Done | kcb/SWDR-3 | `docs/adrs/ADR-002.md`, `.coolify/app.json`, `docs/04-deploy.md` |
 | 4 | PBI-004 | coolify-deploy | PBI-003 | Done | kcb/SWDR-4 | `tests/deployment.test.js`, `scripts/verify-deploy.js`, `package.json`, runbook |
 | 5 | PBI-005 | platform-workspace | PBI-001 | Done | kcb/SWDR-5 | `schemas/design_brief.schema.json`, `schemas/listing_copy.schema.json`, `workspace/`, `scripts/seed-workspace.js`, `tests/platform-workspace.test.js` |
-| 6 | PBI-006 | platform-workspace | PBI-005 | Todo | kcb/SWDR-6 | `agents/ceo/SKILL.md`, `program.md`, `scripts/append-program.js`, `scripts/compact-program.js`, `scripts/lint.js`, `tests/platform.test.js`, `AGENTS.md` §5 |
-| 6.5 | PBI-019 | llm-config | PBI-005 | Todo | kcb/SWDR-20 | gents/lib/config.js, gents/lib/provider.js, 	ests/llm-config.test.js, .coolify/app.json |
+| 6 | PBI-006 | platform-workspace | PBI-005 | Done | kcb/SWDR-6 | `agents/ceo/SKILL.md`, `program.md`, `scripts/append-program.js`, `scripts/compact-program.js`, `scripts/lint.js`, `tests/platform.test.js`, `AGENTS.md` §5 |
+| 6.5 | PBI-019 | llm-config | PBI-005 | Done | kcb/SWDR-20 | gents/lib/config.js, gents/lib/provider.js, 	ests/llm-config.test.js, .coolify/app.json |
 | 7 | PBI-007 | content-pipeline | PBI-005, PBI-006, PBI-019 | Todo | kcb/SWDR-8 | `agents/trend-scout/SOUL.md`, `agents/trend-scout/`, `workspace/fixtures/`, `tests/trend-scout.test.js` |
 | 8 | PBI-008 | content-pipeline | PBI-007 | Todo | kcb/SWDR-9 | `agents/copy/SOUL.md`, `agents/copy/`, `tests/copy-agent.test.js` |
 | 9 | PBI-009 | content-pipeline | PBI-008 | Todo | kcb/SWDR-10 | `agents/design/SOUL.md`, `agents/design/`, `workspace/designs/`, `tests/design-agent.test.js` |

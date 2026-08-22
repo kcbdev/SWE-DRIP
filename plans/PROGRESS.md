@@ -107,3 +107,20 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Gates:** npm run verify green - build OK, lint OK, tests 26/26 PASS (was 10). Windows fix in test: pathToFileURL for ESM import of validator script.
 
 ---
+## 2026-08-22 - PBI-006 CEO rules + program.md lifecycle + lint guards -> Done (agentic)
+
+- **Files:** agents/ceo/SKILL.md (identity/read-order/escalation), agents/ceo/rules.js (pure: approve>=60, kill >30d&0sales, scale >=5@14d, flash <=-30%), program.md seeded, scripts/append-program.js (60d dedupe), scripts/compact-program.js (merge dupes / archive >90d unreinforced / kill rules verbatim / log 90d / <=500 lines), scripts/lint.js brand-invariant guard + Context Map honesty check.
+- **Context Map honesty fired as designed:** lint caught agents/ceo/SKILL.md existing while AGENTS.md still said Future -> AGENTS.md S5 updated to as-built (agents/ partial-live incl. PBI-019 provider layer note; workspace/ live; program.md indexed).
+- **Gates:** verify green - build OK, lint OK (brand invariants + Context Map honest), tests 35/35 PASS.
+
+---
+## 2026-08-22 - PBI-019 LLM provider config (Hermes + OpenRouter) -> Done (agentic) [founder-requested]
+
+- **Requirement:** founder asked for agent + LLM provider configuration - Hermes workers on OpenRouter, key set later via Paperclip UI or Coolify env.
+
+- **Files:** specs/llm-config/spec.md (new spec), tasks/PBI-019.md, agents/lib/config.js (11-agent registry mirroring docs/03-agents roster: model+trigger+budget per agent), agents/lib/provider.js (callLLM/generateImage/generateVideo request builders; base URL OPENAI_BASE_URL default openrouter.ai/api/v1; auth OPENROUTER_API_KEY||OPENAI_API_KEY; missing key throws loud error naming Paperclip UI setup path with zero network attempts; video POST+poll 10s x60 shape), sumAgentSpend()+assertBudgetCap(/mo from workspace/reports/*.json), tests/llm-config.test.js (11 assertions incl. registry==roster, mocked fetch shapes, no sk-or- in repo).
+- **Plane:** pushed as SWDR-20 Todo -> Done.
+
+- **Gates:** verify green - build OK, lint OK, tests 46/46 PASS.
+
+---
