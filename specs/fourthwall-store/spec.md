@@ -28,7 +28,7 @@ SWE Drip's storefront is **Fourthwall-hosted end to end** (no custom storefront 
 - Do not create products outside collections or off-price ($32/$62/$20 invariants).
 
 ## Decisions
-- **Decision-1 — OAuth over static token:** FW MCP authenticates per-session via browser OAuth; founder performs one-time login in Paperclip's MCP settings. Corrects `docs/02-stack.md` token assumption.
+- **Decision-1 — Auth path v1 = Platform REST + Basic API user (corrected 2026-08-22):** self-hosted Paperclip lacks per-host MCP OAuth client config (`start-authorization` -> 422), so v1 uses Fourthwall Platform REST (`https://api.fourthwall.com/open-api/v1.0/*`, Basic auth) with credentials stored as Paperclip company secret FOURTHWALL_BASIC_TOKEN injected via rest_api tool connection 6e1f3edf. MCP/OAuth revisit when Paperclip ships host-client config.
 - **Decision-2 — Theme/CSS via Fourthwall dashboard:** theme activation + Custom CSS injection are dashboard operations (not exposed as MCP tools); product/collection/promotion operations are MCP-driven.
 - **Decision-3 — Brand assets via MCP brand tools:** `brand_from_url` on `https://swedrip.kcb.ma` builds the brand profile; wordmark/logo extracted via `brand_extract_assets` where needed.
 

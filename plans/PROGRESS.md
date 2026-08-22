@@ -161,3 +161,11 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Gates:** verify green 46/46 incl souls lint on SKILL.md paths.
 
 ---
+## 2026-08-22 - PBI-023 pivot executed: Fourthwall REST + API-user creds (founder-provided)
+
+- **Verified live:** GET /open-api/v1.0/shops/current -> 200 {name:SWE DRIP, domain swe-drip-shop.fourthwall.com, status COMING_SOON}; auth = Basic base64(api-user:password).
+- **Collections created (PBI-027 progress):** Terminal Collection col_fWajt4BKTLGsh2995Y8BEw + Stack-Specific col_ieJr5DgrT1yNTMnr5TsKcw.
+- **Paperclip wiring:** company secret FOURTHWALL_BASIC_TOKEN (local_encrypted) + rest_api connection Fourthwall Platform API 6e1f3edf (active, credentialRef Authorization header prefix Basic). enabled flag pending profile bind (no PATCH route).
+- **PBI-023 remains In Progress:** contract 1 (callable from Paperclip agent run) pending first agent task through connection; OAuth path blocked upstream (documented in spec).
+
+---
