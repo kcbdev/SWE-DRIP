@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "schemas/listing_copy.schema.json",
+  "title": "listing_copy — Copy Agent output (specs/platform-workspace contract 1)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["brief_id", "primary_slogan", "fw_title", "fw_description", "fw_tags", "product_types"],
+    "additionalProperties": false,
+    "properties": {
+      "brief_id": { "type": "string", "minLength": 1 },
+      "primary_slogan": { "type": "string", "minLength": 1, "description": "<=6 words enforced by validator" },
+      "slogan_variants": { "type": "array", "items": { "type": "string" } },
+      "fw_title": { "type": "string", "maxLength": 60, "minLength": 1 },
+      "fw_description": { "type": "string", "minLength": 1, "description": "150-200 words enforced by validator" },
+      "fw_tags": { "type": "array", "minItems": 13, "maxItems": 13, "items": { "type": "string" } },
+      "design_prompt_notes": { "type": "string" },
+      "product_types": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "enum": ["tshirt", "hoodie", "mug"] }
+      },
+      "product_url": { "type": ["string", "null"], "description": "null until Design Agent publishes via FW MCP (PBI-009)" }
+    }
+  }
+}

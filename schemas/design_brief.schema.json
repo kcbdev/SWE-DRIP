@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "schemas/design_brief.schema.json",
+  "title": "design_briefs — Trend Scout output (specs/platform-workspace contract 1)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["phrase", "source_url", "score", "score_breakdown", "rationale", "suggested_aesthetic"],
+    "additionalProperties": false,
+    "properties": {
+      "phrase": { "type": "string", "minLength": 1, "description": "the actual phrase or concept" },
+      "source_url": { "type": "string", "minLength": 1, "description": "where it was found" },
+      "score": { "type": "number", "minimum": 0, "maximum": 100, "description": "engagement+novelty+specificity, CEO approves >=60" },
+      "score_breakdown": {
+        "type": "object",
+        "required": ["engagement", "novelty", "specificity"],
+        "additionalProperties": false,
+        "properties": {
+          "engagement": { "type": "number", "minimum": 0, "maximum": 40 },
+          "novelty": { "type": "number", "minimum": 0, "maximum": 30 },
+          "specificity": { "type": "number", "minimum": 0, "maximum": 30 }
+        }
+      },
+      "rationale": { "type": "string", "minLength": 1 },
+      "suggested_aesthetic": { "enum": ["terminal", "minimal", "dark-humor"] },
+      "flag": { "type": ["string", "null"], "description": "CEO review flag; score<60 requires non-null flag" }
+    }
+  }
+}

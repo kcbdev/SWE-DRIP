@@ -100,3 +100,10 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - Full infra story closed: swedrip.kcb.ma (running:healthy) + paperclip.kcb.ma (CEO active). SWE Drip agent factory now has its orchestration home per docs/02-stack + docs/03-agents.
 
 ---
+## 2026-08-22 - PBI-005 Workspace file contracts + seed -> Done (agentic)
+
+- **Files:** schemas/design_brief.schema.json + schemas/listing_copy.schema.json (draft-07, array wrapper), scripts/seed-workspace.js (idempotent: mkdirs + [] only if missing, never overwrites), scripts/validate-workspace.js (zero-dep manual validators per spec Tooling note - no ajv; exports validateDesignBrief/validateListingCopy + CLI), workspace/{designs,reports,fixtures}/ seeded, tests/platform-workspace.test.js (16 assertions).
+- **Contracts:** brief score 0-100 with breakdown sum check (engagement<=40 novelty<=30 specificity<=30), score<60 requires flag (CEO rule); slogan <=6 words, fw_title <=60, description 150-200w, tags exactly 13, product_types enum, product_url nullable.
+- **Gates:** npm run verify green - build OK, lint OK, tests 26/26 PASS (was 10). Windows fix in test: pathToFileURL for ESM import of validator script.
+
+---
