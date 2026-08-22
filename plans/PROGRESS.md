@@ -169,3 +169,15 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **PBI-023 remains In Progress:** contract 1 (callable from Paperclip agent run) pending first agent task through connection; OAuth path blocked upstream (documented in spec).
 
 ---
+
+## 2026-08-22 - PBI-027 progress: Custom Code override authored
+
+- **File:** storefront/custom-code.html — paste-ready <style> block for Fourthwall Custom Code section.
+
+- **Strategy:** dual-layer override — :root variable remap + high-specificity !important element/class coverage (body, headings, links, buttons, CTAs, inputs, header/footer, product cards, prices->green, badges->orange) because Brutal DOM classnames are not pinned.
+
+- **Aesthetic:** flat sharp corners (border-radius 0), no gradients/shadows/text-shadows globally, JetBrains Mono via @import, h1 terminal-cursor blink, sale-strike -> #FF6B35 error orange.
+
+- **Gates:** verify green 46/46.
+
+---

@@ -1,0 +1,196 @@
+<html>
+<style>
+  /* ============================================================
+     SWE DRIP — Fourthwall Custom Code brand override
+     Target: active theme (Brutal) — forces terminal aesthetic
+     Brand: #0D0D0D void black · #00FF41 terminal green · #FF6B35
+            error orange · JetBrains Mono Bold
+     Anti-patterns enforced: no gradients, no shadows, no pastels,
+     no rounded pill corners, no cartoon decorations.
+     ============================================================ */
+
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+  :root {
+    --color-background: #0D0D0D !important;
+    --color-primary: #00FF41 !important;
+    --color-accent: #00FF41 !important;
+    --color-text: #FFFFFF !important;
+    --font-display: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace !important;
+    --font-body: 'JetBrains Mono', 'Fira Code', monospace !important;
+    --sd-black: #0D0D0D;
+    --sd-green: #00FF41;
+    --sd-orange: #FF6B35;
+    --sd-surface: #111111;
+    --sd-border: #222222;
+  }
+
+  /* ---- Base surface + type ---- */
+  html,
+  body {
+    background-color: var(--sd-black) !important;
+    color: #FFFFFF !important;
+    font-family: var(--sd-body) !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display) !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em !important;
+    text-transform: none !important;
+  }
+
+  p, span, div, li, label, td, th, figcaption, small {
+    font-family: var(--sd-body), monospace !important;
+  }
+
+  ::selection {
+    background: var(--sd-green) !important;
+    color: var(--sd-black) !important;
+  }
+
+  /* ---- Links ---- */
+  a,
+  a * {
+    color: var(--sd-green) !important;
+    text-decoration: none !important;
+  }
+  a:hover,
+  a:hover * {
+    color: #FFFFFF !important;
+    text-decoration: underline !important;
+  }
+
+  /* ---- Buttons / CTAs (flat, sharp, terminal) ---- */
+  button,
+  .button,
+  [class*="button"],
+  [class*="Button"],
+  input[type="submit"] {
+    background-color: transparent !important;
+    color: var(--sd-green) !important;
+    border: 2px solid var(--sd-green) !important;
+    border-radius: 0 !important;
+    font-family: var(--font-display) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    box-shadow: none !important;
+    background-image: none !important;
+    transition: background-color 0.15s linear, color 0.15s linear !important;
+  }
+  button:hover,
+  .button:hover,
+  [class*="button"]:hover,
+  [class*="Button"]:hover,
+  input[type="submit"]:hover {
+    background-color: var(--sd-green) !important;
+    color: var(--sd-black) !important;
+  }
+
+  /* Primary add-to-cart style CTA gets filled treatment */
+  [class*="add-to-cart"],
+  [class*="AddToCart"],
+  form button[type="submit"] {
+    background-color: var(--sd-green) !important;
+    color: var(--sd-black) !important;
+    border: 2px solid var(--sd-green) !important;
+  }
+  [class*="add-to-cart"]:hover,
+  form button[type="submit"]:hover {
+    background-color: var(--sd-black) !important;
+    color: var(--sd-green) !important;
+  }
+
+  /* ---- Inputs ---- */
+  input,
+  textarea,
+  select {
+    background-color: #0A0A0A !important;
+    color: #FFFFFF !important;
+    border: 1px solid var(--sd-border) !important;
+    border-radius: 0 !important;
+    font-family: var(--sd-body) !important;
+  }
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none !important;
+    border-color: var(--sd-green) !important;
+  }
+
+  /* ---- Header / nav / footer surfaces ---- */
+  header,
+  nav,
+  footer,
+  [class*="header"],
+  [class*="Header"],
+  [class*="footer"],
+  [class*="Footer"] {
+    background-color: var(--sd-black) !important;
+    background-image: none !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+    border-color: var(--sd-border) !important;
+  }
+
+  /* ---- Product cards / grids ---- */
+  [class*="product-card"],
+  [class*="ProductCard"],
+  [class*="card"],
+  [class*="Card"],
+  [class*="tile"],
+  [class*="grid-item"] {
+    background-color: #0A0A0A !important;
+    border: 1px solid var(--sd-border) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background-image: none !important;
+  }
+  [class*="product-card"]:hover,
+  [class*="ProductCard"]:hover {
+    border-color: var(--sd-green) !important;
+  }
+
+  /* ---- Prices → terminal green ---- */
+  [class*="price"],
+  [class*="Price"],
+  s,
+  del {
+    color: var(--sd-green) !important;
+    font-family: var(--font-display) !important;
+  }
+  s, del { color: var(--sd-orange) !important; }
+
+  /* ---- Badges (sale/new) → error orange on black ---- */
+  [class*="badge"],
+  [class*="Badge"] {
+    background-color: var(--sd-orange) !important;
+    color: var(--sd-black) !important;
+    border-radius: 0 !important;
+    font-family: var(--font-display) !important;
+    font-weight: 700 !important;
+  }
+
+  /* ---- Kill gradients + shadows globally (anti-patterns) ---- */
+  *,
+  *::before,
+  *::after {
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  svg, img { filter: none !important; }
+
+  /* ---- Terminal cursor blink on main headline (subtle flex) ---- */
+  h1::after {
+    content: "▌" !important;
+    color: var(--sd-green) !important;
+    animation: sd-blink 1.1s steps(1) infinite !important;
+  }
+  @keyframes sd-blink {
+    50% { opacity: 0 !important; }
+  }
+</style>
+</html>
