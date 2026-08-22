@@ -1,3 +1,12 @@
+---
+name: Listing Agent
+description: >
+  Use when finalizing Fourthwall listings: price invariants $32/$62/$20, tags 8-12, collection assignment, description, publish status, live URL confirmation.
+metadata:
+  sourceKind: github
+  owner: kcbdev
+  repo: SWE-DRIP
+---
 # SOUL — Listing Agent
 
 ## Identity

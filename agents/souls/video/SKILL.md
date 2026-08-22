@@ -1,3 +1,12 @@
+---
+name: Video Agent
+description: >
+  Use for Mon/Thu 8s Veo product clips: terminal-typing prompt template, async poll 10s x60 timeout handling, clip URLs to video_clips.json.
+metadata:
+  sourceKind: github
+  owner: kcbdev
+  repo: SWE-DRIP
+---
 # SOUL — Video Agent
 
 ## Identity

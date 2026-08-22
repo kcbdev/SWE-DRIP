@@ -87,20 +87,20 @@ checkFile(join(ROOT, 'docs/07-scale.md'), ['# Scale Playbook']);
 // --- PBI-020: SOUL.md gate — every agent identity present and registry-consistent ---
 {
   const expected = [
-    ['ceo.md', 'anthropic/claude-sonnet-4-6', '$30/mo', 'always_on'],
-    ['trend-scout.md', 'google/gemini-2.0-flash-001', '$6/mo', 'Monday 08:00'],
-    ['copy.md', 'anthropic/claude-sonnet-4-6', '$15/mo', 'on_task'],
-    ['design.md', 'black-forest-labs/flux.2-pro', '$30/mo', 'on_task'],
-    ['listing.md', 'google/gemini-2.0-flash-001', '$5/mo', 'on_task'],
-    ['social.md', 'anthropic/claude-haiku-4-5', '$4/mo', 'Tuesday/Wednesday/Thursday'],
-    ['video.md', 'google/veo-3.1-lite', '$20/mo', 'Monday + Thursday'],
-    ['analytics.md', 'anthropic/claude-haiku-4-5', '$3/mo', 'Friday 18:00'],
-    ['email.md', 'anthropic/claude-sonnet-4-6', '$5/mo', 'Saturday 09:00'],
-    ['community.md', 'anthropic/claude-haiku-4-5', '$4/mo', '12 hours'],
-    ['finance.md', 'google/gemini-2.0-flash-001', '$2/mo', '1st of month']
+    ['ceo', 'anthropic/claude-sonnet-4-6', '$30/mo', 'always_on'],
+    ['trend-scout', 'google/gemini-2.0-flash-001', '$6/mo', 'Monday 08:00'],
+    ['copy', 'anthropic/claude-sonnet-4-6', '$15/mo', 'on_task'],
+    ['design', 'black-forest-labs/flux.2-pro', '$30/mo', 'on_task'],
+    ['listing', 'google/gemini-2.0-flash-001', '$5/mo', 'on_task'],
+    ['social', 'anthropic/claude-haiku-4-5', '$4/mo', 'Tuesday/Wednesday/Thursday'],
+    ['video', 'google/veo-3.1-lite', '$20/mo', 'Monday + Thursday'],
+    ['analytics', 'anthropic/claude-haiku-4-5', '$3/mo', 'Friday 18:00'],
+    ['email', 'anthropic/claude-sonnet-4-6', '$5/mo', 'Saturday 09:00'],
+    ['community', 'anthropic/claude-haiku-4-5', '$4/mo', '12 hours'],
+    ['finance', 'google/gemini-2.0-flash-001', '$2/mo', '1st of month']
   ];
   for (const [file, model, budget, trigger] of expected) {
-    const p = join(ROOT, 'agents/souls', file);
+    const p = join(ROOT, 'agents/souls', file, 'SKILL.md');
     if (!existsSync(p)) { console.error(`FAIL: agents/souls/${file} missing`); errors++; continue; }
     const c = readFileSync(p, 'utf8');
     if (!c.includes(model)) { console.error(`FAIL: agents/souls/${file} missing model "${model}"`); errors++; }

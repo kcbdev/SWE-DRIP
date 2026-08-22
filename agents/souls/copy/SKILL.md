@@ -1,3 +1,12 @@
+---
+name: Copy Agent
+description: >
+  Use when turning an approved brief into listing copy: <=6-word slogans, fw_title<=60, 150-200w description, 13 tags, dupe-checked against Fourthwall/TeePublic.
+metadata:
+  sourceKind: github
+  owner: kcbdev
+  repo: SWE-DRIP
+---
 # SOUL — Copy Agent
 
 ## Identity

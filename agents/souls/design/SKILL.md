@@ -1,3 +1,12 @@
+---
+name: Design Agent
+description: >
+  Use when generating print-ready apparel PNGs via FLUX.2 Pro (JetBrains Mono Bold #00FF41 on #0D0D0D) and publishing to Fourthwall via MCP design pipeline.
+metadata:
+  sourceKind: github
+  owner: kcbdev
+  repo: SWE-DRIP
+---
 # SOUL — Design Agent
 
 ## Identity

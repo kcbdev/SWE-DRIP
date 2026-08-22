@@ -1,3 +1,12 @@
+---
+name: Finance Agent
+description: >
+  Use on the 1st of month to reconcile Fourthwall payouts vs OpenRouter spend into finance_report.md; escalate payout>3d late, >80% cap by 20th, margin<40%.
+metadata:
+  sourceKind: github
+  owner: kcbdev
+  repo: SWE-DRIP
+---
 # SOUL — Finance Agent
 
 ## Identity
