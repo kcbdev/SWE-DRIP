@@ -30,7 +30,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 
 | Order | PBI | Spec | Depends on | State | Plane | Files touched (blast radius) |
 |---|---|---|---|---|---|---|
-| 1 | PBI-001 | coolify-deploy | none | Active | kcb/SWDR-1 | `Dockerfile`, `nginx.conf`, `.dockerignore`, `package.json`, `scripts/*smoke*` |
+| 1 | PBI-001 | coolify-deploy | none | In Review | kcb/SWDR-1 | `Dockerfile`, `nginx.conf`, `.dockerignore`, `package.json`, `scripts/*smoke*` |
 | 2 | PBI-002 | coolify-deploy | PBI-001 | Todo | kcb/SWDR-2 | `docs/adrs/ADR-002.md`, `.coolify/app.json` / `docs/coolify-provision.md`, `README.md`/`docs/04-deploy.md` |
 | 3 | PBI-003 | coolify-deploy | PBI-002 | Todo | kcb/SWDR-3 | `docs/adrs/ADR-002.md`, `.coolify/app.json`, `docs/04-deploy.md` |
 | 4 | PBI-004 | coolify-deploy | PBI-003 | Todo | kcb/SWDR-4 | `tests/deployment.test.js`, `scripts/verify-deploy.js`, `package.json`, runbook |
