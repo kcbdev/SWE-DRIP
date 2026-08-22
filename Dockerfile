@@ -54,8 +54,9 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget -qO- http://localhost:8080/health | grep -q '"status":"ok"' || exit 1
 
-# Run as non-root (nginx user already exists in nginx:alpine)
-USER nginx
+# Run as root for now — non-root pid fix requires host volume chown like guide #5 (Paperclip /paperclip chown 1000:1000)
+# TODO: re-enable USER nginx + pid /tmp/nginx.pid via sed on /etc/nginx/nginx.conf once host /run perms are handled
+# USER nginx
 
-# nginx runs in foreground — pid /tmp/nginx.pid for non-root (guide: Paperclip volume chown, here nginx pid)
-CMD ["nginx", "-g", "pid /tmp/nginx.pid; daemon off;"]
+# nginx runs in foreground
+CMD ["nginx", "-g", "daemon off;"]
