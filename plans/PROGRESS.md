@@ -146,3 +146,18 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Gates:** verify green - build OK, lint OK incl. souls gate, tests 46/46 PASS (one transient live-probe flake, clean on rerun).
 
 ---
+## 2026-08-22 - Phase 7 executed via Paperclip API (board token)
+
+- **Auth:** CLI-auth challenge approved by founder -> board API token.
+
+- **PBI-021 DONE:** POST /api/companies -> SWE Drip org 65913eaa-7de5-4372-8657-887328089e0a, budgetMonthlyCents 13000.
+
+- **Skills+attribution:** souls restructured to agents/souls/<name>/SKILL.md (YAML frontmatter), pushed d35fff1, imported x11 into Paperclip -> canonical keys kcbdev/swe-drip/* pinned commit d35fff12 (attribution automatic per skills reference). Lint gate repointed to SKILL.md paths.
+
+- **PBI-022/024/025:** hired all 11 agents via /agent-hires (codex_local like KCB CEO): CEO da47cca9 (crown, ), Trend Scout researcher , Copy , Design designer  (critical path), Listing , Social cmo , Video , Analytics , Email , Community , Finance cfo  - workers reportTo CEO; budgets total  <=  cap. Skills attached via desiredSkills (ephemeral sync verified).
+
+- **PBI-023 BLOCKED (upstream):** FW MCP connection adb188ce created (draft, mcp_remote, url mcp.fourthwall.com) but start-authorization fails: OAuth client id not configured for mcp_fourthwall_com - self-hosted Paperclip lacks per-host OAuth client config; no instance-settings slot exists. Pivot options: (a) Fourthwall Platform REST API + API key connection (rest_api transport + secret credentialRef), or (b) wait for Paperclip OAuth-client config support.
+
+- **Gates:** verify green 46/46 incl souls lint on SKILL.md paths.
+
+---

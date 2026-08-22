@@ -144,11 +144,11 @@ Specs: `specs/paperclip-org/spec.md` + `specs/fourthwall-store/spec.md`. Archite
 | Order | PBI | Spec | Depends on | State | Plane | Summary |
 |---|---|---|---|---|---|---|
 | 19 | PBI-020 | paperclip-org | none | Done | kcb/SWDR-21 | Materialize 11 SOUL.md files + souls lint gate |
-| 20 | PBI-021 | paperclip-org | none | Todo | kcb/SWDR-22 | Create SWE Drip organization in Paperclip |
-| 21 | PBI-022 | paperclip-org | PBI-021 | Todo | kcb/SWDR-23 | Hire CEO agent (Sonnet, $30/mo) + test cycle |
-| 22 | PBI-023 | fourthwall-store | PBI-021 | Todo | kcb/SWDR-24 | Connect Fourthwall MCP in Paperclip + OAuth smoke |
-| 23 | PBI-024 | paperclip-org | 020, 023 | Todo | kcb/SWDR-25 | Hire pipeline workers (Trend/Copy/Design/Listing) |
-| 24 | PBI-025 | paperclip-org | 020, 023 | Todo | kcb/SWDR-26 | Hire distribution+ops workers (6) |
+| 20 | PBI-021 | paperclip-org | none | Done | kcb/SWDR-22 | Create SWE Drip organization in Paperclip |
+| 21 | PBI-022 | paperclip-org | PBI-021 | In Review | kcb/SWDR-23 | Hire CEO agent (Sonnet, $30/mo) + test cycle |
+| 22 | PBI-023 | fourthwall-store | PBI-021 | In Progress | kcb/SWDR-24 | Connect Fourthwall MCP in Paperclip + OAuth smoke |
+| 23 | PBI-024 | paperclip-org | 020, 023 | Done | kcb/SWDR-25 | Hire pipeline workers (Trend/Copy/Design/Listing) |
+| 24 | PBI-025 | paperclip-org | 020, 023 | Done | kcb/SWDR-26 | Hire distribution+ops workers (6) |
 | 25 | PBI-027 | fourthwall-store | PBI-023 | Todo | kcb/SWDR-28 | Storefront design live (Brutal theme, CSS, collections, online) |
 | 26 | PBI-028 | both | 024, 026/027 | Todo | kcb/SWDR-29 | First product E2E to live Fourthwall listing |
 
