@@ -40,8 +40,9 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy static site from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Ensure nginx user owns html (non-root runtime)
-RUN chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx/conf.d && \
+# Ensure nginx user owns html + pid + cache (non-root runtime — guide: chown -R 1000:1000 for Paperclip /paperclip, here for nginx)
+RUN mkdir -p /var/run /run /tmp && \
+    chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /var/run /run /tmp && \
     chmod -R 755 /usr/share/nginx/html && \
     # Validate nginx config at build time (fails the build if broken)
     nginx -t
