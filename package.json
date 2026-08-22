@@ -9,6 +9,7 @@
     "lint": "node scripts/lint.js",
     "test": "node --test tests/*.test.js",
     "verify": "npm run build && npm run lint && npm test",
+    "verify:deploy": "node scripts/verify-deploy.js",
     "docker:build": "docker build -t swedrip:local .",
     "docker:run": "docker run --rm -d -p 8080:80 --name swedrip-smoke swedrip:local",
     "docker:smoke": "node scripts/docker-smoke.js"

@@ -86,3 +86,11 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Plane:** founder-directed extra beyond the 18-PBI plan; tracked here only
 
 ---
+## 2026-08-22 - PBI-003 + PBI-004 -> Done (agentic, live TLS + gate wiring)
+
+- **PBI-003 (SWDR-3):** domain swedrip.kcb.ma bound at creation + Traefik LE. Live verified: HTTPS / 200 with valid CA chain (no rejectUnauthorized), HTTP / 302 -> https on both swedrip.kcb.ma and paperclip.kcb.ma. paperclip.kcb.ma also serving 200 UI.
+- **PBI-004 (SWDR-4):** scripts/verify-deploy.js (12 offline contract checks), tests/deployment.test.js (live probes, skip offline), package.json verify:deploy. Gates: verify:deploy 12/12 OK, npm test 10/10 PASS (8 smoke + 2 live). Runbook lives in docs/coolify-provision.md.
+- **Review:** agentic - deterministic gates + machine-checkable live probes (fetch 200 + JSON status ok). No human judgment required.
+- **Commits:** this commit. Next actionable: PBI-005 (platform-workspace schemas) per plans/README.md order.
+
+---

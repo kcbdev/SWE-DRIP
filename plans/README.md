@@ -32,8 +32,8 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 |---|---|---|---|---|---|---|
 | 1 | PBI-001 | coolify-deploy | none | Done | kcb/SWDR-1 | `Dockerfile`, `nginx.conf`, `.dockerignore`, `package.json`, `scripts/*smoke*` |
 | 2 | PBI-002 | coolify-deploy | PBI-001 | Done | kcb/SWDR-2 | `docs/adrs/ADR-002.md`, `.coolify/app.json` / `docs/coolify-provision.md`, `README.md`/`docs/04-deploy.md` |
-| 3 | PBI-003 | coolify-deploy | PBI-002 | Todo | kcb/SWDR-3 | `docs/adrs/ADR-002.md`, `.coolify/app.json`, `docs/04-deploy.md` |
-| 4 | PBI-004 | coolify-deploy | PBI-003 | Todo | kcb/SWDR-4 | `tests/deployment.test.js`, `scripts/verify-deploy.js`, `package.json`, runbook |
+| 3 | PBI-003 | coolify-deploy | PBI-002 | Done | kcb/SWDR-3 | `docs/adrs/ADR-002.md`, `.coolify/app.json`, `docs/04-deploy.md` |
+| 4 | PBI-004 | coolify-deploy | PBI-003 | Done | kcb/SWDR-4 | `tests/deployment.test.js`, `scripts/verify-deploy.js`, `package.json`, runbook |
 | 5 | PBI-005 | platform-workspace | PBI-001 | Todo | kcb/SWDR-5 | `schemas/design_brief.schema.json`, `schemas/listing_copy.schema.json`, `workspace/`, `scripts/seed-workspace.js`, `tests/platform-workspace.test.js` |
 | 6 | PBI-006 | platform-workspace | PBI-005 | Todo | kcb/SWDR-6 | `agents/ceo/SKILL.md`, `program.md`, `scripts/append-program.js`, `scripts/compact-program.js`, `scripts/lint.js`, `tests/platform.test.js`, `AGENTS.md` §5 |
 | 7 | PBI-007 | content-pipeline | PBI-005, PBI-006 | Todo | kcb/SWDR-8 | `agents/trend-scout/SOUL.md`, `agents/trend-scout/`, `workspace/fixtures/`, `tests/trend-scout.test.js` |
