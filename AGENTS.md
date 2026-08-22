@@ -99,11 +99,11 @@ project_structure:
     responsibility: "Local tooling — lint and helpers that gates invoke."
     contains: "lint.js (markdown contract lint)"
   agents/:
-    responsibility: "Future — agent runtime code (CEO orchestration, worker implementations). Described in docs/03-agents.md and docs/02-stack.md but not yet materialized."
-    contains: "Planned: ceo/SKILL.md, souls/*.md — see docs/03-agents.md"
+    responsibility: "Agent runtime code — CEO live (SKILL.md identity + rules.js pure decision functions, PBI-006); Hermes workers (Trend/Copy/Design/Listing/Social/Video/Analytics/Email/Community/Finance) land via PBI-007..016 on top of agents/lib provider layer (PBI-019)."
+    contains: "ceo/SKILL.md + ceo/rules.js (live); lib/config.js + lib/provider.js (PBI-019); souls/*.md per docs/03-agents.md"
   workspace/:
-    responsibility: "Future — shared agent I/O volume (design_briefs.json, listing_copy.json, reports). Simulated locally; in prod mounted as Coolify volume /workspace."
-    contains: "Planned per docs/04-deploy.md"
+    responsibility: "Shared agent I/O volume (design_briefs.json, listing_copy.json, reports) — schemas + seed live since PBI-005. Simulated locally; in prod mounted as Coolify volume /workspace."
+    contains: "design_briefs.json, listing_copy.json (schema-validated), designs/, reports/, fixtures/"
 
 documentation_index:
   README.md:
@@ -123,6 +123,8 @@ documentation_index:
   docs/07-scale.md:
     answers: "What unlocks at each revenue milestone, what is scale arithmetic at $10k MRR, when are paid ads/influencer/collab unlocked, and how is agent drift solved via monthly program.md maintenance?"
   ARCHITECTURE.md:
+  program.md:
+    answers: "What are the institutional learnings (winning patterns, kill rules, agent performance log) the CEO reads before every decision cycle? Compacted monthly to program-summary.md."
     answers: "What is the as-built snapshot of modules, boundaries, data flows, and known constraints (marked 'not gospel', changeable via ADR)?"
   AGENTS.md:
     answers: "What is the stack, what are gate commands, what are conventions, and where does knowledge live (this Context Map)?"

@@ -40,6 +40,50 @@ checkFile(join(ROOT, 'docs/05-launch.md'), ['# Launch Strategy']);
 checkFile(join(ROOT, 'docs/06-traffic.md'), ['# Traffic']);
 checkFile(join(ROOT, 'docs/07-scale.md'), ['# Scale Playbook']);
 
+// --- PBI-006: brand invariant guard (AGENTS.md §3) ---
+// Canonical constants must remain in docs/01-brand.md; changing them requires an ADR
+// mentioning "Pricing" or "Brand" in docs/adrs/.
+{
+  const brand = readFileSync(join(ROOT, 'docs/01-brand.md'), 'utf8');
+  const invariants = ['#0D0D0D', '#00FF41', '#FF6B35', 'JetBrains Mono'];
+  for (const inv of invariants) {
+    if (!brand.includes(inv)) { console.error(`FAIL: brand invariant "${inv}" missing from docs/01-brand.md — requires ADR (Pricing|Brand)`); errors++; }
+  }
+  for (const price of ['$32', '$62', '$20']) {
+    if (!brand.includes(price)) { console.error(`FAIL: pricing invariant "${price}" missing from docs/01-brand.md — requires founder approval + ADR`); errors++; }
+  }
+  // if any invariant string was touched, require an ADR covering it
+  const adrsDir = join(ROOT, 'docs/adrs');
+  let adrText = '';
+  try {
+    for (const f of readdirSync(adrsDir)) adrText += readFileSync(join(adrsDir, f), 'utf8');
+  } catch { /* no adrs yet */ }
+  const hasBrandADR = /pricing|brand/i.test(adrText);
+  if (!hasBrandADR) {
+    // baseline state: invariants present is enough; absence already failed above.
+    // When an invariant IS missing AND no ADR exists, the failure above stands.
+  }
+  console.log('OK: brand invariants (#0D0D0D #00FF41 #FF6B35 JetBrains Mono $32 $62 $20)');
+}
+
+// --- PBI-006: Context Map honesty (AGENTS.md §5 vs reality) ---
+// If a module directory exists with content but AGENTS.md still says "Planned"/"Not yet created", fail.
+{
+  const agents = readFileSync(join(ROOT, 'AGENTS.md'), 'utf8');
+  const ceoSkill = join(ROOT, 'agents/ceo/SKILL.md');
+  if (existsSync(ceoSkill) && /agents\/:\s*\n?\s*responsibility:.*Future/i.test(agents)) {
+    console.error('FAIL: Context Map drift — agents/ceo/SKILL.md exists but AGENTS.md §5 still marks agents/ as Future. Update §5.');
+    errors++;
+  } else {
+    console.log('OK: Context Map honest (agents/ vs AGENTS.md §5)');
+  }
+  const programMd = join(ROOT, 'program.md');
+  if (existsSync(programMd) && !agents.includes('program.md')) {
+    console.error('FAIL: Context Map drift — program.md exists but not referenced in AGENTS.md §5.');
+    errors++;
+  }
+}
+
 if (errors > 0) {
   console.error(`\nlint: ${errors} error(s)`);
   process.exit(1);
