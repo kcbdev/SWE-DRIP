@@ -47,12 +47,12 @@ RUN mkdir -p /var/run /run /tmp && \
     # Validate nginx config at build time (fails the build if broken)
     nginx -t
 
-# Document exposed port — 8080 for non-root (spec allows 80 or 3000; 8080 is non-privileged equivalent for USER nginx)
-EXPOSE 8080
+# Document exposed port — 80 (running as root per fix, non-root requires pid /tmp and 8080 — see ADR-002)
+EXPOSE 80
 
-# Healthcheck — matches spec contract 4: wget http://localhost:8080/health → {"status":"ok"} (8080 for non-root)
+# Healthcheck — wget http://localhost/health → {"status":"ok"} (80, root)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://localhost:8080/health | grep -q '"status":"ok"' || exit 1
+    CMD wget -qO- http://localhost/health | grep -q '"status":"ok"' || exit 1
 
 # Run as root for now — non-root pid fix requires host volume chown like guide #5 (Paperclip /paperclip chown 1000:1000)
 # TODO: re-enable USER nginx + pid /tmp/nginx.pid via sed on /etc/nginx/nginx.conf once host /run perms are handled
