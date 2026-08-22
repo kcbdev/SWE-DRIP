@@ -12,7 +12,7 @@ curl -X POST https://coolify.kcb.ma/api/v1/projects \
   -d '{"name":"swe-drip","description":"SWE Drip - autonomous POD brand for swedrip.kcb.ma"}'
 # → {uuid: vztwc3dxianozufxinxm0cgp}
 
-# 2. Application public Git (done)
+# 2. Application public Git (done — corrected to kcbdev/SWE-DRIP after git push)
 curl -X POST https://coolify.kcb.ma/api/v1/applications/public \
   -H "Authorization: Bearer $COOLIFY_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
@@ -21,7 +21,7 @@ curl -X POST https://coolify.kcb.ma/api/v1/applications/public \
     "server_uuid":"e4cowswcks844wow04c084wg",
     "environment_uuid":"r5c2ohxgtq9irlvjiwbtzji1",
     "destination_uuid":"i448wgc40wc4wg8oww0ww4os",
-    "git_repository":"https://github.com/KCB/SWE-DRIP",
+    "git_repository":"https://github.com/kcbdev/SWE-DRIP",
     "git_branch":"master",
     "build_pack":"dockerfile",
     "ports_exposes":"80",
@@ -29,6 +29,7 @@ curl -X POST https://coolify.kcb.ma/api/v1/applications/public \
     "domains":"https://swedrip.kcb.ma"
   }'
 # → {uuid: vfsgl47pv5ew2hbrqxbjwmjq, domains: https://swedrip.kcb.ma}
+# Patched 2026-08-22: PATCH /api/v1/applications/vfsgl47… → git_repository https://github.com/kcbdev/SWE-DRIP (was KCB/SWE-DRIP, repo 404) after git push to kcbdev/SWE-DRIP master succeeded
 
 # 3. Health patch (done)
 curl -X PATCH https://coolify.kcb.ma/api/v1/applications/vfsgl47pv5ew2hbrqxbjwmjq \

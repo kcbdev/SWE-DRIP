@@ -28,7 +28,7 @@
     "description": "SWE Drip container — static nginx from Dockerfile (node:22-alpine → nginx:alpine)",
     "fqdn": "https://swedrip.kcb.ma",
     "domains": "https://swedrip.kcb.ma",
-    "git_repository": "https://github.com/KCB/SWE-DRIP",
+    "git_repository": "https://github.com/kcbdev/SWE-DRIP",
     "git_branch": "master",
     "build_pack": "dockerfile",
     "dockerfile_location": "/Dockerfile",
@@ -46,7 +46,7 @@
     "health_check_start_period": 10,
     "is_auto_deploy_enabled": true,
     "is_force_https_enabled": true,
-    "status": "created — deploy pending git push of master (c9e3872 etc.) to KCB/SWE-DRIP"
+    "status": "deployed — queued gnbn5idhphzuunbostgdm4cl after git push to kcbdev/SWE-DRIP master"
   },
   "volumes": {
     "note": "Reserved names for Paperclip — not yet attached in this PBI to avoid mount failure before Paperclip PBI lands; attach in Coolify → swedrip → Storages when Paperclip lands",
