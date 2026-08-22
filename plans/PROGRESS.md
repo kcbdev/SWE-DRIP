@@ -181,3 +181,14 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Gates:** verify green 46/46.
 
 ---
+## 2026-08-22 - PBI-022/024/025 runtime pivot: codex_local -> hermes_gateway
+
+- **Why:** codex_local runs fail acpx ensure_session Authentication required even with OPENAI_API_KEY secret_ref bound + OPENAI_BASE_URL plain env (verified key works direct vs OpenRouter 200). Self-hosted ACP+codex+OpenRouter combo is the quirk; founder chose hermes_gateway.
+
+- **Done:** official image confirmed (nousresearch/hermes-agent, Docker Hub, 8.3M pulls); deploy repo kcbdev/hermes-gateway-deploy created (Dockerfile: debian slim + pip hermes-agent + gateway CMD on 8642); HERMES_GATEWAY_KEY stored as Paperclip company secret (a16ac6f1...831c).
+
+- **BLOCKER:** Coolify API persistently 404 mid-session -> cannot create the hermes container via API. Founder UI steps issued (2 min): New Resource -> Dockerfile-based -> kcbdev/hermes-gateway-deploy#master, port 8642 internal, envs OPENROUTER_API_KEY + API_SERVER_KEY + API_SERVER_ENABLED=true.
+
+- **Queued (mine, after container up):** PATCH all 11 agents adapterType=hermes_gateway adapterConfig {apiBaseUrl:http://hermes:8642, apiKey:<gateway>} -> clear-error -> checkout CEO test cycle -> mark 022/024/025 Done.
+
+---
