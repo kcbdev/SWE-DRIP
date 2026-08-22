@@ -48,4 +48,22 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Gates:** `npm run verify` green at plan commit (8/8)
 - **MCP:** Coolify via MCP (no skills) per founder; Plane binding `kcb/SWDR` verified
 
+## 2026-08-22 — PBI-002 Provision Coolify app swedrip on kcb (SWDR-2) → In Review (manual)
+
+- **PBI:** PBI-002 `c309d6f` — Coolify project `swe-drip vztwc3dxianozufxinxm0cgp` env `production r5c2ohxgtq9irlvjiwbtzji1` on server `kcb.ma e4cowswcks844wow04c084wg` destination `coolify i448wgc40wc4wg8oww0ww4os` app `swedrip vfsgl47pv5ew2hbrqxbjwmjq` `https://swedrip.kcb.ma` `KCB/SWE-DRIP#master` `dockerfile` `80` health `/health:80` (PATCH true), `.coolify/app.json` + `docs/adrs/ADR-002.md` + `docs/coolify-provision.md`
+- **Branch:** `master` **Commits:** `c309d6f` on `c9e3872` — feat: provision Coolify app swedrip on kcb (SWDR-2)
+- **Spec:** `specs/coolify-deploy/spec.md` contracts 2,5,6 — app exists on kcb, git, health, no secrets baked, redeploy one-click
+- **Gates:**
+  - `npm run build` → PASS
+  - `npm run lint` → PASS (7 docs OK)
+  - `npm test` → 8/8 PASS
+  - `node scripts/docker-smoke.js` → 13/13 OK
+  - `GET /api/v1/applications/vfsgl47pv5ew2hbrqxbjwmjq` via `coolify.kcb.ma` `COOLIFY_ACCESS_TOKEN` → `health_check_enabled:true` `health_check_path:/health` `fqdn:https://swedrip.kcb.ma` `git:KCB/SWE-DRIP master dockerfile 80` — live (200)
+  - `GET /api/v1/servers/e4cowswcks844wow04c084wg` → `kcb.ma server is_coolify_host:true wildcard https://kcb.ma` + `GET /api/v1/projects/vztwc3dxianozufxinxm0cgp` → `swe-drip` — live
+  - `swedrip.kcb.ma` DNS `158.220.96.44` (wildcard `*.kcb.ma` → kcb server) — `dns.lookup` OK, but app not yet deployed (needs `git push` of `master` to `KCB/SWE-DRIP` — repo 404, create via `gh repo create KCB/SWE-DRIP --public --source=. --push` before `POST /api/v1/applications/vfsgl47…/deploy`)
+- **Review:** `manual` — live Coolify API provisioning succeeded, but `git push` + first `Deploy` + `curl https://swedrip.kcb.ma/health` → LE cert still pending (PBI-003). Adversarial: spec contracts 2/5/6 honored, no Dockerfile/nginx mutation, volumes reserved not mounted, env catalog no values baked, brand invariants intact. Constitutional: `AGENTS.md:56` still Planned for `agents/`/`workspace` — correct (only `.coolify/` added).
+- **Files:** `docs/adrs/ADR-002.md:1`, `.coolify/app.json:1`, `docs/coolify-provision.md:1`, `plans/README.md:34` Active→In Review
+- **Plane:** `kcb/SWDR-2` `2bb2a422-1d20-465d-ac63-102f0a186bd1` — `In Review` `583e59de…` comment `5013db08…` (How to reproduce: `curl -H "Authorization: Bearer $COOLIFY_ACCESS_TOKEN" https://coolify.kcb.ma/api/v1/applications/vfsgl…` + UI + `git push` + `deploy`)
+- **Next:** per founder `2026-08-22` override, PBI-001 still `In Review` (will be retro-validated on deploy success) — proceeding to PBI-003 domain TLS on success of this PBI's live deploy; do not block PBI-003 on PBI-001 `Done` (dependency overridden)
+
 ---
