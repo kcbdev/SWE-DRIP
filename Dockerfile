@@ -50,9 +50,9 @@ RUN mkdir -p /var/run /run /tmp && \
 # Document exposed port — 80 (running as root per fix, non-root requires pid /tmp and 8080 — see ADR-002)
 EXPOSE 80
 
-# Healthcheck — wget http://localhost/health → {"status":"ok"} (80, root)
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://localhost/health | grep -q '"status":"ok"' || exit 1
+# Healthcheck — 127.0.0.1 (not localhost: alpine wget may resolve ::1 where nginx isn't bound)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=5 \
+    CMD wget -qO- http://127.0.0.1/health | grep -q '"status":"ok"' || exit 1
 
 # Run as root for now — non-root pid fix requires host volume chown like guide #5 (Paperclip /paperclip chown 1000:1000)
 # TODO: re-enable USER nginx + pid /tmp/nginx.pid via sed on /etc/nginx/nginx.conf once host /run perms are handled
