@@ -1,0 +1,80 @@
+{
+  "project": {
+    "name": "swe-drip",
+    "uuid": "vztwc3dxianozufxinxm0cgp",
+    "environment": {
+      "name": "production",
+      "uuid": "r5c2ohxgtq9irlvjiwbtzji1",
+      "id": 60
+    }
+  },
+  "server": {
+    "name": "kcb.ma server",
+    "uuid": "e4cowswcks844wow04c084wg",
+    "ip": "host.docker.internal",
+    "is_coolify_host": true,
+    "wildcard_domain": "https://kcb.ma",
+    "proxy": "TRAEFIK"
+  },
+  "destination": {
+    "name": "coolify",
+    "uuid": "i448wgc40wc4wg8oww0ww4os",
+    "network": "coolify",
+    "type": "standalone"
+  },
+  "application": {
+    "name": "swedrip",
+    "uuid": "vfsgl47pv5ew2hbrqxbjwmjq",
+    "description": "SWE Drip container — static nginx from Dockerfile (node:22-alpine → nginx:alpine)",
+    "fqdn": "https://swedrip.kcb.ma",
+    "domains": "https://swedrip.kcb.ma",
+    "git_repository": "https://github.com/KCB/SWE-DRIP",
+    "git_branch": "master",
+    "build_pack": "dockerfile",
+    "dockerfile_location": "/Dockerfile",
+    "ports_exposes": "80",
+    "base_directory": "/",
+    "health_check_enabled": true,
+    "health_check_path": "/health",
+    "health_check_port": "80",
+    "health_check_method": "GET",
+    "health_check_scheme": "http",
+    "health_check_return_code": 200,
+    "health_check_interval": 30,
+    "health_check_timeout": 5,
+    "health_check_retries": 3,
+    "health_check_start_period": 10,
+    "is_auto_deploy_enabled": true,
+    "is_force_https_enabled": true,
+    "status": "created — deploy pending git push of master (c9e3872 etc.) to KCB/SWE-DRIP"
+  },
+  "volumes": {
+    "note": "Reserved names for Paperclip — not yet attached in this PBI to avoid mount failure before Paperclip PBI lands; attach in Coolify → swedrip → Storages when Paperclip lands",
+    "future": [
+      { "source": "paperclip-data", "target": "/app/data", "type": "named volume" },
+      { "source": "paperclip-workspace", "target": "/workspace", "type": "named volume" }
+    ]
+  },
+  "env_vars": {
+    "note": "Catalog — values stay in Coolify UI → swedrip → Environment Variables as Secret where marked; do not bake in image",
+    "required": [
+      { "key": "OPENROUTER_API_KEY", "secret": true, "description": "OpenRouter single key (also OPENAI_API_KEY)" },
+      { "key": "OPENAI_API_KEY", "secret": true, "description": "Alias for OPENROUTER_API_KEY" },
+      { "key": "OPENAI_BASE_URL", "secret": false, "value": "https://openrouter.ai/api/v1", "description": "OpenRouter base" },
+      { "key": "DEFAULT_MODEL", "secret": false, "value": "anthropic/claude-sonnet-4-6", "description": "Default model" },
+      { "key": "WORKSPACE_PATH", "secret": false, "value": "/workspace", "description": "Shared volume path" },
+      { "key": "FOURTHWALL_MCP_TOKEN", "secret": true, "description": "FW MCP OAuth" },
+      { "key": "TELEGRAM_BOT_TOKEN", "secret": true, "description": "Telegram bot token" },
+      { "key": "TELEGRAM_CHAT_ID", "secret": true, "description": "Telegram chat id" },
+      { "key": "LOOPS_API_KEY", "secret": true, "description": "Loops.so" },
+      { "key": "BUFFER_ACCESS_TOKEN", "secret": true, "description": "Buffer" },
+      { "key": "PLANE_API_KEY", "secret": true, "description": "Plane" }
+    ]
+  },
+  "coolify_api": {
+    "host": "https://coolify.kcb.ma",
+    "created_via": "POST /api/v1/applications/public 201 {uuid: vfsgl47pv5ew2hbrqxbjwmjq}",
+    "patched": "PATCH /api/v1/applications/vfsgl47pv5ew2hbrqxbjwmjq health_check_enabled true",
+    "verified": "GET /api/v1/applications/vfsgl47pv5ew2hbrqxbjwmjq → health_check_enabled true, fqdn https://swedrip.kcb.ma"
+  }
+}
