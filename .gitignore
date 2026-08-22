@@ -1,0 +1,12 @@
+node_modules/
+.codegraph/
+.env
+.env.local
+.DS_Store
+Thumbs.db
+coverage/
+.nyc_output/
+*.log
+npm-debug.log*
+/workspace/
+/app/

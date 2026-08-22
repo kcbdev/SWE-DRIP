@@ -1,0 +1,16 @@
+{
+  "name": "swe-drip",
+  "version": "0.1.0",
+  "description": "SWE Drip — autonomous AI-run POD clothing brand for software engineers",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node -e \"console.log('build: docs-only repo, no compilation required')\"",
+    "lint": "node scripts/lint.js",
+    "test": "node --test tests/*.test.js",
+    "verify": "npm run build && npm run lint && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
