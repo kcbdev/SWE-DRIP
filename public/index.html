@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SWE Drip — The only clothing brand that makes software engineers feel seen</title>
+  <meta name="description" content="Autonomous AI-run POD clothing brand for software engineers. 11 agents, Hetzner Coolify, OpenRouter FLUX.2 Pro, Fourthwall." />
+  <style>
+    :root { --bg:#0D0D0D; --primary:#00FF41; --accent:#FF6B35; --text:#FFFFFF; --mono:'JetBrains Mono', 'Fira Code', 'Courier New', monospace; }
+    *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--mono)}
+    a{color:var(--primary);text-decoration:none} a:hover{text-decoration:underline}
+    .wrap{max-width:960px;margin:0 auto;padding:48px 24px}
+    header{border:1px solid var(--primary);padding:24px;background:#111}
+    h1{margin:0;font-size:2.2rem;letter-spacing:.04em}
+    .tag{color:var(--primary);font-size:.95rem;margin-top:8px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:32px}
+    .card{border:1px solid #222;padding:16px;background:#0a0a0a}
+    .card h3{margin:0 0 8px;color:var(--primary);font-size:1rem}
+    .badge{display:inline-block;border:1px solid var(--primary);padding:2px 8px;font-size:.75rem;color:var(--primary);margin-bottom:12px}
+    code{background:#1a1a1a;padding:2px 6px}
+    footer{margin-top:40px;border-top:1px solid #222;padding:16px 0;color:#aaa;font-size:.8rem}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="badge">PLANE kcb/SWDR — COOLIFY kcb → swedrip.kcb.ma</div>
+      <h1>SWE Drip</h1>
+      <div class="tag">The only clothing brand that makes software engineers feel seen — not patronized.</div>
+      <p style="margin-top:16px;line-height:1.5">An autonomous AI-run print-on-demand clothing brand targeting software engineers in the US, UK, and EU. Founded and operated from Morocco. The entire company runs on an agent stack — a CEO agent orchestrates ten specialized workers. <a href="/health">health</a> · <a href="https://github.com/KCB/SWE-DRIP">KCB/SWE-DRIP</a></p>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h3>Architecture</h3>
+        <p style="font-size:.85rem;line-height:1.5">CEO (Paperclip) orchestrates 10 workers via <code>/workspace</code> volume — Trend Scout → Copy → Design (FLUX.2 Pro) → Listing → Social/Video → Analytics/Email/Community/Finance. Hetzner CX31 + Coolify + Traefik + Let's Encrypt.</p>
+      </div>
+      <div class="card">
+        <h3>Stack</h3>
+        <p style="font-size:.85rem;line-height:1.5">OpenRouter <code>claude-sonnet-4-6</code> · <code>flux.2-pro</code> · <code>veo-3.1-lite</code> · Fourthwall Brutal <code>#0D0D0D</code>/<code>#00FF41</code>/<code>#FF6B35</code> · Loops.so · Buffer · Telegram</p>
+      </div>
+      <div class="card">
+        <h3>Brand</h3>
+        <p style="font-size:.85rem;line-height:1.5">Voice: insider, dry, never explains the joke. Aesthetic: JetBrains Mono Bold, terminal green on void black, no gradients/shadows. Pricing: $32 tee / $62 hoodie / $20 mug</p>
+      </div>
+    </section>
+
+    <section style="margin-top:24px;border:1px solid #222;padding:16px;background:#0a0a0a">
+      <h3 style="color:var(--primary);margin:0 0 8px">Deploy status</h3>
+      <p style="font-size:.85rem;line-height:1.6;margin:0">
+        Server: <code>kcb</code> (Coolify) · Domain: <code>swedrip.kcb.ma</code> → <code>swedrip.fourthwall.com</code> (storefront)<br>
+        Health: <code>GET /health</code> → <code>{"status":"ok"}</code> · Build: <code>Dockerfile</code> (node:22-alpine → nginx:alpine) · <a href="/docs/">docs</a>
+      </p>
+    </section>
+
+    <footer>
+      SWE Drip · docs in <code>docs/</code> · specs in <code>specs/</code> · Box: <code>#0D0D0D</code> Accent <code>#00FF41</code> <code>#FF6B35</code> Font <code>JetBrains Mono Bold</code> · Plane kcb/SWDR 2af62f36-c11a-411a-89b5-8e5a5176b829
+    </footer>
+  </div>
+</body>
+</html>

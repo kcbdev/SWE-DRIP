@@ -1,0 +1,16 @@
+.git
+.gitignore
+.codegraph
+node_modules
+npm-debug.log*
+.env
+.env.local
+workspace
+coverage
+.nyc_output
+*.log
+plans
+specs
+tasks
+.archives
+.backups
