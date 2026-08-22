@@ -57,5 +57,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 # Run as non-root (nginx user already exists in nginx:alpine)
 USER nginx
 
-# nginx runs in foreground
-CMD ["nginx", "-g", "daemon off;"]
+# nginx runs in foreground — pid /tmp/nginx.pid for non-root (guide: Paperclip volume chown, here nginx pid)
+CMD ["nginx", "-g", "pid /tmp/nginx.pid; daemon off;"]
