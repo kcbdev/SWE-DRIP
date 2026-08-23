@@ -192,3 +192,16 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Queued (mine, after container up):** PATCH all 11 agents adapterType=hermes_gateway adapterConfig {apiBaseUrl:http://hermes:8642, apiKey:<gateway>} -> clear-error -> checkout CEO test cycle -> mark 022/024/025 Done.
 
 ---
+## 2026-08-23 - Full wiring pass — all agents configured
+
+- **Models:** all 11 agents set per docs/03-agents.md (gpt-4o-mini for reasoning, gemini-flash-lite for scanning) — cheap test phase.
+
+- **Design Agent:** FLUX.2 Pro -> flux-schnell (~17x cheaper per image).
+
+- **Tool connections:** FW REST v2 created (active), secret FOURTHWALL_BASIC_TOKEN_V2 stored. Tool profile creation returned empty response (API limitation) — binding needs UI click or next session.
+
+- **Fourthwall MCP:** OAuth DCR client registered (26c33bdb), founder authorized via browser, access+refresh tokens obtained, ecommerce_get-current-shop verified 200.
+
+- **Status:** all 11 agents idle, zero errors, correct budgets (<=). Ready for orchestration testing.
+
+---
