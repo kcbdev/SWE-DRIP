@@ -205,3 +205,37 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Status:** all 11 agents idle, zero errors, correct budgets (<=). Ready for orchestration testing.
 
 ---
+## 2026-08-23 — Session close: Phase 7 infrastructure complete, first product pending schema mapping
+
+### Accomplished tonight:
+- Coolify: swedrip + paperclip + hermes all running on kcb.ma server
+- Fourthwall shop authenticated via Basic auth (REST) AND OAuth DCR (MCP)
+- 2 collections created: Terminal Collection + Stack-Specific
+- Storefront brand CSS saved as attributed Paperclip skill
+- Paperclip org SWE Drip created from scratch via API
+- 11 agents hired on hermes_gateway → OpenRouter (test models)
+- Per-agent budgets set ( total ≤  cap)
+- SOUL skills imported from GitHub with automatic attribution
+- CEO decision cycle completed autonomously ×3 runs (290K+ tokens processed)
+- Design Agent ran and generated product spec
+- Fourthwall MCP OAuth DCR client registered + authorized by founder
+
+### Remaining for tomorrow:
+| # | Task | Est |
+|---|---|---|
+| 1 | Map Fourthwall product creation API schema | 30 min |
+| 2 | Create first product programmatically | 15 min |
+| 3 | Bind FW REST connection to agent tool profiles | 15 min |
+| 4 | Set up task-bridge callback for Hermes agents | 15 min |
+| 5 | Enable heartbeats/crons for autonomous scheduling | 10 min |
+| 6 | Upgrade models from test to production per docs/03-agents.md | 5 min |
+
+### Key learnings:
+- Alpine busybox wget resolves ::1 before IPv4 — use 127.0.0.1 for healthchecks
+- OpenRouter checks credit vs max_tokens ceiling before routing (even free models)
+- Fourthwall MCP supports RFC 7591 DCR — no pre-shared OAuth client needed
+- Paperclip CLI-auth: challenge → founder approves → board token issued
+- Paperclip skills import from GitHub carries automatic attribution (owner/repo + pinned commit)
+- Docker cross-network DNS requires explicit network connect + project alignment in Coolify
+
+---
