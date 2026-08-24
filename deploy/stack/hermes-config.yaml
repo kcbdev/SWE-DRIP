@@ -9,7 +9,7 @@
 # in OpenRouter usage. Cheap test model is pinned below.
 
 model:
-  default: openrouter/openai/gpt-4o-mini   # cheap test model (founder-approved test phase)
+  default: openai/gpt-4o-mini               # cheap test model — plain OpenRouter ID (NO openrouter/ prefix; Hermes passes model.default verbatim to the API)
   provider: openrouter
   max_tokens: 4096                         # cap fixes OpenRouter 402 (128k vs low-credit key)
 
@@ -17,7 +17,7 @@ approvals:
   mode: off                                # headless autonomy: no command-approval stalls
 
 # Applied via:
-#   hermes config set model.default openrouter/openai/gpt-4o-mini
+#   hermes config set model.default openai/gpt-4o-mini
 #   hermes config set model.provider openrouter
 #   hermes config set model.max_tokens 4096
 #   hermes config set approvals.mode off
