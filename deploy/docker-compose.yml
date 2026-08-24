@@ -1,80 +1,80 @@
-# SWE Drip — Full Stack: Paperclip + Hermes Agent + PostgreSQL
-# Deploy via Coolify → New Resource → Docker Compose
-# Replaces separate paperclip + hermes deployments with one integrated stack
+# SWE Drip — working agent stack: Postgres + Paperclip (from source) + Hermes gateway
+# Single source of truth (specs/agent-stack/spec.md). Deploy via Coolify →
+# New Resource → Docker Compose → kcbdev/SWE-DRIP#master deploy/docker-compose.yml.
+# NO SECRETS BAKED — every secret is a ${VAR} placeholder set in the Coolify UI.
 
 services:
-
-  # ── PostgreSQL ──────────────────────────────────────────────
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     restart: unless-stopped
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: paperclip
       POSTGRES_USER: paperclip
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-swedrip_change_me}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in Coolify env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U paperclip"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-  # ── Hermes Agent Gateway ────────────────────────────────────
-  # Runs NousResearch/hermes-agent with OpenRouter provider
-  # Exposes API server on internal port 8642
-  hermes:
-    image: nousresearch/hermes-agent:latest
-    restart: unless-stopped
-    volumes:
-      - hermes-home:/home/hermes/.hermes
-    environment:
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-      API_SERVER_ENABLED: "true"
-      API_SERVER_KEY: ${HERMES_GATEWAY_KEY}
-      API_SERVER_HOST: "0.0.0.0"
-    expose:
-      - "8642"
     networks:
-      - swe-drip-net
+      - agent-stack-net
 
-  # ── Paperclip Platform ──────────────────────────────────────
-  # Custom build with hermes-local-plus adapter pre-installed
-  # Connects to Hermes via shared network + Postgres for state
   paperclip:
-    image: paperclipai/paperclip:latest
+    # Built from source: paperclipai/paperclip:latest does NOT exist on Docker Hub.
+    # BuildKit fetches the upstream repo at build time (pinned to a commit for reproducibility).
+    build:
+      context: https://github.com/paperclipai/paperclip.git#41bf5cafa11e44a941a992096b302a006a29d74f
     restart: unless-stopped
-    ports:
-      - "${PAPERCLIP_PORT:-3001}:3001"
-    volumes:
-      - paperclip-data:/app/data
-      - paperclip-npm:/app/node_modules
-      - hermes-shared:/home/hermes/.hermes
-    environment:
-      DATABASE_URL: postgresql://paperclip:${POSTGRES_PASSWORD:-swedrip_change_me}@postgres:5432/paperclip
-      PAPERCLIP_TELEMETRY_DISABLED: "1"
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-      OPENAI_API_KEY: ${OPENROUTER_API_KEY}
-      OPENAI_BASE_URL: https://openrouter.ai/api/v1
-      FOURTHWALL_AUTH: ${FOURTHWALL_AUTH}
-      FW_BASE_URL: https://api.fourthwall.com
-      HERMES_GATEWAY_URL: http://hermes:8642
-      HERMES_GATEWAY_KEY: ${HERMES_GATEWAY_KEY}
     depends_on:
       postgres:
         condition: service_healthy
-      hermes:
-        condition: service_started
+    environment:
+      HOST: "0.0.0.0"
+      PAPERCLIP_HOME: /paperclip
+      PAPERCLIP_PUBLIC_URL: https://paperclip.kcb.ma
+      PAPERCLIP_ALLOWED_HOSTNAMES: paperclip.kcb.ma
+      DATABASE_URL: postgres://paperclip:${POSTGRES_PASSWORD}@postgres:5432/paperclip
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET (openssl rand -hex 32)}
+      PAPERCLIP_TOOL_ACTION_SIGNING_SECRET: ${PAPERCLIP_TOOL_ACTION_SIGNING_SECRET:?set PAPERCLIP_TOOL_ACTION_SIGNING_SECRET (openssl rand -hex 32)}
+      OPENAI_API_KEY: ${OPENROUTER_API_KEY}
+      OPENAI_BASE_URL: https://openrouter.ai/api/v1
+    volumes:
+      - paperclip-data:/paperclip
+    ports:
+      - "3100:3100"
     networks:
-      - swe-drip-net
+      - agent-stack-net
+
+  hermes:
+    image: nousresearch/hermes-agent:latest
+    restart: unless-stopped
+    command: gateway run
+    environment:
+      API_SERVER_ENABLED: "true"
+      API_SERVER_KEY: ${API_SERVER_KEY:?set API_SERVER_KEY (64-hex)}
+      API_SERVER_HOST: "0.0.0.0"
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY}
+      HERMES_DASHBOARD: "0"
+    volumes:
+      - hermes-data:/opt/data   # THE memory path: config.yaml, sessions/, memories/, skills/, logs/
+    expose:
+      - "8642"                  # gateway API — internal only (same network)
+    shm_size: 1g                # browser tools need shared memory
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+          cpus: "2.0"
+    networks:
+      - agent-stack-net
 
 volumes:
-  postgres-data:
+  pgdata:
   paperclip-data:
-  paperclip-npm:
-  hermes-home:
-  hermes-shared:
+  hermes-data:
 
 networks:
-  swe-drip-net:
+  agent-stack-net:
     driver: bridge

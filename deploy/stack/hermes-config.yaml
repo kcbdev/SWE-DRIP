@@ -1,0 +1,9 @@
+# Hermes Agent canonical config — SWE Drip (specs/agent-stack/spec.md contract 2)
+# Source of truth for provider routing + token cap. Apply after first boot inside
+# the container (PBI-035): `hermes config set provider openrouter` and
+# `hermes config set max_tokens 4096` (or copy this file to /opt/data/config.yaml).
+# State volume is /opt/data (sessions/, memories/, skills/, logs/) — persistent.
+
+provider: openrouter
+model: openrouter/openai/gpt-4o-mini   # cheap test default; per-agent models set in Paperclip adapter
+max_tokens: 4096                       # cap fixes OpenRouter 402 (128k max_tokens vs low-credit key)

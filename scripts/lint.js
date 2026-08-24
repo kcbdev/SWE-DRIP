@@ -110,6 +110,70 @@ checkFile(join(ROOT, 'docs/07-scale.md'), ['# Scale Playbook']);
   console.log(`OK: souls (${expected.length} agent identities, registry-consistent)`);
 }
 
+// --- PBI-032: agent-stack gate (specs/agent-stack/spec.md contracts 1-3) ---
+{
+  // No secret material in ANY tracked deploy/ file: OpenRouter keys (sk-or-v1-),
+  // 64-hex keys (API_SERVER_KEY / signing secrets), or Basic-auth tokens.
+  const deployFiles = [
+    join(ROOT, 'deploy/docker-compose.yml'),
+    join(ROOT, 'deploy/stack/hermes-config.yaml'),
+    join(ROOT, 'deploy/README.md')
+  ];
+  const secretRe = /sk-or-v1-[A-Za-z0-9_-]+|\b[0-9a-f]{64}\b|Basic\s+[A-Za-z0-9+/]{20,}/i;
+  let bakedFound = false;
+  for (const f of deployFiles) {
+    if (!existsSync(f)) { console.error(`FAIL: missing ${f}`); errors++; continue; }
+    if (secretRe.test(readFileSync(f, 'utf8'))) {
+      console.error(`FAIL: secret material baked into ${f} — env placeholders only`);
+      errors++; bakedFound = true;
+    }
+  }
+  const compose = join(ROOT, 'deploy/docker-compose.yml');
+  if (!existsSync(compose)) {
+    console.error('FAIL: missing deploy/docker-compose.yml');
+    errors++;
+  } else {
+    const c = readFileSync(compose, 'utf8');
+    if (/image:\s*paperclipai\/paperclip/i.test(c)) {
+      console.error('FAIL: paperclip must be built from source — image paperclipai/paperclip does not exist on Docker Hub');
+      errors++;
+    }
+    if (!/image:\s*nousresearch\/hermes-agent:latest/i.test(c)) {
+      console.error('FAIL: hermes service must use nousresearch/hermes-agent:latest');
+      errors++;
+    }
+    if (/\/home\/hermes\/\.hermes/.test(c)) {
+      console.error('FAIL: hermes must mount /opt/data, not /home/hermes/.hermes');
+      errors++;
+    }
+    if (!/hermes-data:\/opt\/data/.test(c)) {
+      console.error('FAIL: hermes service missing hermes-data:/opt/data volume');
+      errors++;
+    }
+    if (!/\$\{API_SERVER_KEY/.test(c) || !/\$\{OPENROUTER_API_KEY/.test(c) || !/\$\{POSTGRES_PASSWORD/.test(c)) {
+      console.error('FAIL: compose must reference API_SERVER_KEY, OPENROUTER_API_KEY, POSTGRES_PASSWORD as env placeholders');
+      errors++;
+    }
+  }
+  if (!bakedFound) console.log('OK: no secrets baked in deploy/ (sk-or-, 64-hex, Basic tokens)');
+  const hcfg = join(ROOT, 'deploy/stack/hermes-config.yaml');
+  if (!existsSync(hcfg)) {
+    console.error('FAIL: missing deploy/stack/hermes-config.yaml');
+    errors++;
+  } else {
+    const h = readFileSync(hcfg, 'utf8');
+    if (!h.includes('provider: openrouter')) {
+      console.error('FAIL: hermes-config.yaml missing provider: openrouter');
+      errors++;
+    }
+    if (!h.includes('max_tokens: 4096')) {
+      console.error('FAIL: hermes-config.yaml missing max_tokens: 4096 (OpenRouter 402 fix)');
+      errors++;
+    }
+  }
+  console.log('OK: agent-stack compose + hermes config (no secrets, /opt/data, built-from-source)');
+}
+
 if (errors > 0) {
   console.error(`\nlint: ${errors} error(s)`);
   process.exit(1);
