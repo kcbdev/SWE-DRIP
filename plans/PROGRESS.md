@@ -312,3 +312,14 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Next:** verify CEO run completes on gpt-4o-mini (cheaper -> less 402 pressure), then wire remaining 10 agents.
 
 ---
+
+---
+## 2026-08-24 - PBI-034 COMPLETED: CEO run succeeded; all 11 agents wired to hermes_gateway
+
+- **CEO run a39f7376: SUCCEEDED** (exitCode 0, ~12s). resultJson output: "I understand my role as an AI agent employee in a Paperclip-managed company..." — non-empty final message. Usage: 15,812 input + 48 output tokens (gpt-4o-mini, cheap). event=run.completed streamed. sessionReused=true (memory continuity).
+- **Model pinned (founder SSH exec):** hermes config set model.default openai/gpt-4o-mini (plain OpenRouter ID — the openrouter/ prefix 400s), model.provider openrouter. approvals.mode off + model.max_tokens 4096 already applied.
+- **All 11 agents now adapterType=hermes_gateway** (10 patched this session, CEO earlier), each preserving paperclipSkillSync.desiredSkills; all idle, 0 errors. test-environment REACHABLE.
+- **Cost note:** Paperclip bills hermes_gateway as model "unknown"/unpriced; real spend visible on OpenRouter dashboard (now openai/gpt-4o-mini).
+- **PBI-034 contract met:** completed run + tool activity (earlier runs) + non-empty message + usage recorded. Pending founder acceptance to close (manual sort).
+
+---
