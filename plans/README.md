@@ -149,8 +149,10 @@ Specs: `specs/paperclip-org/spec.md` + `specs/fourthwall-store/spec.md`. Archite
 | 22 | PBI-023 | fourthwall-store | PBI-021 | In Progress | kcb/SWDR-24 | Connect Fourthwall MCP in Paperclip + OAuth smoke |
 | 23 | PBI-024 | paperclip-org | 020, 023 | Done | kcb/SWDR-25 | Hire pipeline workers (Trend/Copy/Design/Listing) |
 | 24 | PBI-025 | paperclip-org | 020, 023 | Done | kcb/SWDR-26 | Hire distribution+ops workers (6) |
-| 25 | PBI-027 | fourthwall-store | PBI-023 | Todo | kcb/SWDR-28 | Storefront design live (Brutal theme, CSS, collections, online) |
-| 26 | PBI-028 | both | 024, 026/027 | Todo | kcb/SWDR-29 | First product E2E to live Fourthwall listing |
+| 25 | PBI-027 | fourthwall-store | PBI-023 | Done | kcb/SWDR-28 | Storefront design live (Brutal theme, CSS, collections, online) |
+| 26 | PBI-028 | both | 024, 026/027 | Superseded | kcb/SWDR-29 (deleted 2026-08-24) | First product E2E — superseded by Phase 8 (PBI-037) |
+
+> PBI-030 (tool binding + model upgrade) and PBI-031 (Hermes callback + heartbeat) existed as Plane issues only (no task files) and were predicated on the broken stack — deleted from Plane 2026-08-24; re-derived inside Phase 8 PBI-034/035.
 
 ### Dependency graph
 
@@ -164,6 +166,35 @@ PBI-021 (org) ─► PBI-022 (hire CEO)
 ```
 
 Manual-sort note: PBI-021..028 are Paperclip-UI/Fourthwall-dashboard operations — verification evidence is screenshots/task-board outputs attached to Plane issues (founder or agent-in-browser). PBI-020 is fully agentic.
+
+
+## Phase 8 — Agent stack rebuild (ADR-004, 2026-08-24)
+
+Supersedes the fragmented Phase 7 runtime (root causes: nonexistent `paperclipai/paperclip` image, wrong Hermes `/opt/data` mount, non-first-class `hermes_gateway` + insecure-HTTP guard, OpenRouter 402 from 128k max_tokens, cross-project/network split). Spec: `specs/agent-stack/spec.md`. One compose = `postgres` + `paperclip` (from source) + `hermes` gateway. Stale PBI-028/030/031 removed from Plane 2026-08-24.
+
+### Execution order
+
+| Order | PBI | Spec | Depends on | State | Plane |
+|---|---|---|---|---|---|
+| 32 | PBI-032 — Author stack compose + hermes config + lint gate | agent-stack | none | Done | kcb/SWDR-32 |
+| 33 | PBI-033 — Provision stack on Coolify (UI, single compose service) | agent-stack | PBI-032 | Proposed | kcb/SWDR-33 |
+| 34 | PBI-034 — Wire 11 agents → hermes_gateway + CEO test cycle | agent-stack | PBI-033 | Proposed | kcb/SWDR-34 |
+| 35 | PBI-035 — Full-power verify (memory persist, prod models, max_tokens) | agent-stack | PBI-034 | Proposed | kcb/SWDR-35 |
+| 36 | PBI-036 — FW product-creation fix (image upload 403) | fourthwall-store | none | Proposed | kcb/SWDR-36 |
+| 37 | PBI-037 — First product E2E (replaces stale PBI-028) | agent-stack + fourthwall-store | PBI-034, PBI-036 | Proposed | kcb/SWDR-37 |
+
+### Dependency graph
+
+```
+PBI-032 -> PBI-033 -> PBI-034 -> PBI-035 -> PBI-037
+PBI-036 (independent) ----------------------> PBI-037
+```
+
+### Gate plan (Phase 8)
+
+- Deterministic: `npm run verify` — PBI-032 adds agent-stack lint gate + `tests/agent-stack.test.js`; grep gate forbids `sk-or-`/64-hex secrets in `deploy/`.
+- Review gates: critic validates compose + config against agent-stack contracts 1–3; adversarial on the lint additions.
+- Human gates (`manual`): PBI-033 (Coolify UI provisioning — founder executes, verified via Coolify MCP), PBI-034/035 (live runtime), PBI-036 (live Fourthwall), PBI-037 (first product + founder design approval). PBI-032 is agentic (deterministic, no live/production impact).
 
 
 ## How to add a PBI (via asdlc-plan)
