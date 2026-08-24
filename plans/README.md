@@ -178,7 +178,7 @@ Supersedes the fragmented Phase 7 runtime (root causes: nonexistent `paperclipai
 |---|---|---|---|---|---|
 | 32 | PBI-032 — Author stack compose + hermes config + lint gate | agent-stack | none | Done | kcb/SWDR-32 |
 | 33 | PBI-033 — Provision stack on Coolify (UI, single compose service) | agent-stack | PBI-032 | In Review | kcb/SWDR-33 |
-| 34 | PBI-034 — Wire 11 agents → hermes_gateway + CEO test cycle | agent-stack | PBI-033 | Proposed | kcb/SWDR-34 |
+| 34 | PBI-034 — Wire 11 agents → hermes_gateway + CEO test cycle | agent-stack | PBI-033 | Active | kcb/SWDR-34 |
 | 35 | PBI-035 — Full-power verify (memory persist, prod models, max_tokens) | agent-stack | PBI-034 | Proposed | kcb/SWDR-35 |
 | 36 | PBI-036 — FW product-creation fix (image upload 403) | fourthwall-store | none | Proposed | kcb/SWDR-36 |
 | 37 | PBI-037 — First product E2E (replaces stale PBI-028) | agent-stack + fourthwall-store | PBI-034, PBI-036 | Proposed | kcb/SWDR-37 |
