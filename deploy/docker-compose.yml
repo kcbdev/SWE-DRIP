@@ -42,9 +42,7 @@ services:
   # Custom build with hermes-local-plus adapter pre-installed
   # Connects to Hermes via shared network + Postgres for state
   paperclip:
-    build:
-      context: .
-      dockerfile: Dockerfile.paperclip
+    image: paperclipai/paperclip:latest
     restart: unless-stopped
     ports:
       - "${PAPERCLIP_PORT:-3001}:3001"
