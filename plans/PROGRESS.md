@@ -263,3 +263,19 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Open items (not blocking PBI-032):** (1) keys baked in git history pre-314b167 -> FOUNDER must rotate OpenRouter key, Hermes API_SERVER_KEY, Fourthwall credential. (2) hermes CLI/layout + Coolify remote-git build context verified at PBI-033 (manual).
 
 ---
+
+---
+## 2026-08-24 - PBI-033 progress: founder-directed resource edits — Hermes stack fixed (Coolify REST works for existing resources)
+
+- **Reveal:** Coolify REST API WORKS for existing resources (GET/PATCH 200; earlier "all 404" was stale). MCP has no edit tools; REST PATCH is the seam. Founder authorized: "you can edit current resource paperclip".
+- **Hermes service (kh85cuzhgfz1ib19x6d6es6i) edited via PATCH /api/v1/services/{uuid} (base64 docker_compose_raw):**
+  - volume corrected: /home/hermes/.hermes -> /opt/data (hermes-data volume) — THE memory fix
+  - added command: gateway run; shm_size 1g
+  - secrets moved from baked compose to Coolify env (POST /api/v1/services/{uuid}/envs): OPENROUTER_API_KEY, API_SERVER_KEY (new), FOURTHWALL_AUTH verified present+matched
+  - restart queued via MCP control -> gateway now running under s6 supervision, API server on 0.0.0.0:8642, 82 skills installed, /opt/data mounted
+- **Paperclip app (ddglphkkmg5apsosgh7q1crj):** untouched, dockerfile build from paperclipai/paperclip@master, embedded DB; GET /api/health -> 200 ok. Both resources same project+env -> shared network.
+- **Orphan cleanup:** swedrip-web/paperclip/postgres records in service = stale cosmetic; DELETE /api/v1/services/{uuid}/apps|databases/{id} -> 404 (no endpoint). Harmless.
+- **Spec divergence (flagged + updated):** Decision-1 "one compose" superseded by founder-directed edit-existing path; contract 4 "postgres healthy" N/A (embedded DB). As-built note added to specs/agent-stack/spec.md.
+- **Remaining for PBI-033/PBI-034:** verify Paperclip->hermes:8642 connectivity via agent test-environment, then wire 11 agents to hermes_gateway (PBI-034).
+
+---

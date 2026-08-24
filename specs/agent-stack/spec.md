@@ -47,6 +47,16 @@ Replace the non-functional Paperclip/Hermes topology with one **source-of-truth 
 - **Decision-2 — `hermes_gateway` (first-class, Paperclip ≥ v2026.626.0) over manual hermes_local pip-install.** The official built-in adapter with secret-ref API key and session key strategy is the supported path; the in-container pip-install experiment is abandoned. → ADR-004.
 - **Decision-3 — Provision via Coolify UI (Docker Compose resource), verify via Coolify MCP.** REST create endpoints are unreliable (404s); the MCP server has no create tool. The repo compose is the single source of truth; Coolify just points at it.
 
+## As-built (2026-08-24, founder-directed "edit current resource paperclip")
+
+**Decision-1 superseded in practice** — instead of a new single-compose service, the existing resources were **edited in place** (Coolify REST API confirmed working for existing resources):
+
+- **Paperclip** = standalone app `ddglphkkmg5apsosgh7q1crj` (dockerfile build from `paperclipai/paperclip@master`, port 3100, fqdn paperclip.kcb.ma) — **running**, uses its **embedded DB** (no external postgres needed). `GET https://paperclip.kcb.ma/api/health` → 200.
+- **Hermes** = service `kh85cuzhgfz1ib19x6d6es6i` (project `dmaobray…`, env production) — **edited**: volume corrected to `hermes-data:/opt/data` (was `/home/hermes/.hermes`), `command: gateway run` added, secrets moved from baked compose to Coolify-managed env (`OPENROUTER_API_KEY`, `API_SERVER_KEY`, `FOURTHWALL_AUTH`), `shm_size: 1g`. Gateway confirmed listening on 0.0.0.0:8642 under s6 supervision.
+- Both resources are in the **same project + environment** → shared docker network (`kh85cuzhgfz1ib19x6d6es6i` for the service); Paperclip reaches Hermes at `http://hermes:8642`.
+- **Stale orphan records** (swedrip-web app, paperclip app, postgres db in the service) are cosmetic only — no delete endpoint exposed via REST (404); they do not affect the running hermes container.
+- Contract 4's "postgres healthy" is **not applicable** in the as-built (Paperclip embedded DB); contract's single-compose wording is superseded by this as-built note.
+
 ## Tooling
 
 - Coolify MCP (`https://coolify.kcb.ma/mcp`) — verify status, control restarts, read logs; no create.
