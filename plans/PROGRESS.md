@@ -333,3 +333,14 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Production models:** DEFERRED by founder decision — cheap test models during test phase (model.default openai/gpt-4o-mini). Roster models per docs/03-agents.md to be applied at founder's go (cost note in AGENTS.md).
 
 ---
+
+---
+## 2026-08-24 - PBI-036 BREAKTHROUGH: product creation UNBLOCKED — draft product created live
+
+- **Root cause of the 403 (finally pinned, from Fourthwall docs + live probes):** the presigned PUT must echo TWO signed headers — Content-Type (== contentType declared) AND x-goog-content-length-range: 0,<size> where size is the EXACT byte count sent as the size field in POST /open-api/v1.0/media/upload-url. Missing/wrong -> GCS 403 SignatureDoesNotMatch. (The size field name matters: sizeBytes etc. are ignored and sign a different range.)
+- **Second gotcha:** POST /open-api/v1.0/media/images REQUIRES width+height in the FIRST registration call (schema SaveMediaImageRequestV1: fileUrl,width,height required), and registration CONSUMES the tmp file (2nd registration of same fileUrl -> 404 MEDIA_FILE_DO_NOT_EXISTS). Registering without dims -> width 0 -> renderer "width/height Too small".
+- **Verified live:** upload-url -> PUT(200, headers echoed) -> register (1024x1024) -> POST /products -> **201 draft** productId cf6288ea-15cc-4bbf-b5c4-16dbdb27d03e, customizationId cud_vgqoqQwNRSi1dJMk47Ortg, 4 rendered mockups (front/back/sleeve_right/..., DTG, Black, 2048x2048). Product listed (1 total, hidden draft).
+- **Repo deliverable:** scripts/fw-product-create.js (env-credentialed FW_USERNAME/FW_PASSWORD, PNG IHDR dims auto-read, region front, publishOnCreate=false by default). specs/fourthwall-store/spec.md corrected-flow section added.
+- **Next:** PBI-037 first-product E2E (offer pricing  + Terminal Collection + publish) via the working stack.
+
+---

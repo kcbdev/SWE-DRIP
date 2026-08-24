@@ -35,3 +35,14 @@ SWE Drip's storefront is **Fourthwall-hosted end to end** (no custom storefront 
 ## Tooling
 - Fourthwall MCP (`https://mcp.fourthwall.com`) attached inside Paperclip settings.
 - Verification helpers: direct HTTPS probes of `swedrip.fourthwall.com`; `ecommerce_get-collections` / `ecommerce_get-offers` reads.
+
+## Corrected product-creation flow (PBI-036, verified live 2026-08-24)
+
+The REST path that unblocked product creation (draft product `cf6288ea-15cc-4bbf-b5c4-16dbdb27d03e` created, mockups rendered 2048×2048):
+
+1. `POST /open-api/v1.0/media/upload-url` body `{ fileName, contentType: "image/png", size }` — **`size` is the file's exact byte count and is signed into the URL** → `{ uploadUrl, fileUrl }`.
+2. `PUT <uploadUrl>` with raw bytes and **both signed headers echoed exactly**: `Content-Type: <contentType>` and `x-goog-content-length-range: 0,<size>` (same `size`). Missing/wrong → GCS **`403 SignatureDoesNotMatch`** (the original blocker; the channel-api face is OAuth-only, use the open-api face).
+3. `POST /open-api/v1.0/media/images` body `{ fileUrl, width, height }` — **width/height are required on the FIRST registration call, and registration CONSUMES the tmp file** (a second registration of the same fileUrl → 404 `MEDIA_FILE_DO_NOT_EXISTS`; registering without dims → width 0 → renderer "width/height Too small").
+4. `POST /open-api/v1.0/products` body `{ type: "design", productTemplateId, name, description, regions: [{ region: "front", imageId, placementStrategy: "AUTO" }], publishOnCreate: false }` → **201 draft product** (hidden; mockups rendered). `publishOnCreate: true` or `PUT /products/{id}/state` later makes it live.
+
+Reference: `scripts/fw-product-create.js` (env-credentialed, no secrets baked). Region is template-specific (`front` for DTG, `front_dtf` for DTFX).
