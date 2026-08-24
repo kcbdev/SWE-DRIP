@@ -57,6 +57,13 @@ Replace the non-functional Paperclip/Hermes topology with one **source-of-truth 
 - **Stale orphan records** (swedrip-web app, paperclip app, postgres db in the service) are cosmetic only — no delete endpoint exposed via REST (404); they do not affect the running hermes container.
 - Contract 4's "postgres healthy" is **not applicable** in the as-built (Paperclip embedded DB); contract's single-compose wording is superseded by this as-built note.
 
+## As-built addendum — Hermes owns the model for gateway agents (2026-08-24, verified)
+
+- For `hermes_gateway` agents, the **Paperclip per-agent `model` field is ignored by design** ("Hermes manages its own model" — upstream hermes_gateway docs). The actual model is whatever Hermes's own `config.yaml` specifies.
+- **Observed failure:** with `model.default` unpinned, Hermes auto-resolves an expensive default (opus-class via OpenRouter) and rotates through fallback models (incl. GLM) — founder saw `opus` + `glm` in OpenRouter usage while Paperclip reported gateway runs as model `unknown`. This also amplified the 402 credit-exhaustion failures.
+- **Corrective config (applied via founder SSH exec):** `model.default: openrouter/openai/gpt-4o-mini`, `model.provider: openrouter`, `model.max_tokens: 4096`, `approvals.mode: off`. Canonical file: `deploy/stack/hermes-config.yaml`. Per-agent model routing through gateway agents is therefore **not supported** — the global Hermes model applies to all gateway agents during the test phase.
+- The 10 non-gateway agents (currently `hermes_local`) DO honor the Paperclip model field (passed via `--model` to the CLI) — those are set to the cheap test models (gpt-4o-mini / gemini-2.0-flash-lite-001).
+
 ## Tooling
 
 - Coolify MCP (`https://coolify.kcb.ma/mcp`) — verify status, control restarts, read logs; no create.

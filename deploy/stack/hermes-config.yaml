@@ -1,9 +1,24 @@
 # Hermes Agent canonical config — SWE Drip (specs/agent-stack/spec.md contract 2)
-# Source of truth for provider routing + token cap. Apply after first boot inside
-# the container (PBI-035): `hermes config set provider openrouter` and
-# `hermes config set max_tokens 4096` (or copy this file to /opt/data/config.yaml).
-# State volume is /opt/data (sessions/, memories/, skills/, logs/) — persistent.
+# Source of truth for provider routing + token cap + approvals policy.
+# Apply inside the container with `hermes config set <key> <value>` (no exec API
+# in Coolify — founder runs these once via SSH), or copy to /opt/data/config.yaml.
+# NOTE (2026-08-24): for hermes_gateway agents Hermes OWNS the model — the
+# Paperclip per-agent model field is ignored by design. If model.default is not
+# pinned here, Hermes auto-resolves an expensive default (opus-class via
+# OpenRouter) and rotates through fallbacks (incl. GLM) — founder observed this
+# in OpenRouter usage. Cheap test model is pinned below.
 
-provider: openrouter
-model: openrouter/openai/gpt-4o-mini   # cheap test default; per-agent models set in Paperclip adapter
-max_tokens: 4096                       # cap fixes OpenRouter 402 (128k max_tokens vs low-credit key)
+model:
+  default: openrouter/openai/gpt-4o-mini   # cheap test model (founder-approved test phase)
+  provider: openrouter
+  max_tokens: 4096                         # cap fixes OpenRouter 402 (128k vs low-credit key)
+
+approvals:
+  mode: off                                # headless autonomy: no command-approval stalls
+
+# Applied via:
+#   hermes config set model.default openrouter/openai/gpt-4o-mini
+#   hermes config set model.provider openrouter
+#   hermes config set model.max_tokens 4096
+#   hermes config set approvals.mode off
+#   docker restart hermes-kh85cuzhgfz1ib19x6d6es6i

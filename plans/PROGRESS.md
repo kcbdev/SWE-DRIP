@@ -300,3 +300,15 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Verdict: the autonomous pipeline is 100% functional** (paperclip -> hermes gateway -> OpenRouter -> streaming -> tools, approvals off, max_tokens capped). The ONLY remaining constraint is the OpenRouter key's total credit limit — founder must raise it (or add credit) in the OpenRouter dashboard. After that, re-fire CEO -> completed run -> PBI-034 done -> wire remaining 10 agents.
 
 ---
+
+---
+## 2026-08-24 - RECORDED: Hermes owns the model for gateway agents (founder verification + fix)
+
+- **Founder observed:** opus + glm models being used despite cheap-model instruction.
+- **Verified root cause:** Paperclip /costs/by-agent-model shows hermes_gateway runs as model "unknown" (Hermes-side model invisible). hermes_gateway agents IGNORE the Paperclip model field by design (upstream docs). Hermes config.yaml had no model pinned -> auto-resolved opus-class default (config_defaults.py aggregator default anthropic/claude-opus-4.8) + fallback rotation incl. GLM.
+- **Paperclip-side check:** the 10 hermes_local agents ARE on the instructed cheap test models (gpt-4o-mini x5, gemini-2.0-flash-lite-001 x5); CEO on hermes_gateway has no model field (N/A).
+- **Fix applied (founder SSH exec):** hermes config set model.default openrouter/openai/gpt-4o-mini; model.provider openrouter; docker restart. (approvals.mode off + max_tokens 4096 already set.)
+- **Repo records:** deploy/stack/hermes-config.yaml rewritten to canonical (model.default/model.provider/model.max_tokens/approvals.mode, + ownership note); specs/agent-stack/spec.md as-built addendum added.
+- **Next:** verify CEO run completes on gpt-4o-mini (cheaper -> less 402 pressure), then wire remaining 10 agents.
+
+---
