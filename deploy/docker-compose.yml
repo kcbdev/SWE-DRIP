@@ -70,15 +70,6 @@ services:
     networks:
       - swe-drip-net
 
-  # ── swedrip static site (existing) ─────────────────────────
-  swedrip-web:
-    image: nousresearch/hermes-agent:latest
-    profiles:
-      - docs-only
-    restart: unless-stopped
-    networks:
-      - swe-drip-net
-
 volumes:
   postgres-data:
   paperclip-data:
