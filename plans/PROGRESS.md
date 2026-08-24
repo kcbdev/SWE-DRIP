@@ -323,3 +323,13 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **PBI-034 contract met:** completed run + tool activity (earlier runs) + non-empty message + usage recorded. Pending founder acceptance to close (manual sort).
 
 ---
+
+---
+## 2026-08-24 - PBI-035: memory persistence VERIFIED across restart
+
+- **Restart test:** hermes service restarted (control restart flaky -> control start; known quirk) with NO state wipe (command: gateway run, config persists).
+- **Post-restart CEO run 69bc308c: SUCCEEDED** — sessionReused=true, freshSession=false, sessionRotated=false => session/memory survived container restart. Non-empty output. No 402s. max_tokens cap active (HERMES_MAX_TOKENS=4096 env).
+- **Skills finding:** hermes_gateway adapter does NOT implement skill sync (sync endpoint: supported=false, "This adapter does not implement skill sync yet."). Souls/identity reach Hermes via the instructions bundle injected into the run prompt (CEO output confirms role awareness). Hermes's 82 bundled image skills always available; /opt/data/skills persists for user-installed ones.
+- **Production models:** DEFERRED by founder decision — cheap test models during test phase (model.default openai/gpt-4o-mini). Roster models per docs/03-agents.md to be applied at founder's go (cost note in AGENTS.md).
+
+---
