@@ -344,3 +344,12 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Next:** PBI-037 first-product E2E (offer pricing  + Terminal Collection + publish) via the working stack.
 
 ---
+
+---
+## 2026-08-24 - PBI-037 BLOCKED on OpenRouter key total limit (founder action required)
+
+- **Pipeline driven:** 5 pipeline issues created + checked out (CEO/Trend/Copy/Design/Listing) via Paperclip board. CEO run succeeded (posted 3 board comments; its issue moved to blocked for lack of disposition). Trend Scout + Copy Agent heartbeats fired.
+- **Blocker:** BOTH Trend + Copy runs failed with HTTP 403: Key limit exceeded (total limit) — the OpenRouter key (775a20c6...) total limit is exhausted. CEO's earlier small runs consumed the budget. The earlier "top up" step was NOT actually done.
+- **Founder action (required):** raise the key's total limit or add credit at https://openrouter.ai/workspaces/default/keys/775a20c61a87d8c6e0f9562efeddce369dfbe45b9912cd35b2d584dabdc32744. Then I re-fire Trend/Copy/Design/Listing heartbeats and complete PBI-037 (design PNG -> live  tee in Terminal Collection after founder design approval).
+
+---
