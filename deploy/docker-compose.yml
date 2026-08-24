@@ -1,0 +1,91 @@
+# SWE Drip — Full Stack: Paperclip + Hermes Agent + PostgreSQL
+# Deploy via Coolify → New Resource → Docker Compose
+# Replaces separate paperclip + hermes deployments with one integrated stack
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: paperclip
+      POSTGRES_USER: paperclip
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-swedrip_change_me}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperclip"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Hermes Agent Gateway ────────────────────────────────────
+  # Runs NousResearch/hermes-agent with OpenRouter provider
+  # Exposes API server on internal port 8642
+  hermes:
+    image: nousresearch/hermes-agent:latest
+    restart: unless-stopped
+    volumes:
+      - hermes-home:/home/hermes/.hermes
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      API_SERVER_ENABLED: "true"
+      API_SERVER_KEY: ${HERMES_GATEWAY_KEY}
+      API_SERVER_HOST: "0.0.0.0"
+    expose:
+      - "8642"
+    networks:
+      - swe-drip-net
+
+  # ── Paperclip Platform ──────────────────────────────────────
+  # Custom build with hermes-local-plus adapter pre-installed
+  # Connects to Hermes via shared network + Postgres for state
+  paperclip:
+    build:
+      context: .
+      dockerfile: Dockerfile.paperclip
+    restart: unless-stopped
+    ports:
+      - "${PAPERCLIP_PORT:-3001}:3001"
+    volumes:
+      - paperclip-data:/app/data
+      - paperclip-npm:/app/node_modules
+      - hermes-shared:/home/hermes/.hermes
+    environment:
+      DATABASE_URL: postgresql://paperclip:${POSTGRES_PASSWORD:-swedrip_change_me}@postgres:5432/paperclip
+      PAPERCLIP_TELEMETRY_DISABLED: "1"
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENAI_API_KEY: ${OPENROUTER_API_KEY}
+      OPENAI_BASE_URL: https://openrouter.ai/api/v1
+      FOURTHWALL_AUTH: ${FOURTHWALL_AUTH}
+      FW_BASE_URL: https://api.fourthwall.com
+      HERMES_GATEWAY_URL: http://hermes:8642
+      HERMES_GATEWAY_KEY: ${HERMES_GATEWAY_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      hermes:
+        condition: service_started
+    networks:
+      - swe-drip-net
+
+  # ── swedrip static site (existing) ─────────────────────────
+  swedrip-web:
+    image: nousresearch/hermes-agent:latest
+    profiles:
+      - docs-only
+    restart: unless-stopped
+    networks:
+      - swe-drip-net
+
+volumes:
+  postgres-data:
+  paperclip-data:
+  paperclip-npm:
+  hermes-home:
+  hermes-shared:
+
+networks:
+  swe-drip-net:
+    driver: bridge
