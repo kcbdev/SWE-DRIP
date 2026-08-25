@@ -415,3 +415,13 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Note:** OpenRouter key credit limit STILL exhausted (403) — founder must raise the total limit before test runs can proceed. payloadTemplate model change does not need credit to be applied, only to run.
 
 ---
+
+---
+## 2026-08-25 - FULL AUTONOMOUS LOOP VERIFIED on DeepSeek V4 Flash 0731 (per-agent model)
+
+- **Model ID format fixed:** Hermes runs API splits provider prefixes on '::' (not '/'). payloadTemplate.model set to PLAIN 'deepseek/deepseek-v4-flash-0731' on all 11 agents (the 'openrouter/deepseek/...' single-slash form would 400 verbatim — the exact trap from model.default earlier). Verified in api_server.py _split_provider_prefixed_model.
+- **TEST 1 (Trend Scout, issue df6af142): SUCCEEDED end-to-end** — checkout -> wake -> execute (tools: execute_code xN) -> POST comment (callback env PAPERCLIP_API_URL/PAPERCLIP_API_KEY worked) -> CLOSE ISSUE (status done). Score 86/100 (33+26+27) PASS with slogan direction, posted as comment. Run succeeded exit 0.
+- **REAL cost data (corrects the earlier estimate):** one WORKING agentic run = 2,294,152 input + 18,455 output tokens (tool loops feed context back). At DeepSeek V4 Flash .04/.08 per M: ~.092/run. Full 5-agent pipeline ~.45; full week (11 runs) ~.00; month ~-5. gpt-4o-mini would be ~3.75x that. (Earlier 16K/run estimate reflected single-turn non-working runs; real agentic runs cost ~25x more input.)
+- **Remaining:** run the FULL 5-agent company test (CEO->Trend->Copy->Design->Listing) as the final validation, then crons.
+
+---
