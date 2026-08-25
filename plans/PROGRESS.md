@@ -425,3 +425,14 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Remaining:** run the FULL 5-agent company test (CEO->Trend->Copy->Design->Listing) as the final validation, then crons.
 
 ---
+
+---
+## 2026-08-25 - FULL POD TEST: 11/11 agents executed, delivered, and closed autonomously (DeepSeek V4 Flash)
+
+- **Production (5/5):** CEO "GO — approved" decision; Trend Scout scored 86/100 PASS; Copy Agent full listing copy; Design Agent print spec; Listing Agent "PRICE-INVARIANT CHECK: .00 USD exact".
+- **Post-production (6/6):** Social 3 scheduled posts (4:1 compliant); Video 8s clip spec 1080x1920; Analytics weekly KPI structure; Email "exit 0: the only tee that compiles clean" newsletter draft; Community 2 dry-humor replies with grep jokes, no links; Finance summary.
+- **All issues closed (status done), 0 blocked.** Callback posting + closing worked (env PAPERCLIP_API_URL/KEY). Per-agent model via payloadTemplate (plain deepseek/deepseek-v4-flash-0731) works.
+- **Notes:** Email Agent had been TERMINATED (cannot resume — re-hired via agent-hires with full identity; re-checkout 200). Copy/Design/Finance issue comments show "did not post a summary comment" on the last run but deliverables are in earlier comments (7/4/3 comments respectively).
+- **Cost:** 11 real agentic runs ≈ 2.3M input tokens each ≈ ~ total for the full pod test at DeepSeek V4 Flash prices.
+
+---
