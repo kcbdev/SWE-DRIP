@@ -362,3 +362,12 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Awaiting founder:** visual approval of the design mockup before state -> PUBLIC. Mockup: https://cdn.fourthwall.com/customizations/sh_9519eb77-53cf-4676-afda-4fc73319be2b/e02a6be7-735e-4fa8-83e2-b06a3ecf969c.webp
 
 ---
+
+---
+## 2026-08-24 - Autonomy gap #1 FIXED: per-role instructions (wake-context)
+
+- **Root cause:** hermes_gateway runs were generic ("I'm ready to assist") — agents lacked role instructions. The adapter's instructions field (stable per-run role contract, sent separately from the wake input) was unset.
+- **Fix:** set instructions on all 11 agents (per-role contracts from the souls: score/execute/post-comment). Verified on Trend Scout: run executed the task, scored the brief 78/100 (Engagement 35 + Novelty 18 + Specificity 25, PASS >=60), used tools (saved /opt/data/score_breakdown.txt), tried to PATCH the issue — callback DNS still broken.
+- **Remaining gap #2:** callback DNS — ddglphkkmg5apsosgh7q1crj does not resolve from the hermes container. Need the paperclip app's actual container name (founder: docker ps --format '{{.Names}}') to fix paperclipApiUrl on all agents.
+
+---
