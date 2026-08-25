@@ -371,3 +371,14 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Remaining gap #2:** callback DNS — ddglphkkmg5apsosgh7q1crj does not resolve from the hermes container. Need the paperclip app's actual container name (founder: docker ps --format '{{.Names}}') to fix paperclipApiUrl on all agents.
 
 ---
+
+---
+## 2026-08-24 - Autonomy mechanism PROVEN: checkout = wake trigger; agents execute real tasks
+
+- **Root cause of generic runs:** manual heartbeat invokes create UNASSIGNED runs (scratch dir paperclip-run-unassigned-*) with empty wakes. The proper trigger is ISSUE CHECKOUT — its run carries wakeReason=issue_checked_out + full paperclipWake (issue title/description/identifier). 
+- **Verified execution with wake:** Trend Scout scored brief 78/100 (35+18+25) and posted it; Listing Agent confirmed " USD / Terminal Collection / published live" as comment; Design Agent generated the design spec (saved output, tried posting); Copy Agent wrote the full listing copy to /opt/data/exit_0_listing.txt. Board shows real agent-attributed work.
+- **Remaining gap — agent callbacks:** remote Hermes agents attempt localhost:3100 for Paperclip callbacks instead of the container host; posting fails with host/DNS errors. Needs per-run credential injection (PAPERCLIP_API_URL + run JWT) into the Hermes process — a Paperclip hermes_gateway feature/config level item, recorded as follow-up (PBI-031-style). PAPERCLIP_API_URL env added to hermes service (restarted) as partial mitigation.
+- **Heartbeats enabled:** all 11 agents runtimeConfig.heartbeat.enabled=true; scheduler records show schedulerActive false until interval set (follow-up: cron triggers per roster).
+- **Assignee field:** assigneeAgentId (not assigneeId) — checkout sets it correctly; blocked issues cleared it, reopen+checkout restores.
+
+---
