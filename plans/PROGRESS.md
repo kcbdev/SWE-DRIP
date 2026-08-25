@@ -436,3 +436,14 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Cost:** 11 real agentic runs ≈ 2.3M input tokens each ≈ ~ total for the full pod test at DeepSeek V4 Flash prices.
 
 ---
+
+---
+## 2026-08-25 - CREATIVE TEST PASSED: new product "UNTIL USER 50" researched, designed, and on the shelf
+
+- **Trend Scout research:** fresh 2026 concept "UNTIL USER 50" (vibe-coded app breaks at user 50, Karpathy-era meme) scored 87/100 (33+26+28), slogan "WORKS. UNTIL IT'S 50." — NOT the exit 0 rehash.
+- **CEO:** GO — APPROVED with rationale. **Copy:** full listing (slogan + 3 variants + title + 150-200w description + 13 tags). **Design:** exact print spec with verbatim production-log lines (INFO 1-49 -> ERROR user 50 -> FATAL out of memory).
+- **Design generation:** flux-schnell gone from OpenRouter (0 flux models, Aug 2026); used registry fallback google/gemini-3.1-flash-image -> 1024x1024 PNG saved workspace/designs/until-user-50.png (founder should visually verify text rendering).
+- **Product on the shelf:** "UNTIL USER 50 — Terminal Log Tee" b4c67a05-e1dd-4de3-ad4a-fe7bf396e436 — access PUBLIC, unitPrice EXACTLY , Terminal Collection (now EXIT 0 + UNTIL USER 50), rendered DTG mockups 2048x2048. Storefront URL (pending shop go-live): swedrip.fourthwall.com/products/until-user-50-terminal-log-tee.
+- **Cost:** ~4 agent runs (~.35) + 2 image generations (cents).
+
+---
