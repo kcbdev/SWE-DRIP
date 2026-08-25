@@ -353,3 +353,12 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Founder action (required):** raise the key's total limit or add credit at https://openrouter.ai/workspaces/default/keys/775a20c61a87d8c6e0f9562efeddce369dfbe45b9912cd35b2d584dabdc32744. Then I re-fire Trend/Copy/Design/Listing heartbeats and complete PBI-037 (design PNG -> live  tee in Terminal Collection after founder design approval).
 
 ---
+
+---
+## 2026-08-24 - PBI-037:  product staged — awaiting founder design approval before publish
+
+- **Credit top-up confirmed:** re-fired Trend/Copy/Design/Listing heartbeats — ALL succeeded (exit 0). Pipeline board evidence: 5+ agent-attributed runs. (Agent outputs are generic — wake-context/instruction tuning is a known follow-up, incl. Trend's DNS failure resolving ddglphkkmg5apsosgh7q1crj from hermes.)
+- **Product staged (hidden draft):** "EXIT 0 — Terminal Tee" b0b861ca-2318-498f-8d85-b6ddb32d27dd — unitPrice exactly 32 USD (base 11.25 + margin 20.75), access HIDDEN, Terminal Collection set (col_fWajt4BKTLGsh2995Y8BEw offerIds), rendered mockups 2048x2048 (DTG Black). Old  draft (cf6288ea) hidden (accidentally public via state probe — reverted HIDDEN).
+- **Awaiting founder:** visual approval of the design mockup before state -> PUBLIC. Mockup: https://cdn.fourthwall.com/customizations/sh_9519eb77-53cf-4676-afda-4fc73319be2b/e02a6be7-735e-4fa8-83e2-b06a3ecf969c.webp
+
+---
