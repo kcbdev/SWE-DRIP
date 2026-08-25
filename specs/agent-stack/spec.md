@@ -64,6 +64,13 @@ Replace the non-functional Paperclip/Hermes topology with one **source-of-truth 
 - **Corrective config (applied via founder SSH exec):** `model.default: openrouter/openai/gpt-4o-mini`, `model.provider: openrouter`, `model.max_tokens: 4096`, `approvals.mode: off`. Canonical file: `deploy/stack/hermes-config.yaml`. Per-agent model routing through gateway agents is therefore **not supported** — the global Hermes model applies to all gateway agents during the test phase.
 - The 10 non-gateway agents (currently `hermes_local`) DO honor the Paperclip model field (passed via `--model` to the CLI) — those are set to the cheap test models (gpt-4o-mini / gemini-2.0-flash-lite-001).
 
+## As-built addendum 2 — PER-AGENT MODELS SOLVED via payloadTemplate (2026-08-25, verified in adapter source)
+
+- **Mechanism:** the hermes_gateway adapter (`packages/adapters/hermes/src/gateway/server/execute.ts` `buildRunBody`) **spreads the `payloadTemplate` adapterConfig field into the `POST /v1/runs` request body**, and the Hermes API server (`gateway/platforms/api_server.py` `_parse_request_model`) accepts a **per-request `model`** field (`body.get("model")`, provider-prefixed form like `openrouter/<vendor>/<model>`). Therefore `adapterConfig.payloadTemplate = { model: "openrouter/deepseek/deepseek-v4-flash-0731" }` routes each agent's runs to its own model.
+- **IMPORTANT:** do NOT put `input` or `instructions` inside `payloadTemplate` — those fields override the built wake input and per-role instructions.
+- **Applied:** all 11 agents set to the cheap test model DeepSeek V4 Flash 0731 (`$0.04/M` in, `$0.08/M` out — OpenRouter's cheapest capable agentic model, tool-calling supported, Aug 2026). Registry production models (docs/03-agents.md) can now be applied per agent by editing the `REGISTRY_MODELS` map (one value per agent) — no more global-model limitation.
+- **Hermes global `model.default` remains the fallback** for runs without payloadTemplate (e.g., unassigned timer wakes).
+
 ## Tooling
 
 - Coolify MCP (`https://coolify.kcb.ma/mcp`) — verify status, control restarts, read logs; no create.

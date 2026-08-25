@@ -402,3 +402,16 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Callback gap:** agents execute + attempt posts; env vars PAPERCLIP_API_URL + PAPERCLIP_API_KEY now injected via compose; final verify pending a successful assigned run with credit.
 
 ---
+
+---
+## 2026-08-25 - PER-AGENT MODELS SOLVED + cheap model selected (DeepSeek V4 Flash 0731)
+
+- **Solution:** adapterConfig.payloadTemplate is spread into POST /v1/runs body (adapter source verified); Hermes API server accepts per-request model. Set payloadTemplate.model on all 11 agents -> per-agent model routing, no more global-only.
+- **Cheap model (Aug 2026, OpenRouter):** DeepSeek V4 Flash 0731 — .04/M in / .08/M out, GA, top agentic (86th pctl), tool-calling. 4x cheaper than gpt-4o-mini. All 11 agents set.
+- **Cost estimate (measured usage: ~15.8K input + ~30-800 output per run):**
+  - Full pipeline (5 runs CEO->Listing): ~80K in + 2.5K out = **~.0034** at DeepSeek V4 Flash (gpt-4o-mini would be ~.0135).
+  - Full week (5 pipeline + 6 ops runs): ~176K in + 5.5K out = **~.0075**.
+  - Full month (~4 weeks + retries): **< .10** — total autonomous operation is effectively free.
+- **Note:** OpenRouter key credit limit STILL exhausted (403) — founder must raise the total limit before test runs can proceed. payloadTemplate model change does not need credit to be applied, only to run.
+
+---
