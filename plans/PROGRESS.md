@@ -382,3 +382,23 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Assignee field:** assigneeAgentId (not assigneeId) — checkout sets it correctly; blocked issues cleared it, reopen+checkout restores.
 
 ---
+
+---
+## 2026-08-24 - PBI-037: first product PUBLISHED (founder approved design); shop-online = dashboard action
+
+- **Product b0b861ca "EXIT 0 — Terminal Tee" published**: access PUBLIC, state AVAILABLE, unitPrice exactly 32 USD, Terminal Collection assigned, mockups rendered (founder approved the design).
+- **Storefront check:** swedrip.fourthwall.com/products/exit-0-terminal-tee returns 404 because the SHOP is still COMING_SOON — the site-status toggle is NOT in the REST API (dashboard action). Founder: Fourthwall dashboard -> SWE DRIP shop -> go live/online.
+- **Autonomy follow-ups queued:** (1) agent callbacks (PAPERCLIP_API_URL env added; agents need per-run token injection), (2) cron triggers per roster (scheduler heartbeats enabled).
+
+---
+
+---
+## 2026-08-25 - Autonomy status: mechanism PROVEN + scheduler engaged; OpenRouter key limit keeps exhausting (founder action)
+
+- **Scheduler engaged:** setting runtimeConfig.heartbeat.intervalSec=30 flipped schedulerActive=true on all 11 agents (env HEARTBEAT_SCHEDULER_INTERVAL_MS on the app alone wasn't enough). Timer wakes fire every 30s.
+- **BUT:** timer wakes are UNASSIGNED (scratch unassigned-*, no taskId, no paperclipWake issue) — they do not carry checked-out issues. The ONLY wake that carries the issue is issue.checkout (proven: Trend scored 78/100, Listing confirmed , Design generated the spec, Copy wrote the copy).
+- **Credit crisis:** the 30s timer loop across 11 agents burned the OpenRouter key's total limit FAST -> HTTP 403 Key limit exceeded on all timer runs. Paused all agent heartbeats (intervalSec=0, enabled=false) to stop the burn.
+- **Decision needed (founder):** raise the OpenRouter key TOTAL limit substantially (https://openrouter.ai/workspaces/default/keys/775a20c6...) — small top-ups get consumed in minutes by 11 scheduled agents. Also: reconcile why timer wakes don't pick up assigned issues (upstream behavior; the checkout-run path works without the timer).
+- **Callback gap:** agents execute + attempt posts; env vars PAPERCLIP_API_URL + PAPERCLIP_API_KEY now injected via compose; final verify pending a successful assigned run with credit.
+
+---
