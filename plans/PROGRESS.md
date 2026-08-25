@@ -460,3 +460,16 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Pending founder visual check:** White/Charcoal mockups of 1d06ad88 (transparency proof) + the -t.png art.
 
 ---
+
+---
+## 2026-08-25 - NATIVE ALPHA CONFIRMED: openai/gpt-5-image-mini — no transparency script needed
+
+- **Founder question:** do our image models emit alpha natively? **Tested empirically across the OpenRouter image catalog (11 image models, Aug 2026):**
+  - google/gemini-3.1-flash-image + flash-lite: return PNG colorType 2 (RGB, NO alpha) even with explicit "transparent background, PNG alpha" prompt -> flattened.
+  - **openai/gpt-5-image-mini: returns PNG colorType 6 (RGBA) with a REAL alpha mask** — verified: 88.6% transparent / 5.7% opaque / 5.7% anti-aliased edges; corners+center alpha=0. Maps 1:1 to POD print needs.
+- **No script needed for the main path:** generate with gpt-5-image-mini + transparency prompt -> native RGBA. scripts/png-transparent.js kept ONLY as fallback (Gemini flattening).
+- **End-to-end proof:** regenerated "UNTIL USER 50" art with gpt-5-image-mini (1024x1024, colorType 6, native transparent) -> FW flow -> product a02250b0 with Black/White/Charcoal mockups — alpha composites on every color. White mockups confirm no sticker box.
+- **Image model catalog (Aug 2026):** gemini-3.1-flash-image .0005/M (no alpha), gemini-3.1-flash-lite-image .00025/M (no alpha), gpt-5-image-mini .0025/M (**ALPHA**), gpt-5-image .01/M, gemini-3-pro-image .002/M. FLUX: 0 models on OpenRouter.
+- **Design quality note:** gpt-5-image-mini renders text better + transparent; non-square outputs occur (1536x1024 once) — request "1:1 square" in prompt; FW handles 1024x1024.
+
+---

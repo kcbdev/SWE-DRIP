@@ -8,9 +8,23 @@ graphics AND text designs, and artwork works on any shirt color.
 
 | Treatment | When | How |
 |---|---|---|
-| **TRANSPARENT** (default) | Any design that should print directly on the shirt | Generate green-on-black, then run `node scripts/png-transparent.js in.png out.png` (alpha = luminance key). The print lands on EVERY shirt color with no sticker box. |
+| **TRANSPARENT** (default) | Any design that should print directly on the shirt | Generate with `openai/gpt-5-image-mini` (native alpha) + "transparent background, PNG alpha" prompt → verify PNG colorType 6. The print lands on EVERY shirt color with no sticker box. |
 | **BADGE / PATCH** | Deliberate "printed patch" look (e.g. `>_` on a rounded dark patch) | Keep the patch shape as the art itself (rounded rectangle), background transparent AROUND it. |
 | **FULL BLEED** | All-over prints (rare) | Document only; DTG front-back preferred. |
+
+## Image model (verified Aug 2026)
+
+| Model | Alpha | Price (prompt $/M) | Notes |
+|---|---|---|---|
+| **openai/gpt-5-image-mini** | ✅ native RGBA | ~$0.0025 | **PRIMARY** — real alpha mask (verified 88.6% transparent on a text render), text legible, ~1024² |
+| google/gemini-3.1-flash-image | ❌ flattens | $0.0005 | Fallback — needs `node scripts/png-transparent.js` after render |
+| google/gemini-3.1-flash-lite-image | ❌ flattens | $0.00025 | Cheapest, same fallback |
+| google/gemini-3-pro-image | ❓ not tested | $0.002 | higher quality alternative |
+| openai/gpt-5-image | ❓ not tested | $0.01 | highest quality |
+
+FLUX models: no longer on OpenRouter (verified 0). Registry `flux.2-pro` is stale — treat gpt-5-image-mini as the runtime image model.
+
+**Post-render verification (always):** PNG colorType must be 6 (RGBA). If 2 (RGB) → run `scripts/png-transparent.js` (alpha = luminance key) as fallback. 
 
 ## Style directions (choose one per design + never mix >2)
 
