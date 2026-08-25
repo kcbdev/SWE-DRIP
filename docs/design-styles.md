@@ -1,0 +1,72 @@
+# SWE Drip — Design Style Library (inspiration source for the Design Agent)
+
+Every design spec must name a style from this library and declare its background
+treatment. The library is the shared reference so prompt quality stays high for
+graphics AND text designs, and artwork works on any shirt color.
+
+## Background treatment rules (CRITICAL for POD)
+
+| Treatment | When | How |
+|---|---|---|
+| **TRANSPARENT** (default) | Any design that should print directly on the shirt | Generate green-on-black, then run `node scripts/png-transparent.js in.png out.png` (alpha = luminance key). The print lands on EVERY shirt color with no sticker box. |
+| **BADGE / PATCH** | Deliberate "printed patch" look (e.g. `>_` on a rounded dark patch) | Keep the patch shape as the art itself (rounded rectangle), background transparent AROUND it. |
+| **FULL BLEED** | All-over prints (rare) | Document only; DTG front-back preferred. |
+
+## Style directions (choose one per design + never mix >2)
+
+### 1. Terminal Log (proven — text-forward)
+Flat monospace production log; the joke is in the type. Green #00FF41 on black art;
+transparent background. OPTIONALLY render verbatim app logs that corrupt at the
+punchline. Prompt: "flat production-log screenshot, JetBrains Mono Bold, green
+#00FF41 mono glyphs, corrupting FATAL at the punchline, centered, print-safe."
+
+### 2. Terminal Glyph (logo-forward — the `>_` language)
+Single bold terminal glyph as the hero: `>_`, `$`, `#`, `exit`, `0/1`, `&&`, or a
+composed glyph. Studio-grade mark: flat, centered, minimal. Good for badges or
+big front prints. Prompt: "single bold terminal prompt glyph, flat vector mark,
+centered, minimal, high contrast."
+
+### 3. Pixel-Sprite (retro-dec)
+8/16-bit sprite composition — a compressed cat, a rocket, or a debugger ghost
+exploding into pixels. Prompt: "8-bit pixel art sprite, limited palette, CRT
+green on transparent, crisp square pixels, retro game composition."
+
+### 4. Flat Vector Scene (graphic narrative)
+A single-scene illustrated gag in flat vector style: a tiny dev in a terminal
+glow, a server smoking, a pile of `git stash` debris. Prompt: "flat vector
+illustration, minimal shapes, 2-3 colors max, negative space, no gradients,
+story in one scene."
+
+### 5. Glitch / Corruption (texture)
+Signal noise, scanlines, bit-crush, VHS artifacts around a wordmark. Use
+sparingly (readability first). Prompt: "glitch artifact texture around bold
+mono wordmark, scanlines, bit-crush, subtle, readable text center."
+
+### 6. ASCII Mosaic (big-image-from-characters)
+Shape built from characters (ASCII art scaled up). Prompt: "large ASCII-art
+mosaic forming a simple icon, monospace, green on transparent, crisp."
+
+### 7. Doodle / Hand-Drawn (community-sticker tier)
+Mono-line doodle with dry dev humor caption. Prompt: "single-color line doodle,
+marker weight, minimal doodle, small caption under."
+
+## Prompt template (Design Agent uses this shape)
+
+```
+Style: <style-1 (or NONE)>
+Subject: <exact iconography>
+Text: "<exact lines — short, verbatim>"
+Palette: <ink #00FF41 ONLY unless style says otherwise> on transparent
+Composition: centered | badge | grid
+Rendering: flat, no gradients/shadows/textures beyond style, 2048x2048 print-safe
+Background: TRANSPARENT (default) | BADGE (rounded patch kept, rest transparent)
+```
+
+## Quality rules
+- Text ≤ 6 words when text-forward; longer text only for Terminal Log style and
+  ONLY if the render is legible (image models garble long text — the
+  transparentizer + 1024px+ art mitigate; if a render fails legibility, drop to
+  the punchline line only).
+- Never mix green-on-black art with white/red ink; the brand is 2-color.
+- Graphics must still carry the "software" story — no generic merch art.
+- Validate: PNG 1024x1024+, colorType 6 (RGBA) after transparentizer, < 10MB.
