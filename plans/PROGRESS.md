@@ -447,3 +447,16 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Cost:** ~4 agent runs (~.35) + 2 image generations (cents).
 
 ---
+
+---
+## 2026-08-25 - Image creation improved: transparent backgrounds + style library + multi-color verification
+
+- **Problem found (founder):** every generated design had a solid BLACK background -> rendered as a black rectangle sticker on the tee (fine on black shirts, broken on white/colored). Mockup review confirmed.
+- **Fix 1 — transparentizer:** scripts/png-transparent.js (pure Node, no deps) — decodes 8-bit RGB PNG, backdrops alpha=luminance (black bg -> alpha 0, green art crisp anti-aliased), re-encodes RGBA (colorType 6). Verified on until-user-50.png -> until-user-50-t.png (1024x1024 RGBA).
+- **Fix 2 — multi-color proof:** uploaded transparent art via corrected FW flow -> product 1d06ad88 (draft) with colors [Black,White,Heather Gray,Charcoal] -> renderer produced 12 mockups (4 colors x 3 views) — same art on all colors, no sticker box. URLs in PROGRESS repo decision history.
+- **Fix 3 — style inspiration library:** workspace/design-styles.md — 7 named styles (Terminal Log, Terminal Glyph, Pixel-Sprite, Flat Vector Scene, Glitch, ASCII Mosaic, Doodle), prompt template, quality rules, and the BACKGROUND-TREATMENT table (TRANSPARENT default / BADGE kept / FULL BLEED) so graphics AND text designs are covered.
+- **Design Agent instructions upgraded:** read design-styles.md, pick a style per design, declare background treatment, may propose graphic artwork (sprites/scenes/glitch) not only text, keep 2-color brand rule.
+- **Image model note:** FLUX removed from OpenRouter (0 flux models Aug 2026); google/gemini-3.1-flash-image is the working image model (1024x1024 output; image_config 2048 ignored). Registry flux.2-pro entry is stale.
+- **Pending founder visual check:** White/Charcoal mockups of 1d06ad88 (transparency proof) + the -t.png art.
+
+---
