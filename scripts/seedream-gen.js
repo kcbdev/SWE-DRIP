@@ -29,9 +29,12 @@ function api(path, method, body) {
 
 const body = {
   model: 'bytedance/seedream/5.0/lite/edit',
-  prompt: prompt + ' Transparent background (alpha 0 outside the artwork), PNG with alpha channel.',
+  prompt,
+  resolution: '2K',
   aspect_ratio: '1:1',
-  output_format: 'png'
+  output_format: 'png',
+  background: 'transparent', // auto | transparent | opaque — native alpha control
+  n: 1
 };
 const r = await api('/v1/run', 'POST', body);
 console.log('run →', r.status, r.data.slice(0, 300));

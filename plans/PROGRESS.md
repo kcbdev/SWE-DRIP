@@ -495,3 +495,15 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Engine roles:** gpt-5-image-mini = native-alpha default; seedream (sandbase) = creative art; riverflow = fast art (no alpha); gemini = fallback.
 
 ---
+
+---
+## 2026-08-25 - MODEL MATRIX RESOLVED: riverflow-v2-pro = native alpha WebP, FW accepts webp — no script needed
+
+- **riverflow-v2-pro (OpenRouter, verified):** WebP VP8X + ALPH chunk (real alpha), 1024x1024, ~170s. 
+- **FW accepts image/webp DIRECTLY:** presigned upload contentType image/webp -> PUT 200 -> registered 2009373204 (1024x1024). NO PNG conversion, NO transparency script — native alpha end-to-end.
+- **riverflow-v2.5-fast:** WebP VP8 lossy (NO alpha) — solid-BG/badge art only.
+- **seedream 5.0 lite (sandbase param spec, founder-provided):** resolution 1K/2K/4K, aspect_ratio (1:1 etc), output_format png/jpeg/webp, **background auto/transparent/opaque**, n=1, input_references 0-10. scripts/seedream-gen.js updated with {resolution:2K, aspect_ratio:1:1, output_format:png, background:transparent}. Needs SANDBASE_API_KEY.
+- **Engine roles (final):** gpt-5-image-mini (native RGBA, default) | riverflow-v2-pro (native alpha webp, creative) | riverflow-v2.5-fast (fast, no alpha) | seedream via sandbase (creative, background:transparent) | gemini (fallback + script).
+- **Design Agent showcase:** showcase scenes (mockup -> human model) can use riverflow-v2-pro edit/imagine path via image input.
+
+---
