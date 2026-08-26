@@ -507,3 +507,15 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Design Agent showcase:** showcase scenes (mockup -> human model) can use riverflow-v2-pro edit/imagine path via image input.
 
 ---
+
+---
+## 2026-08-25 - FULL COLOR + TRANSPARENCY PIPELINE PROVEN END-TO-END (founder-directed)
+
+- **Step 1 — creative art w/ alpha:** sourceful/riverflow-v2-pro -> WebP VP8X native alpha, 1024x1024, full-color 8-bit pixel rocket (cyan/magenta/yellow) on transparent. 139s.
+- **Step 2 — FW product + mockups:** uploaded image/webp directly (PUT 200, registered 488489179) -> product 981cbfbe "ROCKET PIXEL — Arcade Tee" colors [Black,White,Charcoal] -> 12 DTG mockups rendered from native-alpha art (no sticker box).
+- **Step 3 — showcase scene from mockup:** fed the WHITE mockup URL as input image to bytedance-seed/seedream-5-0-lite via OpenRouter /images (images param, like sandbase) -> 200, 1024x1024 JPEG lifestyle scene (dev wearing the tee, editorial light). 30s. JPEG fine (no transparency needed for photos).
+- **Step 4 — upload showcase to FW:** image/jpeg media flow -> registered 1341322826 -> POST /products/{id}/images attached (201). Product now has 13 images (12 mockups + showcase).
+- **Pipeline capability locked in:** riverflow-v2-pro (creative, native-alpha webp) -> FW (webp OK) -> mockup -> seedream OpenRouter (image-to-image) -> showcase -> attach to product.
+- **Cost:** 1 riverflow render (~.02) + 1 seedream render (~.01) + product (free) — pennies.
+
+---
