@@ -519,3 +519,14 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Cost:** 1 riverflow render (~.02) + 1 seedream render (~.01) + product (free) — pennies.
 
 ---
+
+---
+## 2026-08-25 - Showcase fidelity fix: gpt-5-image-mini replaces seedream for showcase scenes (founder-directed)
+
+- **Issue 1 (founder):** seedream showcase scene showed a DIFFERENT graphic than the product mockup (low image-to-image fidelity).
+- **Issue 2 (founder):** gpt-5-image-mini was called during the test matrix — founder directs: riverflow-v2-pro = creative alpha art; gpt-5-image-mini = showcase scene engine.
+- **Fix applied:** regenerated showcase from the WHITE mockup with openai/gpt-5-image-mini (images param image-to-image, "reproduce EXACTLY" prompt) -> PNG 1024x1536 portrait (44s) -> uploaded (registered 499964055) -> attached to product 981cbfbe (201). The rocket pixel design now matches the mockup in the scene.
+- **Engine roles (locked):** riverflow-v2-pro = creative generation (native-alpha webp -> FW); gpt-5-image-mini = showcase (mockup -> human scene, faithful); seedream = no longer used for showcase (kept only if founder wants creative alt via sandbase background:transparent).
+- **Design Agent instructions:** updated to reflect engines (riverflow for art + alpha, gpt-5-mini for showcase).
+
+---
