@@ -19,6 +19,7 @@
 | Model | Alpha | Price (prompt $/M) | Notes |
 |---|---|---|---|
 | **openai/gpt-5-image-mini** | ✅ native RGBA | ~$0.0025 | **PRIMARY** — real alpha mask (verified 88.6% transparent on a text render), text legible, ~1024² |
+| **seedream 5.0 lite** (creative) | ⚠️ PNG via sandbase.ai (`output_format:"png"`) | sandbase pricing | **Creative engine** — high-quality illustration/art. OpenRouter flattens it to JPEG (verified); use direct sandbase API (`scripts/seedream-gen.js`, `SANDBASE_API_KEY`) with output_format png. Alpha-capability pending key test — transparency prompt included; if RGB, run `scripts/bg-remove` chroma-key. |
 | **sourceful/riverflow-v2.5-fast** | ❌ WebP VP8 lossy (no alpha) | ~$0.019 | Founder-picked for tee design — fast, strong art; alpha missing → only for solid-BG or badge designs, or convert via webp→png (needs converter) |
 | google/gemini-3.1-flash-image | ❌ flattens | $0.0005 | Fallback — needs `node scripts/png-transparent.js` after render |
 | google/gemini-3.1-flash-lite-image | ❌ flattens | $0.00025 | Cheapest, same fallback |

@@ -485,3 +485,13 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Mockup->showcase:** founder asked to use the rendered mockup to generate a model-wearing scene -> now the Design Agent's deliverable 2. (Showcase engine test pending founder EACHLABS_API_KEY or riverflow/gpt5.)
 
 ---
+
+---
+## 2026-08-25 - Seedream 5.0 Lite: OpenRouter flattens to JPEG (verified 6 ways); sandbase.ai direct API is the alpha path
+
+- **OpenRouter seedream probe (bytedance-seed/seedream-5-0-lite):** ALWAYS JPEG — tested plain transparency prompt, response_format png, format png, image_config.format, output_format png (founder's param) — all JPEG. OpenRouter's gateway owns output format; provider params don't pass through.
+- **sandbase.ai (founder-provided):** direct provider API supports output_format:"png" + polling. Wired scripts/seedream-gen.js (run -> poll -> download; model bytedance/seedream/5.0/lite/edit, aspect 1:1, transparency prompt, output_format png). Needs SANDBASE_API_KEY (founder).
+- **Alpha verdict pending:** once key set, run seedream-gen -> check PNG colorType: 6 = native alpha (no script); 2 = RGB -> chroma-key remover (bg-remove upgrade) needed. Creative art (shading/gradients) needs color-distance key + feather, NOT the luminance key (destroys mid-tones).
+- **Engine roles:** gpt-5-image-mini = native-alpha default; seedream (sandbase) = creative art; riverflow = fast art (no alpha); gemini = fallback.
+
+---
