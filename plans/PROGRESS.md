@@ -539,3 +539,12 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Engine docs:** gpt-5-image-mini showcase role de-emphasized (kept available, not used in the flow).
 
 ---
+
+---
+## 2026-08-25 - Creative pipeline re-run (mockups only): DEPLOY flat-vector tee live
+
+- **Art:** riverflow-v2-pro flat-vector scene (tiny dev pushing giant deploy button, cyan/magenta/yellow, native alpha webp 1024x1024, 161s) -> workspace/designs/deploy-art.webp.
+- **FW:** webp upload -> registered 1020732212 -> product ac6b0e86 "DEPLOY — Flat Vector Tee" colors [Black,White,Charcoal] -> DTG mockups (no showcase). Draft (publishOnCreate false).
+- **Pipeline (final):** riverflow-v2-pro (creative+alpha) -> FW webp upload -> multi-color product -> mockups. Showcase disabled per founder.
+
+---
