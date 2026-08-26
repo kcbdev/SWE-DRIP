@@ -548,3 +548,12 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Pipeline (final):** riverflow-v2-pro (creative+alpha) -> FW webp upload -> multi-color product -> mockups. Showcase disabled per founder.
 
 ---
+
+---
+## 2026-08-25 - Full agent+creative test staged; blocked on OpenRouter key total limit (again)
+
+- **Readiness verdict:** agent chain (Trend->CEO->Copy->Design) is READY for the new pipeline — agents produce research/approval/copy/design-spec; platform executes riverflow-v2-pro generation + FW product (the split model we tested). Agent-side execution of generation (scripts in workspace + env) is the next wiring upgrade, not required for this test.
+- **Test staged:** fulltest1 Trend issue 509eb2c2 created + checked out.
+- **Blocker:** OpenRouter key 775a20c6... total limit exhausted (HTTP 403) — consumed by the agent runs (~2.3M tokens each) + image renders. Founder must raise the TOTAL limit meaningfully (e.g., -10 total) — small top-ups get consumed in minutes.
+
+---
