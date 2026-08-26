@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "ai-graphic-design": {
+      "source": "designrique/ai-graphic-design-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "0f2a592c36031aee303bccbeeb1f6e573c9c29d11acde6542cc8079c01399ec2"
+    },
+    "tshirt-design-generation": {
+      "source": "eachlabs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tshirt-design-generation/SKILL.md",
+      "computedHash": "578d88c767e146746b70d1ae7f7549906110f18784f5853b03068db1445f4ebd"
+    }
+  }
+}

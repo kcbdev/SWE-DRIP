@@ -473,3 +473,15 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Design quality note:** gpt-5-image-mini renders text better + transparent; non-square outputs occur (1536x1024 once) — request "1:1 square" in prompt; FW handles 1024x1024.
 
 ---
+
+---
+## 2026-08-25 - Design production roles/skills installed + workflow upgraded (founder-directed)
+
+- **Skills installed** (.agents/skills/, committed):
+  - tshirt-design-generation (eachlabs) — T-Shirt Designer: print-method table (screen 1-6 colors/DTG/sublimation/heat transfer/vinyl), transparent export rules, style categories (minimal/typography/vintage/illustration/meme), each::sense API engine (needs EACHLABS_API_KEY, founder-set).
+  - ai-graphic-design (designrique) — AI Creative Director: tool-selection matrix (Recraft SVG, Midjourney, Nano Banana photoreal mockups, vectorizer, bg removal, upscaler), RCAO briefing framework, StoryBrand, typography/composition, IP safety. Knowledge-only.
+- **Layered workflow (per founder, not merged):** AI Creative Director (direction) -> T-Shirt Designer (apparel craft) -> brand rules (design-styles.md) -> Image Generation (gpt-5-image-mini native alpha PRIMARY; riverflow-v2.5-fast founder-picked BUT WebP-VP8 lossy NO alpha — verified — so only for blank/badge treatments or with conversion; gemini fallback).
+- **Design Agent instructions v2:** reads the two skills + brand rules (RCAO framework -> style -> print method -> exact prompt), 2 deliverables: (1) print design spec, (2) SHOWCASE LIFESTYLE SCENE — design rendered on a HUMAN MODEL wearing the tee (image-to-image from the mockup), editorial light, minimal bg, exact prompt + model named (riverflow-v2.5-fast preferred / gpt-5-image-mini alpha fallback).
+- **Mockup->showcase:** founder asked to use the rendered mockup to generate a model-wearing scene -> now the Design Agent's deliverable 2. (Showcase engine test pending founder EACHLABS_API_KEY or riverflow/gpt5.)
+
+---

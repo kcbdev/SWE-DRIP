@@ -1,8 +1,10 @@
 # SWE Drip — Design Style Library (inspiration source for the Design Agent)
 
-Every design spec must name a style from this library and declare its background
-treatment. The library is the shared reference so prompt quality stays high for
-graphics AND text designs, and artwork works on any shirt color.
+> Pipeline roles (layered, per founder 2026-08-25):
+> **1. AI Graphic Design** — `.agents/skills/ai-graphic-design/SKILL.md` (Creative Direction): tool-selection matrix (Recraft SVG, Midjourney moodboards, Nano Banana photoreal mockups, vectorizer, bg removal, upscaler), briefing frameworks (RCAO, StoryBrand), typography/composition, IP safety. Sets DIRECTION + prompt quality.
+> **2. T-Shirt Design** — `.agents/skills/tshirt-design-generation/SKILL.md` (T-Shirt Designer): print-method specs (screen print 1-6 spot colors / DTG full-color / sublimation / heat transfer / vinyl), transparent-export rules, typography/vintage/minimal/illustration styles, variations. Engine: each::sense API (`EACHLABS_API_KEY`, founder-set) OR the OpenRouter image models below.
+> **3. This file** — SWE Drip brand rules (2-color, named styles, prompts).
+> **4. Image generation model** — table below (native-alpha verified).
 
 ## Background treatment rules (CRITICAL for POD)
 
@@ -17,6 +19,7 @@ graphics AND text designs, and artwork works on any shirt color.
 | Model | Alpha | Price (prompt $/M) | Notes |
 |---|---|---|---|
 | **openai/gpt-5-image-mini** | ✅ native RGBA | ~$0.0025 | **PRIMARY** — real alpha mask (verified 88.6% transparent on a text render), text legible, ~1024² |
+| **sourceful/riverflow-v2.5-fast** | ❌ WebP VP8 lossy (no alpha) | ~$0.019 | Founder-picked for tee design — fast, strong art; alpha missing → only for solid-BG or badge designs, or convert via webp→png (needs converter) |
 | google/gemini-3.1-flash-image | ❌ flattens | $0.0005 | Fallback — needs `node scripts/png-transparent.js` after render |
 | google/gemini-3.1-flash-lite-image | ❌ flattens | $0.00025 | Cheapest, same fallback |
 | google/gemini-3-pro-image | ❓ not tested | $0.002 | higher quality alternative |
