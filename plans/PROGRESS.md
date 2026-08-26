@@ -530,3 +530,12 @@ Append-only execution log. One entry per PBI state transition, carrying `PBI-XXX
 - **Design Agent instructions:** updated to reflect engines (riverflow for art + alpha, gpt-5-mini for showcase).
 
 ---
+
+---
+## 2026-08-25 - Showcase scene DISABLED from the pipeline (founder-directed) — mockups only
+
+- **Design Agent instructions updated:** single deliverable = print design spec. No showcase/scene generation. Engine: riverflow-v2-pro (creative + alpha). Mockups come from the platform renderer.
+- **Product cleanup note:** product 981cbfbe still carries the 2 previously-attached showcase images (seedream + gpt5) — kept for reference; can be left (draft test product) or removed via dashboard.
+- **Engine docs:** gpt-5-image-mini showcase role de-emphasized (kept available, not used in the flow).
+
+---
