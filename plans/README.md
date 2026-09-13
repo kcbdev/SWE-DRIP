@@ -39,7 +39,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 4 | PBI-004 | auth-rbac | 001, 002 | In Review | SWDRP-4 | Better Auth runtime + FastAPI validation + RBAC + ADR-003 |
 | 5 | PBI-005 | auth-rbac | 004 | In Review | SWDRP-5 | Login + Users & Roles UI + user mgmt endpoints |
 | 6 | PBI-006 | audit-log | 004, 002 | In Review | SWDRP-6 | Audit writer + read API + auth-event hook |
-| 7 | PBI-007 | audit-log | 006 | Todo | SWDRP-7 | Audit log viewer + export UI |
+| 7 | PBI-007 | audit-log | 006 | In Review | SWDRP-7 | Audit log viewer + export UI |
 | 8 | PBI-008 | dashboard | 006, 004 | Todo | SWDRP-8 | Dashboard summary API (+ model_calls migration) |
 | 9 | PBI-009 | dashboard | 008, 001 | Todo | SWDRP-9 | Dashboard UI (cards, feed, pending top) |
 | 10 | PBI-010 | pipeline-core | 002, 008 | Todo | SWDRP-10 | State + graph skeleton + OpenRouter client + routing + costs |
