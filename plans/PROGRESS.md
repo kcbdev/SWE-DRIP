@@ -1,7 +1,8 @@
 # Progress — SWE Drip V1
 
-> Append-only execution log. One row per resolved PBI (and onboarding/bootstrap events), with gate results and review sorting. Never rewrite history.
+> Append-only execution log. One row per resolved PBI (and onboarding/bootstrap/planning events), with gate results and review sorting. Never rewrite history.
 
 | Date | Item | Action | Gates | Review | Evidence / notes |
 |---|---|---|---|---|---|
 | 2026-09-13 | Onboarding bootstrap | Clean-room repo initialized from the v1.0 spec kit; ASDLC structure created (AGENTS.md, ARCHITECTURE.md, plans, docs/adrs); docs-contract gates stood up; Plane binding `kcb/SWDRP` verified | `build` OK · `lint` OK (183 checks) · `test` 13/13 | agentic (structure + deterministic gates) | Commits `d0caef4` (spec kit) → `5b5dd46` (gates) → `4ddf0d4` (constitution) → `3e5fa74` (plans/ADR-001); remote `github.com/kcbdev/SWE-DRIP`; ADR-001 records decisions; Plane seed 0 Todo |
+| 2026-09-13 | Planning (`asdlc-plan`) | 13 specs + 35 PBIs authored from the v1.0 delivery spec (Phases 1–7), plus the Settings/Agents scope correction (FR-17/18/19); sequencing, dependency graph, and gate plan written to `plans/README.md` | `build` OK · `lint` OK (183 checks) · `test` 13/13 | agentic (planning artifacts only — deterministic docs gates unaffected) | Specs: app-foundation, auth-rbac, audit-log, dashboard, pipeline-core, hitl-approvals, collections, design-qc, fourthwall-integration, traceability, catalog-analytics, settings-agents, hitl-graduation. ADRs referenced: 002 (layout, PBI-001), 003 (auth, PBI-004), 004 (FW mechanism, PBI-026) |
