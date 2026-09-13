@@ -19,6 +19,7 @@ dependencies = [
   "alembic>=1.14",
   "sse-starlette>=2.1",
   "mcp>=1.0",
+  "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
