@@ -5,6 +5,6 @@ Node PBIs add modules here and call ``graph.register_node`` at module bottom;
 assembly. The graph stays the single assembly point.
 """
 
-from . import contract, trend
+from . import contract, copy, design_spec, render, trend
 
-__all__ = ["contract", "trend"]
+__all__ = ["contract", "copy", "design_spec", "render", "trend"]

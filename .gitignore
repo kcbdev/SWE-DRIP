@@ -25,6 +25,7 @@ out/
 
 # Local data / runtime artifacts
 data/
+runs/
 *.sqlite
 *.db
 
