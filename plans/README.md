@@ -33,8 +33,8 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 
 | Order | PBI | Spec | Depends on | State | Plane | Summary |
 |---|---|---|---|---|---|---|
-| 1 | PBI-001 | app-foundation | none | Todo | SWDRP-1 | CP scaffold: Next.js 15 + shadcn brand shell + ADR-002 |
-| 2 | PBI-002 | app-foundation | none | Todo | SWDRP-2 | API scaffold: pyproject + FastAPI health + pipeline package |
+| 1 | PBI-001 | app-foundation | none | In Review | SWDRP-1 | CP scaffold: Next.js 15 + shadcn brand shell + ADR-002 |
+| 2 | PBI-002 | app-foundation | none | Done | SWDRP-2 | API scaffold: pyproject + FastAPI health + pipeline package |
 | 3 | PBI-003 | app-foundation | 001, 002 | Todo | SWDRP-3 | Polyglot gates + local Postgres compose + AGENTS.md §2/§5 |
 | 4 | PBI-004 | auth-rbac | 001, 002 | Todo | SWDRP-4 | Better Auth runtime + FastAPI validation + RBAC + ADR-003 |
 | 5 | PBI-005 | auth-rbac | 004 | Todo | SWDRP-5 | Login + Users & Roles UI + user mgmt endpoints |
