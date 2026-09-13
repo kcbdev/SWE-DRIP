@@ -42,7 +42,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 7 | PBI-007 | audit-log | 006 | In Review | SWDRP-7 | Audit log viewer + export UI |
 | 8 | PBI-008 | dashboard | 006, 004 | In Review | SWDRP-8 | Dashboard summary API (+ model_calls migration) |
 | 9 | PBI-009 | dashboard | 008, 001 | In Review | SWDRP-9 | Dashboard UI (cards, feed, pending top) |
-| 10 | PBI-010 | pipeline-core | 002, 008 | In Progress | SWDRP-10 | State + graph skeleton + OpenRouter client + routing + costs |
+| 10 | PBI-010 | pipeline-core | 002, 008 | In Review | SWDRP-10 | State + graph skeleton + OpenRouter client + routing + costs |
 | 11 | PBI-011 | pipeline-core | 010 | Todo | SWDRP-11 | Nodes 1-2: trend/clustering + contract interrupt |
 | 12 | PBI-012 | pipeline-core | 011 | Todo | SWDRP-12 | Nodes 3-5: copy, design spec, render |
 | 13 | PBI-013 | pipeline-core | 012 | Todo | SWDRP-13 | Nodes 6-8: placement, aesthetic QC + regen, technical QC |
