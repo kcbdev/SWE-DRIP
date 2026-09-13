@@ -175,6 +175,67 @@ if (pkgText !== null) {
   }
 }
 
+// ----------------------------------------------------------- polyglot gates
+// PBI-003: the root verify chain must cover both stacks, and the local-dev
+// harness must exist. Additive only — the checks above are never weakened.
+check(fs.existsSync(path.join(ROOT, ".env.example")), "missing .env.example");
+const envExample = readText(".env.example");
+if (envExample !== null) {
+  for (const key of [
+    "DATABASE_URL",
+    "BETTER_AUTH_SECRET",
+    "OPENROUTER_API_KEY",
+    "FOURTHWALL_MCP_TOKEN",
+  ]) {
+    check(envExample.includes(`${key}=`), `.env.example: missing "${key}="`);
+  }
+}
+
+check(fs.existsSync(path.join(ROOT, "docker-compose.yml")), "missing docker-compose.yml");
+const compose = readText("docker-compose.yml");
+if (compose !== null) {
+  check(
+    compose.includes("pgvector"),
+    "docker-compose.yml: db image must be pgvector-capable"
+  );
+  check(
+    /postgres(ql)?\/data/.test(compose),
+    "docker-compose.yml: db needs a persistent volume"
+  );
+}
+
+for (const rel of [
+  "control-panel/package.json",
+  "api/app/main.py",
+  "pipeline/__init__.py",
+  "collections",
+]) {
+  check(fs.existsSync(path.join(ROOT, rel)), `missing expected path: ${rel}`);
+}
+
+if (pkgText !== null) {
+  try {
+    const pkg = JSON.parse(pkgText);
+    const scripts = pkg.scripts || {};
+    check(
+      typeof scripts["verify:web"] === "string",
+      'package.json: missing script "verify:web"'
+    );
+    check(
+      typeof scripts["verify:api"] === "string",
+      'package.json: missing script "verify:api"'
+    );
+    check(
+      typeof scripts.verify === "string" &&
+        scripts.verify.includes("npm run verify:web") &&
+        scripts.verify.includes("npm run verify:api"),
+      "package.json: verify must chain verify:web and verify:api"
+    );
+  } catch {
+    // invalid JSON already reported in the gate-chain block
+  }
+}
+
 // ------------------------------------------------------------- secret scan
 const SECRET_PATTERNS = [
   /sk-or-[A-Za-z0-9]/,
@@ -183,13 +244,27 @@ const SECRET_PATTERNS = [
   /AKIA[0-9A-Z]{16}/,
   /-----BEGIN [A-Z ]*PRIVATE KEY-----/,
 ];
-const SKIP_DIRS = new Set([".git", "node_modules"]);
+const SKIP_DIRS = new Set([
+  ".git",
+  "node_modules",
+  ".next",
+  "out",
+  "dist",
+  "build",
+  "coverage",
+  "__pycache__",
+  ".venv",
+  "venv",
+  ".pytest_cache",
+  ".ruff_cache",
+  ".mypy_cache",
+]);
 
 const SELF = path.join("scripts", "lint.js");
 
 function walk(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (SKIP_DIRS.has(entry.name)) continue;
+    if (SKIP_DIRS.has(entry.name) || entry.name.endsWith(".egg-info")) continue;
     const abs = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       walk(abs);

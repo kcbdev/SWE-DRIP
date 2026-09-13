@@ -29,33 +29,35 @@ No Paperclip/Hermes in this repo's runtime. No compiled service exists yet — t
 Run from repo root. All gates must pass before any PBI moves to In Review.
 
 ```bash
-# Build — docs-only repo, no compilation
+# Build — docs gates (no compilation) + Control Panel production build
 cmd /c "npm run build"
-# or
-npm run build
+cmd /c "npm run verify:web"   # cd control-panel && next build && vitest run
 
-# Lint — spec-kit contracts + constitution checks (binding, Context Map, no secrets)
+# Lint — spec-kit contracts + constitution checks + polyglot gate checks
 cmd /c "npm run lint"
 # or
 npm run lint   # -> node scripts/lint.js
 
-# Test — smoke suite (node:test, zero deps)
+# Test — docs smoke suite (node:test) + Python suites
 cmd /c "npm test"
-# or
-npm test       # -> node --test tests/*.test.js
+cmd /c "npm run verify:api"   # python -m pytest api/tests pipeline/tests -q
 
-# Full verification (Ralph Loop gate)
+# Full verification (Ralph Loop gate) — docs + web + api, fully offline
 cmd /c "npm run verify"
 # or
-npm run verify # -> build && lint && test
+npm run verify # -> build && lint && test && verify:web && verify:api
 ```
 
-Expected results (baseline 2026-09-13):
-- `build`: `build: docs-only repo, no compilation required` (exit 0)
+Expected results (baseline 2026-09-13, post PBI-001…003):
+- `build` (docs): `build: docs-only repo, no compilation required` (exit 0)
+- `verify:web`: Next.js 15 production build OK + vitest 5/5
+- `verify:api`: pytest 3 passed (grows with PBIs)
 - `lint`: `lint: all contracts OK (N checks)` (exit 0)
-- `test`: 13 tests, 13 pass, 0 fail via `tests/smoke.test.js`
+- `test` (docs): 13 tests, 13 pass via `tests/smoke.test.js`
 
-No PBI may start without a runnable gate. If tests are red, fix gates first. When the app scaffold lands, its PBI adds the real build/lint/test steps here and in `package.json` (or a sibling toolchain config) — the docs-contract checks are kept as a regression gate, not deleted.
+Prerequisites (one-time): `cd control-panel && npm install` and `python -m pip install -e ".[dev]"`. `npm run verify` is fully offline — no network, no Docker, no database. `docker compose up -d db` (pgvector Postgres 17) is for integration work only and is never part of the gate.
+
+No PBI may start without a runnable gate. If tests are red, fix gates first. The docs-contract checks in `scripts/lint.js` / `tests/smoke.test.js` are a permanent regression gate — extend, never weaken.
 
 Windows note (this environment): PowerShell 5.1, `.ps1` wrappers blocked. Use `cmd /c "npm.cmd ..."` / `npx.cmd` or `node` directly. Do not assume POSIX. Paths contain spaces — quote them.
 
@@ -105,14 +107,18 @@ project_structure:
   scripts/:
     responsibility: "Local tooling — gates and helpers that the verify chain invokes."
     contains: "build.js, lint.js"
-  control-panel/ (planned):
-    responsibility: "Next.js 15 + shadcn/ui Control Panel — HITL approvals, run inspection, collections, audit, settings. Layout decided by the scaffold PBI (ADR required if structural)."
-  api/ (planned):
+  control-panel/:
+    responsibility: "Next.js 15 (App Router) + shadcn/ui Control Panel — HITL approvals, run inspection, collections, audit, settings."
+    status: "live scaffold (PBI-001); feature screens land per PBI"
+  api/:
     responsibility: "FastAPI Control Panel API — RBAC, checkpointer read/write, audit writer, SSE stream, Fourthwall MCP client."
-  pipeline/ (planned):
+    status: "live scaffold (PBI-002); health route only"
+  pipeline/:
     responsibility: "LangGraph StateGraph — 11-node pipeline, HITL interrupts, placement/colorway resolver, QC rubric."
-  collections/ (planned):
+    status: "live package placeholder (PBI-002); nodes land PBI-010+"
+  collections/:
     responsibility: "Collection contract YAML files (/collections/<slug>.yaml) — the single source of truth for style/palette/colorways/placement/KPI thresholds."
+    status: "live directory (PBI-003); YAML store lands PBI-019"
 
 documentation_index:
   README.md:
@@ -153,7 +159,7 @@ ADRs live in `docs/adrs/ADR-{NNN}.md`. ADR-001 records the onboarding bootstrap 
 
 ## 7. Verification
 
-See §2. Baseline 2026-09-13: build OK, lint OK, 13/13 smoke tests, Plane binding verified via MCP `plane-kcb`. Evidence is re-runnable with `cmd /c "npm run verify"`.
+See §2. Baseline 2026-09-13 (post PBI-001…003): docs build OK, lint OK, 13/13 smoke tests; Control Panel build OK + vitest 5/5; pytest 3 passed; Plane binding verified via MCP `plane-kcb`. Evidence is re-runnable with `cmd /c "npm run verify"`.
 
 ## 8. Plane binding
 

@@ -11,6 +11,8 @@
     "build": "node scripts/build.js",
     "lint": "node scripts/lint.js",
     "test": "node --test tests/*.test.js",
-    "verify": "npm run build && npm run lint && npm test"
+    "verify:web": "cd control-panel && npm run build && npm run test",
+    "verify:api": "python -m pytest api/tests pipeline/tests -q",
+    "verify": "npm run build && npm run lint && npm test && npm run verify:web && npm run verify:api"
   }
 }

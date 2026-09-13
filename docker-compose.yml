@@ -1,0 +1,31 @@
+# SWE Drip V1 — local development stack.
+#
+# `docker compose up -d db` provides a pgvector-capable Postgres 17 for
+# integration work (LangGraph checkpointer + audit/users tables). The
+# deterministic gate (`npm run verify`) never requires this service.
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: swe-drip-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-swe_drip}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-swe_drip}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - swe_drip_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-swe_drip} -d ${POSTGRES_DB:-swe_drip}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  swe_drip_pgdata:
