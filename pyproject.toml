@@ -28,7 +28,7 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["api", "api.app", "pipeline"]
+packages = ["api", "api.app", "api.app.routers", "pipeline"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

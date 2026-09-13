@@ -7,6 +7,7 @@ database and no network access.
 from fastapi import FastAPI
 
 from .config import settings
+from .routers import me
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
@@ -15,3 +16,6 @@ app = FastAPI(title=settings.app_name, version=settings.app_version)
 def health() -> dict[str, str]:
     """Liveness probe. Intentionally free of database/external dependencies."""
     return {"status": "ok"}
+
+
+app.include_router(me.router)
