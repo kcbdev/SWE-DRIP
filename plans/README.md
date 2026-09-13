@@ -8,7 +8,7 @@ Bound to Plane: **kcb / SWDRP (d162b6d4-1205-4eea-9ef3-871354c5e8a3)** — verif
 Backlog ignored until moved to `Todo` — only `Todo` issues are candidate feature inputs; every planned PBI is pushed as a `Todo` issue and linked in its card (`Plane: kcb/SWDRP-N`).
 
 - 2026-09-13: onboarding seed pull — 0 `Todo` issues found (project created same day)
-- 2026-09-13: push-create — 35 PBIs → `kcb/SWDRP` (`Todo`); mapping recorded below after creation
+- 2026-09-13: push-create — 35 issues created in `kcb/SWDRP` (`Todo`), linked in each PBI card (`Plane: kcb/<identifier>`); range SWDRP-1 … SWDRP-35
 - Next sync: `asdlc-execute` moves issues through `In Progress` → `In Review` → `Done` with resolution comments; `asdlc-plane` strictly scoped to `kcb/SWDRP`
 
 ## Spec index
@@ -33,41 +33,41 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 
 | Order | PBI | Spec | Depends on | State | Plane | Summary |
 |---|---|---|---|---|---|---|
-| 1 | PBI-001 | app-foundation | none | Todo | — | CP scaffold: Next.js 15 + shadcn brand shell + ADR-002 |
-| 2 | PBI-002 | app-foundation | none | Todo | — | API scaffold: pyproject + FastAPI health + pipeline package |
-| 3 | PBI-003 | app-foundation | 001, 002 | Todo | — | Polyglot gates + local Postgres compose + AGENTS.md §2/§5 |
-| 4 | PBI-004 | auth-rbac | 001, 002 | Todo | — | Better Auth runtime + FastAPI validation + RBAC + ADR-003 |
-| 5 | PBI-005 | auth-rbac | 004 | Todo | — | Login + Users & Roles UI + user mgmt endpoints |
-| 6 | PBI-006 | audit-log | 004, 002 | Todo | — | Audit writer + read API + auth-event hook |
-| 7 | PBI-007 | audit-log | 006 | Todo | — | Audit log viewer + export UI |
-| 8 | PBI-008 | dashboard | 006, 004 | Todo | — | Dashboard summary API (+ model_calls migration) |
-| 9 | PBI-009 | dashboard | 008, 001 | Todo | — | Dashboard UI (cards, feed, pending top) |
-| 10 | PBI-010 | pipeline-core | 002, 008 | Todo | — | State + graph skeleton + OpenRouter client + routing + costs |
-| 11 | PBI-011 | pipeline-core | 010 | Todo | — | Nodes 1-2: trend/clustering + contract interrupt |
-| 12 | PBI-012 | pipeline-core | 011 | Todo | — | Nodes 3-5: copy, design spec, render |
-| 13 | PBI-013 | pipeline-core | 012 | Todo | — | Nodes 6-8: placement, aesthetic QC + regen, technical QC |
-| 14 | PBI-014 | pipeline-core | 013 | Todo | — | Nodes 9-11: FW draft create, publish gate, shelf |
-| 15 | PBI-015 | pipeline-core | 014, 003, 010 | Todo | — | Parity harness + checkpointer + routing audit (A4/A5/A6) |
-| 16 | PBI-016 | hitl-approvals | 010, 004, 006 | Todo | — | Resume service + approvals queue API |
-| 17 | PBI-017 | hitl-approvals | 016 | Todo | — | SSE stream |
-| 18 | PBI-018 | hitl-approvals | 016, 017, 001 | Todo | — | Approvals screen |
-| 19 | PBI-019 | collections | 004, 006, 008 | Todo | — | YAML store + CRUD API |
-| 20 | PBI-020 | collections | 019, 016, 011 | Todo | — | Lifecycle: candidates, approve (A8), retire + survivor (A9) |
-| 21 | PBI-021 | collections | 020, 001 | Todo | — | Collections UI |
-| 22 | PBI-022 | design-qc | 013 | Todo | — | Rubric calibration suite (A10) + regen evidence (A12) |
-| 23 | PBI-023 | design-qc | 016, 013, 010 | Todo | — | Design detail + calibration API |
-| 24 | PBI-024 | design-qc | 023, 018, 001 | Todo | — | Design QC screen |
-| 25 | PBI-025 | fourthwall-integration | 002 | Todo | — | FW MCP read client |
-| 26 | PBI-026 | fourthwall-integration | 025 | Todo | — | Product-create spike + ADR-004 (A13, manual) |
-| 27 | PBI-027 | fourthwall-integration | 026, 014, 016, 025 | Todo | — | Publish cutover + old-path check (A14/A15, manual) |
-| 28 | PBI-028 | traceability | 010, 004, 006 | Todo | — | Runs + replay API (A18) |
-| 29 | PBI-029 | traceability | 028, 001 | Todo | — | Runs UI (tracker, inspector, replay) |
-| 30 | PBI-030 | catalog-analytics | 025, 004, 001 | Todo | — | Catalog mirror API + screen |
-| 31 | PBI-031 | catalog-analytics | 025, 019, 004, 001 | Todo | — | KPI analytics API + dashboards |
-| 32 | PBI-032 | catalog-analytics | 031, 025 | Todo | — | FW webhook + analytics trigger (A17) |
-| 33 | PBI-033 | settings-agents | 004, 006, 010, 001 | Todo | — | Settings: HITL toggles, brand lock, integrations |
-| 34 | PBI-034 | settings-agents | 010, 008, 004, 006, 001 | Todo | — | Agents roster + budget caps (FR-17) |
-| 35 | PBI-035 | hitl-graduation | 033, 022, 027, 024 | Todo | — | Graduation decision record (A19, manual) |
+| 1 | PBI-001 | app-foundation | none | Todo | SWDRP-1 | CP scaffold: Next.js 15 + shadcn brand shell + ADR-002 |
+| 2 | PBI-002 | app-foundation | none | Todo | SWDRP-2 | API scaffold: pyproject + FastAPI health + pipeline package |
+| 3 | PBI-003 | app-foundation | 001, 002 | Todo | SWDRP-3 | Polyglot gates + local Postgres compose + AGENTS.md §2/§5 |
+| 4 | PBI-004 | auth-rbac | 001, 002 | Todo | SWDRP-4 | Better Auth runtime + FastAPI validation + RBAC + ADR-003 |
+| 5 | PBI-005 | auth-rbac | 004 | Todo | SWDRP-5 | Login + Users & Roles UI + user mgmt endpoints |
+| 6 | PBI-006 | audit-log | 004, 002 | Todo | SWDRP-6 | Audit writer + read API + auth-event hook |
+| 7 | PBI-007 | audit-log | 006 | Todo | SWDRP-7 | Audit log viewer + export UI |
+| 8 | PBI-008 | dashboard | 006, 004 | Todo | SWDRP-8 | Dashboard summary API (+ model_calls migration) |
+| 9 | PBI-009 | dashboard | 008, 001 | Todo | SWDRP-9 | Dashboard UI (cards, feed, pending top) |
+| 10 | PBI-010 | pipeline-core | 002, 008 | Todo | SWDRP-10 | State + graph skeleton + OpenRouter client + routing + costs |
+| 11 | PBI-011 | pipeline-core | 010 | Todo | SWDRP-11 | Nodes 1-2: trend/clustering + contract interrupt |
+| 12 | PBI-012 | pipeline-core | 011 | Todo | SWDRP-12 | Nodes 3-5: copy, design spec, render |
+| 13 | PBI-013 | pipeline-core | 012 | Todo | SWDRP-13 | Nodes 6-8: placement, aesthetic QC + regen, technical QC |
+| 14 | PBI-014 | pipeline-core | 013 | Todo | SWDRP-14 | Nodes 9-11: FW draft create, publish gate, shelf |
+| 15 | PBI-015 | pipeline-core | 014, 003, 010 | Todo | SWDRP-15 | Parity harness + checkpointer + routing audit (A4/A5/A6) |
+| 16 | PBI-016 | hitl-approvals | 010, 004, 006 | Todo | SWDRP-16 | Resume service + approvals queue API |
+| 17 | PBI-017 | hitl-approvals | 016 | Todo | SWDRP-17 | SSE stream |
+| 18 | PBI-018 | hitl-approvals | 016, 017, 001 | Todo | SWDRP-18 | Approvals screen |
+| 19 | PBI-019 | collections | 004, 006, 008 | Todo | SWDRP-19 | YAML store + CRUD API |
+| 20 | PBI-020 | collections | 019, 016, 011 | Todo | SWDRP-20 | Lifecycle: candidates, approve (A8), retire + survivor (A9) |
+| 21 | PBI-021 | collections | 020, 001 | Todo | SWDRP-21 | Collections UI |
+| 22 | PBI-022 | design-qc | 013 | Todo | SWDRP-22 | Rubric calibration suite (A10) + regen evidence (A12) |
+| 23 | PBI-023 | design-qc | 016, 013, 010 | Todo | SWDRP-23 | Design detail + calibration API |
+| 24 | PBI-024 | design-qc | 023, 018, 001 | Todo | SWDRP-24 | Design QC screen |
+| 25 | PBI-025 | fourthwall-integration | 002 | Todo | SWDRP-25 | FW MCP read client |
+| 26 | PBI-026 | fourthwall-integration | 025 | Todo | SWDRP-26 | Product-create spike + ADR-004 (A13, manual) |
+| 27 | PBI-027 | fourthwall-integration | 026, 014, 016, 025 | Todo | SWDRP-27 | Publish cutover + old-path check (A14/A15, manual) |
+| 28 | PBI-028 | traceability | 010, 004, 006 | Todo | SWDRP-28 | Runs + replay API (A18) |
+| 29 | PBI-029 | traceability | 028, 001 | Todo | SWDRP-29 | Runs UI (tracker, inspector, replay) |
+| 30 | PBI-030 | catalog-analytics | 025, 004, 001 | Todo | SWDRP-30 | Catalog mirror API + screen |
+| 31 | PBI-031 | catalog-analytics | 025, 019, 004, 001 | Todo | SWDRP-31 | KPI analytics API + dashboards |
+| 32 | PBI-032 | catalog-analytics | 031, 025 | Todo | SWDRP-32 | FW webhook + analytics trigger (A17) |
+| 33 | PBI-033 | settings-agents | 004, 006, 010, 001 | Todo | SWDRP-33 | Settings: HITL toggles, brand lock, integrations |
+| 34 | PBI-034 | settings-agents | 010, 008, 004, 006, 001 | Todo | SWDRP-34 | Agents roster + budget caps (FR-17) |
+| 35 | PBI-035 | hitl-graduation | 033, 022, 027, 024 | Todo | SWDRP-35 | Graduation decision record (A19, manual) |
 
 _State moves Todo → In Progress → In Review → Done via `asdlc-execute`; the Plane column is filled by the sync below._
 
