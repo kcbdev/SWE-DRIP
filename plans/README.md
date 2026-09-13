@@ -37,7 +37,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 2 | PBI-002 | app-foundation | none | Done | SWDRP-2 | API scaffold: pyproject + FastAPI health + pipeline package |
 | 3 | PBI-003 | app-foundation | 001, 002 | In Review | SWDRP-3 | Polyglot gates + local Postgres compose + AGENTS.md §2/§5 |
 | 4 | PBI-004 | auth-rbac | 001, 002 | In Review | SWDRP-4 | Better Auth runtime + FastAPI validation + RBAC + ADR-003 |
-| 5 | PBI-005 | auth-rbac | 004 | Todo | SWDRP-5 | Login + Users & Roles UI + user mgmt endpoints |
+| 5 | PBI-005 | auth-rbac | 004 | In Review | SWDRP-5 | Login + Users & Roles UI + user mgmt endpoints |
 | 6 | PBI-006 | audit-log | 004, 002 | Todo | SWDRP-6 | Audit writer + read API + auth-event hook |
 | 7 | PBI-007 | audit-log | 006 | Todo | SWDRP-7 | Audit log viewer + export UI |
 | 8 | PBI-008 | dashboard | 006, 004 | Todo | SWDRP-8 | Dashboard summary API (+ model_calls migration) |

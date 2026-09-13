@@ -7,7 +7,7 @@ database and no network access.
 from fastapi import FastAPI
 
 from .config import settings
-from .routers import me
+from .routers import me, users
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
@@ -19,3 +19,4 @@ def health() -> dict[str, str]:
 
 
 app.include_router(me.router)
+app.include_router(users.router)
