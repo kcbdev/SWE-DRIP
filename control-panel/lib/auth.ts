@@ -2,6 +2,8 @@ import { betterAuth } from "better-auth";
 import { admin } from "better-auth/plugins";
 import { Pool } from "pg";
 
+import { SYSTEM_ACTOR, authEventForPath, writeAudit } from "./audit";
+
 /**
  * Better Auth is the single auth runtime (spec C1). It owns credential storage
  * and session lifecycle in the shared Postgres; FastAPI only validates the
@@ -28,4 +30,19 @@ export const auth = betterAuth({
       adminRoles: ["admin"],
     }),
   ],
+  hooks: {
+    // Auth events are written to the shared audit_log table (spec C4). Failures
+    // never block authentication; the event is best-effort from the hook.
+    after: async (ctx: any) => {
+      const event = authEventForPath(ctx?.path ?? "");
+      if (!event) return;
+      const session = ctx?.context?.newSession;
+      await writeAudit({
+        actorUserId: session?.userId ?? SYSTEM_ACTOR,
+        action: event.action,
+        entityType: event.entityType,
+        entityId: session?.id ?? null,
+      }).catch(() => undefined);
+    },
+  },
 });
