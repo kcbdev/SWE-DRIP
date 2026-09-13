@@ -79,10 +79,11 @@ def test_hitl_defaults_match_vision_table() -> None:
     }
     graph = build_graph(checkpointer=MemorySaver())
     result = graph.invoke({"design_id": "d-2"}, {"configurable": {"thread_id": "defaults"}})
-    # Empty input: node 2 records an error instead of interrupting on nothing;
-    # the run then pauses at node 7, the next default-on gate.
+    # Empty input: real nodes 2–8 record errors instead of interrupting on
+    # nothing (PBI-011/012/013); the run pauses at node 10, the next
+    # default-on placeholder gate.
     assert "__interrupt__" in result
-    assert result["visited"] == NODE_ORDER[:6]
+    assert result["visited"] == NODE_ORDER[:9]
 
 
 def test_hitl_toggle_is_config_not_structure() -> None:

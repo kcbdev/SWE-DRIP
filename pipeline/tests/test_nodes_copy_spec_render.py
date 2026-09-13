@@ -52,8 +52,9 @@ GOOD_COPY = {
 }
 
 
-def _png_bytes(width: int = 256, height: int = 256) -> bytes:
-    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+def _png_bytes(width: int = 256, height: int = 256, color_type: int = 6) -> bytes:
+    # RGBA by default so technical QC (PBI-013) passes on render fixtures.
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, color_type, 0, 0, 0)
     return b"\x89PNG\r\n\x1a\n" + struct.pack(">I", 13) + b"IHDR" + ihdr + b"\x00" * 4 + b"\x00\x00\x00\x00IEND"
 
 
@@ -283,11 +284,18 @@ def test_nodes_3_to_5_wired_end_to_end(tmp_path: Path) -> None:
         if request.url.path.endswith("/images/generations"):
             payload = base64.b64encode(_png_bytes()).decode()
             return httpx.Response(200, json={"data": [{"b64_json": payload}], "usage": {}})
-        prompt = body["messages"][0]["content"]
+        content = body["messages"][0]["content"]
+        if isinstance(content, list):  # multimodal vision blocks
+            prompt = " ".join(b.get("text", "") for b in content if isinstance(b, dict))
+        else:
+            prompt = content
         if "thematic clusters" in prompt:
             reply = {"clusters": [{"theme": "Vibe Coding", "brief_ids": ["b1", "b2"]}]  }
         elif "listing copy" in prompt:
             reply = GOOD_COPY
+        elif "rubric" in prompt:
+            reply = {"style_cohesion": 80, "focal_point": 80, "placement_fit": 80,
+                     "contrast": 80}
         else:
             reply = {"rcao": "r", "render_prompt": "a monochrome terminal"}
         return httpx.Response(
@@ -301,7 +309,7 @@ def test_nodes_3_to_5_wired_end_to_end(tmp_path: Path) -> None:
         {"design_id": "d-e2e", "brief": BRIEF, "briefs": briefs},
         {"configurable": {"thread_id": "n3-wire", "hitl": {n: False for n in NODE_ORDER},
                            "llm_client": client, "cost_engine": engine,
-                           "run_dir": str(tmp_path)}},
+                           "run_dir": str(tmp_path), "design_type": "hero-icon"}},
     )
     assert result["visited"] == NODE_ORDER
     assert result["listing_copy"]["slogan"] == "Ship It Live"
@@ -309,6 +317,11 @@ def test_nodes_3_to_5_wired_end_to_end(tmp_path: Path) -> None:
     assert result["design_spec"]["style"] == "mono-log"
     assert result["design_spec"]["palette"] == result["collection_contract"]["illustration_rules"]["palette"]
     assert result["render_result"]["model_used"] == "riverflow-v2-pro"
+    # PBI-013: draft contracts carry no placement templates, so placement
+    # records the gap (CEO fills templates) while QC passes on the render:
+    assert any("no placement template" in e for e in result["errors"])
+    assert result["aesthetic_qc"]["result"] == "pass"
+    assert result["technical_qc"]["passed"] is True
     assert {row["node"] for row in engine.rows} >= {
-        "trend_research", "listing_copy", "design_spec", "art_render",
+        "trend_research", "listing_copy", "design_spec", "art_render", "aesthetic_qc",
     }

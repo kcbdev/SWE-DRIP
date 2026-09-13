@@ -61,6 +61,8 @@ class RunState(TypedDict, total=False):
     fw_product: dict[str, Any]
     publish_decision: dict[str, Any]
     shelf_result: dict[str, Any]
+    # Regen channel node 7 → node 5 (declared: StateGraph drops undeclared keys).
+    render_feedback: str
     # Run bookkeeping (append-only reducers).
     visited: Annotated[list[str], operator.add]
     errors: Annotated[list[str], operator.add]

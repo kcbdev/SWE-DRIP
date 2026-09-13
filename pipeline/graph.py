@@ -61,6 +61,19 @@ def _placeholder(name: str) -> Callable[..., dict[str, Any]]:
     return run
 
 
+def route_after_aesthetic_qc(state: RunState) -> str:
+    """Conditional edge (PBI-013): regen loop back to render, else onward.
+
+    Fail verdict + fresh feedback → ``art_render`` (placement re-runs
+    deterministically afterwards at zero model cost). Pass, human-review, or
+    fail-without-feedback → ``technical_qc``.
+    """
+    verdict = state.get("aesthetic_qc") or {}
+    if verdict.get("result") == "fail" and state.get("render_feedback"):
+        return "art_render"
+    return "technical_qc"
+
+
 def build_graph(checkpointer=None):
     """Assemble and compile the locked 11-node graph."""
     from . import nodes  # noqa: F401 — triggers register_node calls before assembly
@@ -69,7 +82,12 @@ def build_graph(checkpointer=None):
     previous = START
     for name in NODE_ORDER:
         builder.add_node(name, _NODE_IMPLS.get(name, _placeholder(name)))
-        builder.add_edge(previous, name)
+        if previous == "aesthetic_qc":
+            builder.add_conditional_edges(
+                previous, route_after_aesthetic_qc, ["art_render", "technical_qc"]
+            )
+        else:
+            builder.add_edge(previous, name)
         previous = name
     builder.add_edge(previous, END)
     return builder.compile(checkpointer=checkpointer)

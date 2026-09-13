@@ -81,12 +81,19 @@ def art_render(state: RunState, config: RunnableConfig = None) -> dict[str, Any]
     assert primary is not None  # routed per §3; None would be a routing-table bug
     models = [primary, *IMAGE_FALLBACKS]
 
+    # Regeneration feedback from aesthetic QC (PBI-013) augments the prompt.
+    # Overwritten per cycle by node 7 — never accumulated.
+    feedback = (state.get("render_feedback") or "").strip()
+    prompt = spec["render_prompt"]
+    if feedback:
+        prompt = f"{prompt}\n\nREGENERATION FEEDBACK — address every point:\n{feedback}"
+
     result = None
     used_model = None
     failures: list[str] = []
     for candidate in models:
         try:
-            result = client.image(model=candidate, prompt=spec["render_prompt"])
+            result = client.image(model=candidate, prompt=prompt)
             used_model = candidate
             break
         except Exception as exc:  # try next model; all failing is loud below
@@ -101,6 +108,10 @@ def art_render(state: RunState, config: RunnableConfig = None) -> dict[str, Any]
     run_dir = Path(cfg.get("run_dir") or f"runs/{design_id}")
     run_dir.mkdir(parents=True, exist_ok=True)
     artifact = run_dir / "render.png"
+    suffix = 2
+    while artifact.exists():  # regen cycles must not overwrite prior attempts
+        artifact = run_dir / f"render-r{suffix}.png"
+        suffix += 1
     artifact.write_bytes(image_bytes)
 
     render_ref = {
@@ -137,6 +148,8 @@ def art_render(state: RunState, config: RunnableConfig = None) -> dict[str, Any]
         },
         "visited": [NODE],
     }
+    if feedback:
+        output["render_feedback"] = ""  # consumed; node 7 sets it fresh per cycle
     if errors:
         output["errors"] = errors
     return output
