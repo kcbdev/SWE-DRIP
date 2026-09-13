@@ -44,6 +44,8 @@ class RunState(TypedDict, total=False):
 
     design_id: str
     collection_id: str
+    # Input briefs for node 1 (declared: StateGraph drops undeclared keys).
+    briefs: list[dict[str, Any]]
     brief: Brief
     render: Render
     qc_scores: QCScores

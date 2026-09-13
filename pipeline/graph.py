@@ -63,6 +63,8 @@ def _placeholder(name: str) -> Callable[..., dict[str, Any]]:
 
 def build_graph(checkpointer=None):
     """Assemble and compile the locked 11-node graph."""
+    from . import nodes  # noqa: F401 — triggers register_node calls before assembly
+
     builder = StateGraph(RunState)
     previous = START
     for name in NODE_ORDER:

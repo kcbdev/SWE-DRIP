@@ -56,15 +56,33 @@ def test_run_state_inspectable_from_checkpointer() -> None:
     assert snapshot.values["visited"] == NODE_ORDER
 
 
-def test_hitl_defaults_interrupt_without_config() -> None:
-    """Vision §3.2 defaults: gates fire with no flags passed at all."""
+def test_hitl_defaults_match_vision_table() -> None:
+    """Vision §3.2 defaults: gates on nodes 2/7/10, off everywhere else.
+
+    (PBI-011: placeholders for nodes 1–2 are real now, so the behavioral
+    default-interrupt assertion lives in test_nodes_trend_contract.py, where
+    the contract node pauses with drafts. An empty run records the missing
+    input as an error instead of interrupting on nothing.)
+    """
+    assert DEFAULT_HITL == {
+        "trend_research": False,
+        "contract_approval": True,
+        "listing_copy": False,
+        "design_spec": False,
+        "art_render": False,
+        "placement": False,
+        "aesthetic_qc": True,
+        "technical_qc": False,
+        "fw_create": False,
+        "publish_gate": True,
+        "shelf": False,
+    }
     graph = build_graph(checkpointer=MemorySaver())
-    result = graph.invoke(
-        {"design_id": "d-2"}, {"configurable": {"thread_id": "defaults"}}
-    )
+    result = graph.invoke({"design_id": "d-2"}, {"configurable": {"thread_id": "defaults"}})
+    # Empty input: node 2 records an error instead of interrupting on nothing;
+    # the run then pauses at node 7, the next default-on gate.
     assert "__interrupt__" in result
-    assert result["visited"] == ["trend_research"]  # stopped at node 2
-    assert DEFAULT_HITL["contract_approval"] is True
+    assert result["visited"] == NODE_ORDER[:6]
 
 
 def test_hitl_toggle_is_config_not_structure() -> None:
