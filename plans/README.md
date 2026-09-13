@@ -46,7 +46,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 11 | PBI-011 | pipeline-core | 010 | In Review | SWDRP-11 | Nodes 1-2: trend/clustering + contract interrupt |
 | 12 | PBI-012 | pipeline-core | 011 | In Review | SWDRP-12 | Nodes 3-5: copy, design spec, render |
 | 13 | PBI-013 | pipeline-core | 012 | In Review | SWDRP-13 | Nodes 6-8: placement, aesthetic QC + regen, technical QC |
-| 14 | PBI-014 | pipeline-core | 013 | Todo | SWDRP-14 | Nodes 9-11: FW draft create, publish gate, shelf |
+| 14 | PBI-014 | pipeline-core | 013 | In Review | SWDRP-14 | Nodes 9-11: FW draft create, publish gate, shelf |
 | 15 | PBI-015 | pipeline-core | 014, 003, 010 | Todo | SWDRP-15 | Parity harness + checkpointer + routing audit (A4/A5/A6) |
 | 16 | PBI-016 | hitl-approvals | 010, 004, 006 | Todo | SWDRP-16 | Resume service + approvals queue API |
 | 17 | PBI-017 | hitl-approvals | 016 | Todo | SWDRP-17 | SSE stream |
