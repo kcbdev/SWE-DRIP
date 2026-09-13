@@ -1,0 +1,13 @@
+{
+  "name": "sample-a: vibe-coding tees",
+  "design_id": "parity-a",
+  "collection_id": "vibe-coding",
+  "design_type": "hero-icon",
+  "brief": {"subject": "Vibe Coding", "text": "a tee about vibe coding", "style": "mono-log"},
+  "briefs": [
+    {"id": "b1", "subject": "Vibe Coding", "text": "tee about vibe coding", "style": "mono-log",
+     "engagement": 35, "novelty": 20, "specificity": 15},
+    {"id": "b2", "subject": "Vibe Coding", "text": "hoodie about vibe coding", "style": "mono-log",
+     "engagement": 30, "novelty": 20, "specificity": 12}
+  ]
+}

@@ -45,13 +45,14 @@ cmd /c "npm run verify:api"   # python -m pytest api/tests pipeline/tests -q
 # Full verification (Ralph Loop gate) — docs + web + api, fully offline
 cmd /c "npm run verify"
 # or
-npm run verify # -> build && lint && test && verify:web && verify:api
+npm run verify # -> build && lint && test && verify:web && verify:api && verify:parity
 ```
 
 Expected results (baseline 2026-09-13, post PBI-001…003):
 - `build` (docs): `build: docs-only repo, no compilation required` (exit 0)
 - `verify:web`: Next.js 15 production build OK + vitest 5/5
 - `verify:api`: pytest 3 passed (grows with PBIs)
+- `verify:parity`: A4 harness exit 0 offline (PBI-015+; live mode is an explicit flag, never in gates)
 - `lint`: `lint: all contracts OK (N checks)` (exit 0)
 - `test` (docs): 13 tests, 13 pass via `tests/smoke.test.js`
 
