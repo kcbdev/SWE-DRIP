@@ -12,7 +12,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Optional, Protocol
 
-import yaml
 from sqlalchemy import text
 
 from .db import get_engine
@@ -109,18 +108,17 @@ class SqlCostReader:
 
 
 class FileCollectionsReader:
-    """Glob ``collections/*.yaml`` inline (the shared store module is PBI-019's)."""
+    """Contracts via the shared YAML store (PBI-019) — same dict shape as before."""
 
     def contracts(self) -> list[dict[str, Any]]:
-        contracts: list[dict[str, Any]] = []
-        if not COLLECTIONS_DIR.is_dir():
-            return contracts
-        for path in sorted(COLLECTIONS_DIR.glob("*.yaml")):
-            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-            if isinstance(data, dict):
-                data.setdefault("slug", path.stem)
-                contracts.append(data)
-        return contracts
+        from .collections_store import get_collections_store
+
+        try:
+            return [record["contract"] for record in get_collections_store().list()]
+        except Exception:  # noqa: BLE001 - source failure must not 500 the dashboard
+            if not COLLECTIONS_DIR.is_dir():
+                return []
+            raise
 
 
 class EmptyPendingApprovalsReader:
