@@ -8,6 +8,7 @@ import { isAdmin } from "@/lib/api";
 const NAV = [
   { href: "/", label: "Dashboard", adminOnly: false },
   { href: "/approvals", label: "Approvals", adminOnly: false },
+  { href: "/collections", label: "Collections", adminOnly: false },
   { href: "/audit", label: "Audit Log", adminOnly: false },
   { href: "/settings/users", label: "Users & Roles", adminOnly: true },
 ];

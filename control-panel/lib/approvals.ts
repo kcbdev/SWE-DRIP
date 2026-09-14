@@ -69,11 +69,13 @@ export function waitingAge(iso: string | null, nowMs: number = Date.now()): stri
 
 /**
  * Detail route for a queue item where one exists, else null.
- * No gate-specific detail screens ship yet (collections PBI-021, design-qc
- * PBI-024, runs PBI-029) — rows render the run id until those land.
+ * Collection gates deep-link to the Collections screen (PBI-021); design and
+ * run detail routes land with PBI-024 / PBI-029.
  */
 export function detailHrefFor(item: ApprovalItem): string | null {
-  void item;
+  if (item.entity_ref.type === "collection_contract" && item.entity_ref.id) {
+    return `/collections/${item.entity_ref.id}`;
+  }
   return null;
 }
 

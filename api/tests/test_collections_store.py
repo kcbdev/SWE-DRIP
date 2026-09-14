@@ -122,8 +122,10 @@ def test_atomic_write_leaves_no_tmp_residue(store: CollectionsStore) -> None:
 def test_mtime_conflict_rejects_stale_update(store: CollectionsStore) -> None:
     created = store.create(_draft())
     store.update("vibe-coding", {"theme": "changed underneath"})
+    # Deterministically stale: any mtime older than the stored one conflicts,
+    # regardless of filesystem timestamp granularity.
     with pytest.raises(MtimeConflict):
-        store.update("vibe-coding", {"theme": "stale"}, expected_mtime=created["mtime"])
+        store.update("vibe-coding", {"theme": "stale"}, expected_mtime=created["mtime"] - 1)
     assert store.get("vibe-coding")["contract"]["theme"] == "changed underneath"
 
 

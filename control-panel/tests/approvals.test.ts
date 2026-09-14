@@ -47,7 +47,10 @@ describe("approvals helpers", () => {
     expect(rejectNoteValid("off-brand")).toBe(true);
   });
 
-  it("has no detail routes until gate screens land", () => {
-    expect(detailHrefFor(item(1, "contract_approval"))).toBeNull();
+  it("deep-links collection gates to the Collections screen", () => {
+    const row = item(1, "contract_approval");
+    row.entity_ref = { type: "collection_contract", id: "vibe-coding", label: "Vibe" };
+    expect(detailHrefFor(row)).toBe("/collections/vibe-coding");
+    expect(detailHrefFor(item(2, "publish_gate"))).toBeNull(); // no route yet (PBI-029)
   });
 });
