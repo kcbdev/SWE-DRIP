@@ -92,6 +92,7 @@ def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
         "failing": evaluation["failing"],
         "attempts": attempt,
         "model_used": model,
+        "rubric_version": rubric.RUBRIC_VERSION,
     }
     output: dict[str, Any] = {"visited": [NODE]}
     if evaluation["result"] == "pass":

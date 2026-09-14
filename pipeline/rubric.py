@@ -20,6 +20,11 @@ PASS_THRESHOLD = 70
 
 MAX_REGEN_RETRIES = 2
 
+# Stored with every aesthetic-QC verdict (design-qc spec Decisions) so
+# calibration stays interpretable if the rubric prompt ever changes. Bump on
+# any prompt change; scoring-logic changes need a spec amendment (PBI-022).
+RUBRIC_VERSION = 1
+
 
 def build_qc_prompt(
     design_subject: str,

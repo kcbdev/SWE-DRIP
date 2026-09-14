@@ -1,0 +1,15 @@
+{
+  "name": "rocket (known positive)",
+  "description": "Single mono-line rocket icon, bold terminal-green stroke on void black, centered in the chest zone with clear margins, one focal point, high contrast on every valid colorway.",
+  "image_provenance": "Pinned representation — no binary fixture is stored in the repo. The live script (scripts/qc_calibration.py --live) scores the real render; this file pins the model response that run produced, plus the rubric version it was scored under.",
+  "rubric_version": 1,
+  "pass_threshold": 70,
+  "pinned_vision_response": {
+    "style_cohesion": 88,
+    "focal_point": 92,
+    "placement_fit": 85,
+    "contrast": 90,
+    "notes": "Locked style throughout; one focal point; fits chest zone; readable on all colorways."
+  },
+  "expected": "pass"
+}
