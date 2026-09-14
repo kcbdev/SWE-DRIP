@@ -11,6 +11,7 @@ const NAV = [
   { href: "/collections", label: "Collections", adminOnly: false },
   { href: "/designs", label: "Design QC", adminOnly: false },
   { href: "/runs", label: "Runs", adminOnly: false },
+  { href: "/analytics", label: "Analytics", adminOnly: false },
   { href: "/catalog", label: "Catalog", adminOnly: false },
   { href: "/audit", label: "Audit Log", adminOnly: false },
   { href: "/settings/users", label: "Users & Roles", adminOnly: true },
