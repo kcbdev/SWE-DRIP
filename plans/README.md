@@ -58,8 +58,8 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 23 | PBI-023 | design-qc | 016, 013, 010 | Done | SWDRP-23 | Design detail + calibration API |
 | 24 | PBI-024 | design-qc | 023, 018, 001 | In Review | SWDRP-24 | Design QC screen |
 | 25 | PBI-025 | fourthwall-integration | 002 | In Review | SWDRP-25 | FW MCP read client |
-| 26 | PBI-026 | fourthwall-integration | 025 | Todo | SWDRP-26 | Product-create spike + ADR-004 (A13, manual) |
-| 27 | PBI-027 | fourthwall-integration | 026, 014, 016, 025 | Todo | SWDRP-27 | Publish cutover + old-path check (A14/A15, manual) |
+| 26 | PBI-026 | fourthwall-integration | 025 | In Review | SWDRP-26 | Product-create spike + ADR-004 (A13, manual) |
+| 27 | PBI-027 | fourthwall-integration | 026, 014, 016, 025 | Blocked | SWDRP-27 | Publish cutover + old-path check (A14/A15, manual) |
 | 28 | PBI-028 | traceability | 010, 004, 006 | Todo | SWDRP-28 | Runs + replay API (A18) |
 | 29 | PBI-029 | traceability | 028, 001 | Todo | SWDRP-29 | Runs UI (tracker, inspector, replay) |
 | 30 | PBI-030 | catalog-analytics | 025, 004, 001 | Todo | SWDRP-30 | Catalog mirror API + screen |
