@@ -76,6 +76,9 @@ export function detailHrefFor(item: ApprovalItem): string | null {
   if (item.entity_ref.type === "collection_contract" && item.entity_ref.id) {
     return `/collections/${item.entity_ref.id}`;
   }
+  if (item.node === "aesthetic_qc") {
+    return `/designs/${item.run_id}`;
+  }
   return null;
 }
 

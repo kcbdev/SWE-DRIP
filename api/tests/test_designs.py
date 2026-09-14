@@ -11,6 +11,7 @@ from api.app.auth import ROLE_ADMIN, ROLE_VIEWER, Actor, get_current_actor
 from api.app.designs import calibration_for, design_detail_from_state
 from api.app.hitl import HitlStale, InterruptInfo, get_approval_index, get_gate_source, get_graph_runner
 from api.app.routers import designs as designs_router
+from api.app.routers.designs import get_runs_root
 
 
 def _state() -> dict[str, Any]:
@@ -173,3 +174,52 @@ def test_pure_mappers_handle_empty_state() -> None:
     assert detail["qc"] is None and detail["render"]["file_url"] is None
     joined = calibration_for(detail, [])
     assert joined["agreement"] is None
+
+
+# ------------------------------------------------------------------- render
+
+
+def _png_bytes() -> bytes:
+    import struct
+
+    ihdr = struct.pack(">IIBBBBB", 64, 64, 8, 6, 0, 0, 0)
+    return b"\x89PNG\r\n\x1a\n" + struct.pack(">I", 13) + b"IHDR" + ihdr + b"\x00" * 4
+
+
+def test_render_serves_png_same_origin(tmp_path) -> None:
+    runs = tmp_path / "runs"
+    (runs / "d-1").mkdir(parents=True)
+    (runs / "d-1" / "render.png").write_bytes(_png_bytes())
+    state = _state()
+    state["render_result"] = {"file_url": "d-1/render.png", "model_used": "m", "colorways_valid": []}
+    h = Harness(states={"run-1": state})
+    h.client.app.dependency_overrides[get_runs_root] = lambda: runs
+    response = h.client.get("/api/designs/run-1/render")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+    assert response.content.startswith(b"\x89PNG")
+
+
+def test_render_rejects_traversal_and_non_png(tmp_path) -> None:
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    (runs / "note.txt").write_text("x")
+    evil = _state()
+    evil["render_result"] = {"file_url": "../../note.txt", "model_used": "m", "colorways_valid": []}
+    h = Harness(states={"run-1": evil})
+    h.client.app.dependency_overrides[get_runs_root] = lambda: runs
+    assert h.client.get("/api/designs/run-1/render").status_code == 404
+    txt = _state()
+    txt["render_result"] = {"file_url": "note.txt", "model_used": "m", "colorways_valid": []}
+    h2 = Harness(states={"run-1": txt})
+    h2.client.app.dependency_overrides[get_runs_root] = lambda: runs
+    assert h2.client.get("/api/designs/run-1/render").status_code == 404
+
+
+def test_render_requires_auth(tmp_path) -> None:
+    from fastapi import FastAPI as _FastAPI
+    from fastapi.testclient import TestClient as _TestClient
+
+    app = _FastAPI()
+    app.include_router(designs_router.router)
+    assert _TestClient(app).get("/api/designs/run-1/render").status_code == 401

@@ -52,5 +52,8 @@ describe("approvals helpers", () => {
     row.entity_ref = { type: "collection_contract", id: "vibe-coding", label: "Vibe" };
     expect(detailHrefFor(row)).toBe("/collections/vibe-coding");
     expect(detailHrefFor(item(2, "publish_gate"))).toBeNull(); // no route yet (PBI-029)
+    const qc = item(3, "aesthetic_qc");
+    qc.run_id = "run-9";
+    expect(detailHrefFor(qc)).toBe("/designs/run-9");
   });
 });

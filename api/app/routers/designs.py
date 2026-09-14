@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import FileResponse
 
 from ..auth import ROLE_ADMIN, ROLE_OPERATOR, ROLE_VIEWER, Actor
 from ..hitl import (
@@ -26,6 +27,41 @@ from ..designs import calibration_for, design_detail_from_state
 router = APIRouter(prefix="/api", tags=["designs"])
 
 ReadAllowed = Depends(require_role(ROLE_ADMIN, ROLE_OPERATOR, ROLE_VIEWER))
+
+
+def get_runs_root() -> "Path":
+    from pathlib import Path as _Path
+
+    return _Path(__file__).resolve().parent.parent.parent.parent / "runs"
+
+
+@router.get("/designs/{design_id}/render")
+def get_design_render(
+    design_id: str,
+    actor: Actor = ReadAllowed,
+    runner: GraphRunner = Depends(get_graph_runner),
+    runs_root=Depends(get_runs_root),
+) -> FileResponse:
+    """Serve the design's render PNG (Viewer+).
+
+    Asset-serving fix per PBI-024: the UI renders this same-origin URL —
+    never a hotlinked external model URL. Only PNGs under ``runs/`` resolve;
+    anything else (missing file, traversal, non-PNG) is an explicit 404.
+    """
+    from pathlib import Path as _Path
+
+    detail = _detail_or_404(runner, design_id)
+    ref = (detail.get("render") or {}).get("file_url")
+    if not ref:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no render for design")
+    root = _Path(runs_root).resolve()
+    try:
+        path = (root / ref if not _Path(ref).is_absolute() else _Path(ref)).resolve()
+    except (OSError, RuntimeError):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no render for design")
+    if root not in path.parents or path.suffix.lower() != ".png" or not path.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no render for design")
+    return FileResponse(str(path), media_type="image/png")
 
 
 def _detail_or_404(runner: GraphRunner, run_id: str) -> dict[str, Any]:
