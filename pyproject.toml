@@ -29,7 +29,7 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["api", "api.app", "api.app.routers", "pipeline", "pipeline.nodes"]
+packages = ["api", "api.app", "api.app.routers", "api.app.fourthwall", "pipeline", "pipeline.nodes"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
