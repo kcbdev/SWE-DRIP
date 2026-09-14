@@ -10,6 +10,7 @@ const NAV = [
   { href: "/approvals", label: "Approvals", adminOnly: false },
   { href: "/collections", label: "Collections", adminOnly: false },
   { href: "/designs", label: "Design QC", adminOnly: false },
+  { href: "/runs", label: "Runs", adminOnly: false },
   { href: "/audit", label: "Audit Log", adminOnly: false },
   { href: "/settings/users", label: "Users & Roles", adminOnly: true },
 ];
