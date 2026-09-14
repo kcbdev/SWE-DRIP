@@ -23,9 +23,10 @@ out/
 .env.*
 !.env.example
 
-# Local data / runtime artifacts
+# Local data / runtime artifacts (repo-root only — must not swallow
+# same-named source dirs like control-panel/app/runs/)
 data/
-runs/
+/runs/
 *.sqlite
 *.db
 
