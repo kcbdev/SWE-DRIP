@@ -159,6 +159,22 @@ def get_integrations() -> dict[str, bool]:
 
 
 # ---------------------------------------------------------------------------
+# Generic setting accessors (used by agents module)
+# ---------------------------------------------------------------------------
+
+def get_setting(key: str, default: Any = None) -> Any:
+    """Return any settings key, falling back to *default*."""
+    _load_from_db()
+    return _cache.get(key, default)
+
+
+def set_setting(key: str, value: Any) -> None:
+    """Write any settings key to the cache and DB."""
+    _cache[key] = value
+    _write_to_db(key, value)
+
+
+# ---------------------------------------------------------------------------
 # Reset (for tests)
 # ---------------------------------------------------------------------------
 

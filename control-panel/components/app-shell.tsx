@@ -14,6 +14,7 @@ const NAV = [
   { href: "/analytics", label: "Analytics", adminOnly: false },
   { href: "/catalog", label: "Catalog", adminOnly: false },
   { href: "/audit", label: "Audit Log", adminOnly: false },
+  { href: "/agents", label: "Agents", adminOnly: false },
   { href: "/settings", label: "Settings", adminOnly: true },
   { href: "/settings/users", label: "Users & Roles", adminOnly: true },
 ];
