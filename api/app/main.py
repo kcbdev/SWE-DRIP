@@ -5,11 +5,26 @@ database and no network access.
 """
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .routers import agents, approvals, analytics, audit, catalog, collections, dashboard, designs, me, runs, settings as settings_router, stream, users, webhooks
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
+
+# CORS — allow the Control Panel origin for cookie-based auth (credentials: include).
+# In production the panel is served from swedrip-panel.kcb.ma; in dev from localhost:3000.
+_origins = [
+    "https://swedrip-panel.kcb.ma",
+    "http://localhost:3000",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/api/health")
