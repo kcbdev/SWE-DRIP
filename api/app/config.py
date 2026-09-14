@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     fourthwall_mcp_url: str = ""
     fourthwall_mcp_token: str = ""
 
+    # Fourthwall webhook (HMAC-SHA256 signature verification)
+    fourthwall_webhook_secret: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
