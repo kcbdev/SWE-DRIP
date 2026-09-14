@@ -430,6 +430,9 @@ class HitlService:
                 before={"status": PENDING},
                 after={"status": claimed["status"], "note": note},
             )
+            _publish_decision_events(
+                item_id, run_id=row["run_id"], node=row["node"], status=claimed["status"]
+            )
         except Exception:
             if not resumed_ok:
                 # Resume never took effect: roll back so a retry resumes once.
@@ -453,6 +456,17 @@ class HitlService:
             "decided_at": row.get("decided_at"),
             "resumed": resumed,
         }
+
+
+def _publish_decision_events(item_id: int, *, run_id: str, node: str, status: str) -> None:
+    """Best-effort SSE fan-out for a recorded decision (never breaks decide)."""
+    try:
+        from .stream import broker
+
+        broker.publish_queue_delta(item_id, run_id, node, status)
+        broker.publish_run_status(run_id, "resumed")
+    except Exception:
+        pass  # the decision is authoritative; a missed event is just a missed push
 
 
 def get_gate_source() -> CheckpointGateSource:
