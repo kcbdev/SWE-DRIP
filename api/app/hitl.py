@@ -94,6 +94,8 @@ class GraphRunner(Protocol):
 
 class ApprovalIndex(Protocol):
     def list_open(self) -> list[dict[str, Any]]: ...
+    def list_for_run(self, run_id: str) -> list[dict[str, Any]]: ...
+    def distinct_run_ids(self, limit: int = 50) -> list[str]: ...
     def get(self, item_id: int) -> Optional[dict[str, Any]]: ...
     def ensure_pending(self, run_id: str, node: str) -> dict[str, Any]: ...
     def claim(
@@ -282,6 +284,37 @@ class SqlApprovalIndex:
                 .first()
             )
         return _serialize(row) if row else None
+
+    def list_for_run(self, run_id: str) -> list[dict[str, Any]]:
+        """All index rows (pending + decided) for one run — calibration joins."""
+        with self._engines().connect() as conn:
+            rows = (
+                conn.execute(
+                    select(hitl_approvals)
+                    .where(hitl_approvals.c.run_id == run_id)
+                    .order_by(hitl_approvals.c.id)
+                )
+                .mappings()
+                .all()
+            )
+        return [_serialize(row) for row in rows]
+
+    def distinct_run_ids(self, limit: int = 50) -> list[str]:
+        """Newest-first run ids known to the index (pending + decided)."""
+        from sqlalchemy import desc
+
+        with self._engines().connect() as conn:
+            rows = (
+                conn.execute(
+                    select(hitl_approvals.c.run_id)
+                    .group_by(hitl_approvals.c.run_id)
+                    .order_by(desc(func.max(hitl_approvals.c.id)))
+                    .limit(limit)
+                )
+                .scalars()
+                .all()
+            )
+        return list(rows)
 
     def ensure_pending(self, run_id: str, node: str) -> dict[str, Any]:
         try:
