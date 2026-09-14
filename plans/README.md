@@ -62,7 +62,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 27 | PBI-027 | fourthwall-integration | 026, 014, 016, 025 | Blocked | SWDRP-27 | Publish cutover + old-path check (A14/A15, manual) |
 | 28 | PBI-028 | traceability | 010, 004, 006 | In Review | SWDRP-28 | Runs + replay API (A18) |
 | 29 | PBI-029 | traceability | 028, 001 | In Review | SWDRP-29 | Runs UI (tracker, inspector, replay) |
-| 30 | PBI-030 | catalog-analytics | 025, 004, 001 | Todo | SWDRP-30 | Catalog mirror API + screen |
+| 30 | PBI-030 | catalog-analytics | 025, 004, 001 | Done | SWDRP-30 | Catalog mirror API + screen |
 | 31 | PBI-031 | catalog-analytics | 025, 019, 004, 001 | Todo | SWDRP-31 | KPI analytics API + dashboards |
 | 32 | PBI-032 | catalog-analytics | 031, 025 | Todo | SWDRP-32 | FW webhook + analytics trigger (A17) |
 | 33 | PBI-033 | settings-agents | 004, 006, 010, 001 | Todo | SWDRP-33 | Settings: HITL toggles, brand lock, integrations |
