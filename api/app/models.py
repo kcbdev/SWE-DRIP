@@ -6,7 +6,7 @@ DELETE path for ``audit_log`` anywhere in the codebase.
 
 from __future__ import annotations
 
-from sqlalchemy import JSON, BigInteger, Column, DateTime, Index, MetaData, String, Table, func
+from sqlalchemy import JSON, BigInteger, Column, DateTime, Index, MetaData, String, Table, Text, func, text
 
 metadata = MetaData()
 
@@ -25,4 +25,29 @@ audit_log = Table(
     Index("ix_audit_log_action", "action"),
     Index("ix_audit_log_entity", "entity_type", "entity_id"),
     Index("ix_audit_log_created", "created_at"),
+)
+
+# Approvals index (data spec §1.2; migration 0003). Query/filter rows only —
+# gate state itself lives in LangGraph interrupts (spec Decisions, NFR-1).
+hitl_approvals = Table(
+    "hitl_approvals",
+    metadata,
+    Column("id", BigInteger, primary_key=True, autoincrement=True),
+    Column("run_id", String(128), nullable=False),
+    Column("node", String(64), nullable=False),
+    Column("status", String(32), nullable=False, default="pending"),
+    Column("reviewer_user_id", String(128), nullable=True),
+    Column("note", Text, nullable=True),
+    Column("decided_at", DateTime(timezone=True), nullable=True),
+    Index("ix_hitl_approvals_status", "status"),
+    Index("ix_hitl_approvals_run", "run_id"),
+    # Mirrors migration 0003's partial unique index: exactly one open row per
+    # gate, so create_all deployments enforce what the SQL already forbids.
+    Index(
+        "uq_hitl_approvals_open",
+        "run_id",
+        "node",
+        unique=True,
+        postgresql_where=text("status = 'pending'"),
+    ),
 )
