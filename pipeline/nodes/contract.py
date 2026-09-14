@@ -54,6 +54,8 @@ CONTRACT_KEYS = (
     "created_at",
     "approved_at",
     "retired_at",
+    # PBI-020: A9 survivor exception persisted by the collections lifecycle.
+    "survivor_products",
 )
 
 
@@ -96,6 +98,7 @@ def draft_contract(
         "created_at": datetime.now(timezone.utc).isoformat(),
         "approved_at": None,
         "retired_at": None,
+        "survivor_products": [],
     }
 
 

@@ -96,6 +96,31 @@ class CollectionsStore:
         self._write_atomic(self._path(slug), contract_to_dict(contract))
         return self.get(slug)
 
+    def transition(
+        self,
+        slug: str,
+        *,
+        to_status: str,
+        stamp: dict[str, Any],
+        expected_mtime: Optional[float] = None,
+    ) -> dict[str, Any]:
+        """Lifecycle transition (approve/retire): atomic status + stamp write.
+
+        The only path that may change ``status`` (PATCH rejects it). Validates
+        the full contract after the merge; a stale ``expected_mtime`` rejects
+        the write as an MtimeConflict (concurrent-edit guard, spec anti-pattern).
+        """
+        current = self.get(slug)  # validates + raises CollectionNotFound
+        if expected_mtime is not None and current["mtime"] != expected_mtime:
+            raise MtimeConflict(f"{slug!r} changed on disk (mtime mismatch)")
+        merged = {**current["contract"]}
+        merged.pop("slug", None)
+        merged["status"] = to_status
+        merged.update(stamp)
+        contract = CollectionContract.model_validate(merged)
+        self._write_atomic(self._path(slug), contract_to_dict(contract))
+        return self.get(slug)
+
     # ---------------------------------------------------------------- helpers
 
     def _path(self, slug: str) -> Path:

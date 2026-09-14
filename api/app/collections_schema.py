@@ -74,6 +74,10 @@ class CollectionContract(StrictModel):
     created_at: str
     approved_at: Optional[str] = None
     retired_at: Optional[str] = None
+    # A9 survivor exception (collections spec Decisions 2026-09-14): product ids
+    # that stay live and flagged after retirement. Empty (default) when none —
+    # the catalog mirror (PBI-030) reads this to honor the exception.
+    survivor_products: list[str] = Field(default_factory=list)
 
     @field_validator("theme", "style_archetype", "created_by", "created_at")
     @classmethod
