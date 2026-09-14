@@ -60,7 +60,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 25 | PBI-025 | fourthwall-integration | 002 | In Review | SWDRP-25 | FW MCP read client |
 | 26 | PBI-026 | fourthwall-integration | 025 | In Review | SWDRP-26 | Product-create spike + ADR-004 (A13, manual) |
 | 27 | PBI-027 | fourthwall-integration | 026, 014, 016, 025 | Blocked | SWDRP-27 | Publish cutover + old-path check (A14/A15, manual) |
-| 28 | PBI-028 | traceability | 010, 004, 006 | Todo | SWDRP-28 | Runs + replay API (A18) |
+| 28 | PBI-028 | traceability | 010, 004, 006 | In Review | SWDRP-28 | Runs + replay API (A18) |
 | 29 | PBI-029 | traceability | 028, 001 | Todo | SWDRP-29 | Runs UI (tracker, inspector, replay) |
 | 30 | PBI-030 | catalog-analytics | 025, 004, 001 | Todo | SWDRP-30 | Catalog mirror API + screen |
 | 31 | PBI-031 | catalog-analytics | 025, 019, 004, 001 | Todo | SWDRP-31 | KPI analytics API + dashboards |
