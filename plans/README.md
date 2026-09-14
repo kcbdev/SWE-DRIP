@@ -52,7 +52,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 17 | PBI-017 | hitl-approvals | 016 | In Review | SWDRP-17 | SSE stream |
 | 18 | PBI-018 | hitl-approvals | 016, 017, 001 | In Review | SWDRP-18 | Approvals screen |
 | 19 | PBI-019 | collections | 004, 006, 008 | Done | SWDRP-19 | YAML store + CRUD API |
-| 20 | PBI-020 | collections | 019, 016, 011 | Todo | SWDRP-20 | Lifecycle: candidates, approve (A8), retire + survivor (A9) |
+| 20 | PBI-020 | collections | 019, 016, 011 | In Review | SWDRP-20 | Lifecycle: candidates, approve (A8), retire + survivor (A9) |
 | 21 | PBI-021 | collections | 020, 001 | Todo | SWDRP-21 | Collections UI |
 | 22 | PBI-022 | design-qc | 013 | Todo | SWDRP-22 | Rubric calibration suite (A10) + regen evidence (A12) |
 | 23 | PBI-023 | design-qc | 016, 013, 010 | Todo | SWDRP-23 | Design detail + calibration API |
