@@ -7,7 +7,7 @@ database and no network access.
 from fastapi import FastAPI
 
 from .config import settings
-from .routers import approvals, analytics, audit, catalog, collections, dashboard, designs, me, runs, stream, users, webhooks
+from .routers import approvals, analytics, audit, catalog, collections, dashboard, designs, me, runs, settings as settings_router, stream, users, webhooks
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
@@ -30,3 +30,4 @@ app.include_router(analytics.router)
 app.include_router(approvals.router)
 app.include_router(stream.router)
 app.include_router(webhooks.router)
+app.include_router(settings_router.router)

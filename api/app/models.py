@@ -51,3 +51,11 @@ hitl_approvals = Table(
         postgresql_where=text("status = 'pending'"),
     ),
 )
+
+settings_table = Table(
+    "settings",
+    metadata,
+    Column("key", String(64), primary_key=True),
+    Column("value_json", JSON, nullable=False, server_default="{}"),
+    Column("updated_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
+)
