@@ -122,7 +122,12 @@ describe("IntegrationsStatus", () => {
       vi.fn().mockResolvedValue({
         ok: true,
         json: () =>
-          Promise.resolve({ fourthwall_mcp: true, openrouter_key: false }),
+          Promise.resolve({
+            fourthwall_mcp: true,
+            openrouter: false,
+            fourthwall_mcp_url: "",
+            openrouter_base_url: "https://openrouter.ai/api/v1",
+          }),
       }),
     );
     render(<IntegrationsStatus />);
@@ -134,5 +139,53 @@ describe("IntegrationsStatus", () => {
     const notConfigured = screen.getByText("Not configured");
     expect(configured).toBeTruthy();
     expect(notConfigured).toBeTruthy();
+  });
+
+  it("hides the credential form for non-admins", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            fourthwall_mcp: false,
+            openrouter: false,
+            fourthwall_mcp_url: "",
+            openrouter_base_url: "https://openrouter.ai/api/v1",
+          }),
+      }),
+    );
+    render(<IntegrationsStatus role="viewer" />);
+    await waitFor(() => expect(screen.getByText("Fourthwall MCP")).toBeTruthy());
+    expect(screen.queryByText("Set credentials")).toBeNull();
+  });
+
+  it("lets admins set credentials and test the connection", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          fourthwall_mcp: false,
+          openrouter: false,
+          fourthwall_mcp_url: "",
+          openrouter_base_url: "https://openrouter.ai/api/v1",
+        }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<IntegrationsStatus role="admin" />);
+    await waitFor(() => expect(screen.getByText("Set credentials")).toBeTruthy());
+
+    fireEvent.change(screen.getByLabelText(/OpenRouter API key/i), {
+      target: { value: "openrouter-test-key" },
+    });
+    fireEvent.click(screen.getByText("Save credentials"));
+
+    await waitFor(() => {
+      const patchCall = fetchMock.mock.calls.find(
+        ([, init]) => (init as RequestInit | undefined)?.method === "PATCH",
+      );
+      expect(patchCall).toBeTruthy();
+      expect((patchCall![1] as RequestInit).body).toContain("openrouter-test-key");
+    });
   });
 });

@@ -43,15 +43,52 @@ export async function patchBrand(patch: Partial<BrandConstants>): Promise<BrandC
 }
 
 // ---------------------------------------------------------------------------
-// Integrations status
+// Integrations
 // ---------------------------------------------------------------------------
 
 export interface IntegrationsStatus {
+  /** Fourthwall MCP URL + token both present. */
   fourthwall_mcp: boolean;
-  openrouter_key: boolean;
+  /** OpenRouter API key present. */
+  openrouter: boolean;
+  /** Non-secret endpoint hint (may be empty). */
+  fourthwall_mcp_url: string;
+  /** Non-secret endpoint hint. */
+  openrouter_base_url: string;
 }
 
-/** Fetch integration presence status (booleans only, never secret values). */
+export interface IntegrationsPatch {
+  fourthwall_mcp_url?: string;
+  /** Write-only: never returned by the API. Empty string clears it. */
+  fourthwall_mcp_token?: string;
+  /** Write-only: never returned by the API. Empty string clears it. */
+  openrouter_api_key?: string;
+  openrouter_base_url?: string;
+}
+
+export interface IntegrationTestResult {
+  ok: boolean;
+  error?: string;
+}
+
+/** Fetch integration presence + non-secret endpoints (never secret values). */
 export async function fetchIntegrations(): Promise<IntegrationsStatus> {
   return apiFetch<IntegrationsStatus>("/api/settings/integrations");
+}
+
+/** Set integration credentials. Admin-only; confirmation required. */
+export async function saveIntegrations(
+  patch: IntegrationsPatch,
+): Promise<IntegrationsStatus> {
+  return apiFetch<IntegrationsStatus>("/api/settings/integrations", {
+    method: "PATCH",
+    body: JSON.stringify({ ...patch, confirm: true }),
+  });
+}
+
+/** Probe the configured Fourthwall MCP. Admin-only; degraded read is not an error. */
+export async function testFourthwall(): Promise<IntegrationTestResult> {
+  return apiFetch<IntegrationTestResult>("/api/settings/integrations/test", {
+    method: "POST",
+  });
 }
