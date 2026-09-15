@@ -184,8 +184,50 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
     return errors
 
 
+def _select_cluster_brief(
+    cluster: dict[str, Any], briefs_by_id: dict[Any, dict[str, Any]]
+) -> dict[str, Any] | None:
+    """Pick the design brief that represents ``cluster`` (pure, deterministic).
+
+    Nodes 3-8 all require ``state["brief"]`` and nothing upstream used to set it,
+    so a real run failed at ``listing_copy`` with "no design brief in state".
+    A cluster holds several briefs; the representative is the highest total score
+    (engagement+novelty+specificity), ties broken by brief id for stability —
+    no random pick, and reproducible for the same brief set.
+    """
+
+    members = [
+        briefs_by_id[bid] for bid in cluster.get("brief_ids", []) if bid in briefs_by_id
+    ]
+    if not members:
+        return None
+    ordered = sorted(
+        members, key=lambda b: (-_total_score(b), str(b.get("id") or ""))
+    )
+    best = ordered[0]
+    return {
+        "subject": best.get("subject") or "",
+        "text": best.get("text") or "",
+        "style": best.get("style") or "",
+    }
+
+
+def _total_score(brief: dict[str, Any]) -> int:
+    total = 0
+    for field in ("engagement", "novelty", "specificity"):
+        value = brief.get(field)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            total += int(value)
+    return total
+
+
 def contract_approval(state: RunState, config: RunnableConfig = None) -> dict[str, Any]:  # type: ignore[assignment]
-    """Node 2 implementation: draft per cluster → interrupt → resume-select."""
+    """Node 2 implementation: draft per cluster → interrupt → resume-select.
+
+    Also resolves the cluster's representative design ``brief`` for nodes 3-8
+    (see :func:`_select_cluster_brief`) — without it the rest of the graph has
+    nothing to design from.
+    """
     cfg = (config or {}).get("configurable") or {}
     clusters = state.get("clusters") or []
     if not clusters:
@@ -213,7 +255,10 @@ def contract_approval(state: RunState, config: RunnableConfig = None) -> dict[st
         decision = interrupt({"node": NODE, "status": "awaiting_approval", "contracts": drafts})
         approved_id = decision.get("approved_cluster_id") if isinstance(decision, dict) else None
         chosen = next((d for d, c in zip(drafts, clusters) if c["cluster_id"] == approved_id), None)
-        if chosen is None:
+        chosen_cluster = next(
+            (c for c in clusters if c["cluster_id"] == approved_id), None
+        )
+        if chosen is None or chosen_cluster is None:
             return {
                 "collection_contract": {},
                 "visited": [NODE],
@@ -225,7 +270,19 @@ def contract_approval(state: RunState, config: RunnableConfig = None) -> dict[st
         # HITL off (tests/parity): first cluster proceeds; candidate
         # selection UX is the collections lifecycle's job (PBI-020).
         chosen = drafts[0]
-    return {"collection_contract": chosen, "visited": [NODE]}
+        chosen_cluster = clusters[0]
+
+    brief = _select_cluster_brief(chosen_cluster, briefs_by_id)
+    if brief is None:
+        return {
+            "collection_contract": chosen,
+            "visited": [NODE],
+            "errors": [
+                f"{NODE}: selected cluster {chosen_cluster.get('cluster_id')!r} has no "
+                "resolvable member brief — cannot design from it"
+            ],
+        }
+    return {"collection_contract": chosen, "brief": brief, "visited": [NODE]}
 
 
 register_node(NODE, contract_approval)

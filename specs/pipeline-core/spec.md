@@ -35,4 +35,5 @@ Implement the locked 11-node product pipeline (Vision doc §3.2) as a LangGraph 
 
 - Pipeline executes in-process within the API deployable (ADR-002); extraction to a worker is ADR-gated.
 - FW-create node is DRAFT-only until the fourthwall-integration cutover; publish gate node exists but cannot publish publicly in this phase.
-- Routing table lives in code (`pipeline/routing.py`), mirroring data spec §3; changing a model is a config edit reviewed against budget impact.
+- Routing table lives in code (`pipeline/routing.py`) as the reviewed **defaults**; an operator override in the settings store (`node_config`) wins at run start, so changing a model is a settings edit, not a deploy. *(Revised 2026-09-15, specs/agent-control-plane/spec.md: the first live run proved every hardcoded ID was absent from OpenRouter's catalog.)*
+- **Cluster → design brief selection (node 2):** a cluster holds several briefs, so node 2 resolves the representative `brief` (the `Brief` shape nodes 3-8 consume) as the member with the highest total score (`engagement+novelty+specificity`), ties broken by brief id. Deterministic for a given brief set. Nothing upstream used to set `brief` at all, which is why a live run failed at `listing_copy` with "no design brief in state" even though every unit test passed with the brief injected.

@@ -276,10 +276,19 @@ def test_contract_node_pauses_with_drafts_and_resumes() -> None:
 
     resumed = graph.invoke(
         Command(resume={"approved_cluster_id": "cluster-1"}),
-        {"configurable": {**base, "hitl": {}}},
+        # Pause at node 3 so this test stays about node 2's contract+brief output
+        # (the model call itself is node 3's concern).
+        {"configurable": {**base, "hitl": {"listing_copy": True}}},
     )
     assert resumed["collection_contract"]["collection_id"] == "vibe-coding"
     assert resumed["collection_contract"]["status"] == "draft"
+    # Node 2 must also resolve the design brief the rest of the graph needs —
+    # nothing upstream used to set it, so a live run died at listing_copy.
+    assert resumed["brief"] == {
+        "subject": "Vibe Coding",
+        "text": "tee about vibe coding",  # b1 (total 70) beats b2 (62)
+        "style": "mono-log",
+    }
 
 
 def test_contract_node_bad_resume_decision_is_recorded() -> None:
@@ -301,10 +310,57 @@ def test_contract_node_bad_resume_decision_is_recorded() -> None:
     assert any("approved_cluster_id" in e for e in resumed["errors"])
 
 
+def _node_aware_client(captured: list[dict]) -> OpenRouterClient:
+    """Serve every node's real response shape so a full graph run doesn't raise.
+
+    A single canned reply cannot serve nodes 1-8 (the clustering JSON is not
+    valid listing copy), so responses are attributed from the prompt text.
+    """
+    import base64
+    import struct
+
+    def png() -> str:
+        ihdr = struct.pack(">IIBBBBB", 256, 256, 8, 6, 0, 0, 0)
+        return base64.b64encode(
+            b"\x89PNG\r\n\x1a\n" + struct.pack(">I", 13) + b"IHDR" + ihdr + b"\x00" * 4
+            + b"\x00\x00\x00\x00IEND"
+        ).decode()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        captured.append(body)
+        if request.url.path.endswith("/images/generations"):
+            return httpx.Response(200, json={"data": [{"b64_json": png()}], "usage": {}})
+        content = body["messages"][0]["content"]
+        text = (
+            " ".join(b.get("text", "") for b in content if isinstance(b, dict))
+            if isinstance(content, list)
+            else content
+        )
+        if "thematic clusters" in text:
+            reply: Any = {"clusters": [{"theme": "Vibe Coding", "brief_ids": ["b1", "b2"]}]}
+        elif "listing copy" in text:
+            reply = {"slogan": "Ship It Live", "title": "Vibe Coding Tee",
+                     "description": "A dry joke.", "tags": ["vibe-coding"]}
+        elif "RCAO" in text:
+            reply = {"rcao": "r", "render_prompt": "a monochrome terminal"}
+        else:
+            reply = {"style_cohesion": 80, "focal_point": 80, "placement_fit": 80, "contrast": 80}
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{"message": {"content": json.dumps(reply)}}],
+                "usage": {"prompt_tokens": 12, "completion_tokens": 8},
+            },
+        )
+
+    return OpenRouterClient(api_key="test-key", transport=httpx.MockTransport(handler))
+
+
 def test_nodes_wired_in_graph_end_to_end() -> None:
     graph = build_graph(checkpointer=MemorySaver())
     captured: list[dict] = []
-    client = _client({"clusters": [{"theme": "Vibe Coding", "brief_ids": ["b1", "b2"]}]}, captured)
+    client = _node_aware_client(captured)
     off = {n: False for n in NODE_ORDER}
     result = graph.invoke(
         _briefs_state(),
@@ -314,6 +370,10 @@ def test_nodes_wired_in_graph_end_to_end() -> None:
     assert result["visited"] == NODE_ORDER
     assert result["clusters"][0]["theme"] == "Vibe Coding"
     assert result["collection_contract"]["collection_id"] == "vibe-coding"
+    # The brief resolved by node 2 is what nodes 3-5 actually consumed.
+    assert result["brief"]["subject"] == "Vibe Coding"
+    assert result["listing_copy"]["title"] == "Vibe Coding Tee"
+    assert result["design_spec"]["render_prompt"] == "a monochrome terminal"
 
 
 def test_empty_clusters_record_error_without_interrupt() -> None:
