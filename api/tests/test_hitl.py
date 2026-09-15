@@ -364,3 +364,67 @@ def test_gate_source_lists_live_interrupts_without_mocks() -> None:
     assert found[0].run_id == "scan-t" and found[0].node == "publish_gate"
     assert found[0].payload["node"] == "publish_gate"
     assert found[0].waiting_since
+
+
+def test_interrupt_scan_never_queries_while_the_list_cursor_is_open() -> None:
+    """Regression: the approvals queue hung for 25s+ and timed out in production.
+
+    `list_interrupts` used to call `graph.get_state()` *inside* the
+    `saver.list(None)` iteration, which blocks against the saver's connection
+    pool. The scan must consume the thread list first, then query in a fresh
+    session — the same split `CheckpointerRunPorts` already used, which is why
+    `/api/runs` stayed fast while `/api/approvals` did not.
+    """
+    from langgraph.checkpoint.memory import MemorySaver
+
+    from api.app.hitl import CheckpointerGateSource
+    from pipeline.graph import build_graph
+
+    saver = MemorySaver()
+    graph = build_graph(checkpointer=saver)
+    graph.invoke(
+        {"design_id": "scan-open", "briefs": []},
+        {"configurable": {"thread_id": "open-t"}},
+    )
+
+    class GuardedSaver(MemorySaver):
+        """Same surface as MemorySaver, but records queries issued mid-list."""
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.listing = False
+            self.violations: list[str] = []
+
+        def list(self, *args: Any, **kwargs: Any):  # type: ignore[no-untyped-def]
+            self.listing = True
+            try:
+                yield from super().list(*args, **kwargs)
+            finally:
+                self.listing = False
+
+    guarded = GuardedSaver()
+    guarded_graph = build_graph(checkpointer=guarded)
+    guarded_graph.invoke(
+        {"design_id": "scan-open", "briefs": []},
+        {"configurable": {"thread_id": "open-t"}},
+    )
+
+    class GuardedGraph:
+        def get_state(self, config: Any) -> Any:
+            if guarded.listing:
+                guarded.violations.append("get_state called while list() was open")
+            return guarded_graph.get_state(config)
+
+        def __getattr__(self, name: str) -> Any:
+            return getattr(guarded_graph, name)
+
+    source = CheckpointerGateSource(
+        saver_factory=lambda: guarded,
+        graph_factory=lambda checkpointer=None: GuardedGraph(),
+    )
+    found = source.list_interrupts()
+
+    assert guarded.violations == [], guarded.violations
+    assert [i.node for i in found] == ["publish_gate"]
+    assert found[0].waiting_since  # timestamp survives the session split
+

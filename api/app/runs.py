@@ -83,6 +83,42 @@ class SpendUnavailable(RuntimeError):
     """Month-to-date spend could not be read — refuse to start rather than guess."""
 
 
+def validate_briefs(briefs: Optional[list[dict[str, Any]]]) -> list[str]:
+    """Return the reasons a brief set cannot start a run (empty list = valid).
+
+    Node 1 raises on a brief that is missing its locked score fields, and an
+    empty brief set silently produces zero clusters — which cascades into eight
+    downstream node errors on the first live run. Catching it at the API boundary
+    turns that into one actionable 422 instead of a wasted run.
+
+    Ranges come from the pipeline's own constants, never a second copy.
+    """
+    from pipeline.nodes.trend import MAX_ENGAGEMENT, MAX_NOVELTY, MAX_SPECIFICITY
+
+    if not briefs:
+        return [
+            "at least one brief is required — node 1 clusters briefs into collection "
+            "candidates, and an empty set produces no clusters"
+        ]
+    errors: list[str] = []
+    for index, brief in enumerate(briefs):
+        if not isinstance(brief, dict):
+            errors.append(f"briefs[{index}] must be an object")
+            continue
+        label = brief.get("id") or f"briefs[{index}]"
+        for field, maximum in (
+            ("engagement", MAX_ENGAGEMENT),
+            ("novelty", MAX_NOVELTY),
+            ("specificity", MAX_SPECIFICITY),
+        ):
+            value = brief.get(field)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                errors.append(f"{label}: {field} must be a number (0-{maximum})")
+            elif not 0 <= value <= maximum:
+                errors.append(f"{label}: {field}={value} out of locked range 0-{maximum}")
+    return errors
+
+
 def runs_root() -> Path:
     """Render-artifact root, shared with ``routers/designs.py:get_runs_root``.
 
@@ -213,7 +249,7 @@ class RunService:
             raise KeyError(f"unknown run {run_id}")
         values = history[0].values
         return {
-            **summarize(run_id, values, False, None, history[0].at),
+            **summarize(run_id, values, history[0].interrupted, None, history[0].at),
             "nodes": node_detail(history),
             "errors": values.get("errors") or [],
         }
@@ -416,10 +452,18 @@ class CheckpointerRunPorts:
             out = []
             for snapshot in graph.get_state_history({"configurable": {"thread_id": run_id}}):
                 checkpoint = snapshot.config.get("checkpoint", {}) if isinstance(snapshot.config, dict) else {}
+                # `run_detail` derives status from the newest snapshot, so the
+                # interrupt flag must ride along — otherwise the detail endpoint
+                # reports "failed" for a run the list correctly calls
+                # "awaiting_approval".
+                interrupted = any(
+                    getattr(task, "interrupts", None) for task in (snapshot.tasks or [])
+                )
                 out.append(Snapshot(
                     run_id=run_id,
                     values=dict(snapshot.values or {}),
                     at=checkpoint.get("ts"),
+                    interrupted=bool(interrupted),
                 ))
         return out
 

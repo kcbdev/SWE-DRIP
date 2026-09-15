@@ -208,18 +208,30 @@ class CheckpointerGateSource:
         from pipeline.graph import build_graph
 
         found: list[InterruptInfo] = []
+        # Phase 1 — collect thread ids (and their checkpoint timestamp) with the
+        # list cursor FULLY CONSUMED, then let the session close. Reading graph
+        # state while `saver.list()` is still open deadlocks against the saver's
+        # connection pool: the queue hung for 25s+ and timed out in production.
+        # `CheckpointerRunPorts` already splits these two steps (see `_threads()`
+        # vs `list_snapshots`), which is why `/api/runs` stayed fast while
+        # `/api/approvals` did not.
         with _saver_session(self._saver_factory) as saver:
-            graph = (self._graph_factory or build_graph)(checkpointer=saver)
+            threads: list[tuple[str, Optional[str]]] = []
             seen: set[str] = set()
             for tup in saver.list(None):
-                configurable = (tup.config or {}).get("configurable") or {}
-                thread_id = configurable.get("thread_id")
+                thread_id = ((tup.config or {}).get("configurable") or {}).get("thread_id")
                 if not thread_id or thread_id in seen:
                     continue
                 seen.add(thread_id)
-                snapshot = graph.get_state({"configurable": {"thread_id": thread_id}})
                 checkpoint = tup.checkpoint or {}
-                for task in snapshot.tasks:
+                threads.append((thread_id, checkpoint.get("ts")))
+
+        # Phase 2 — fresh session: safe to issue queries now.
+        with _saver_session(self._saver_factory) as saver:
+            graph = (self._graph_factory or build_graph)(checkpointer=saver)
+            for thread_id, waiting_since in threads:
+                snapshot = graph.get_state({"configurable": {"thread_id": thread_id}})
+                for task in snapshot.tasks or []:
                     for intr in task.interrupts or []:
                         found.append(
                             InterruptInfo(
@@ -227,7 +239,7 @@ class CheckpointerGateSource:
                                 node=task.name,
                                 payload=dict(intr.value) if isinstance(intr.value, dict) else {"value": intr.value},
                                 interrupt_id=intr.id,
-                                waiting_since=checkpoint.get("ts"),
+                                waiting_since=waiting_since,
                             )
                         )
         return found

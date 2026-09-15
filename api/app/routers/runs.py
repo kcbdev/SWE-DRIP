@@ -28,6 +28,7 @@ from ..runs import (
     SpendUnavailable,
     SqlSpendReader,
     UnknownNode,
+    validate_briefs,
 )
 
 router = APIRouter(prefix="/api/runs", tags=["runs"])
@@ -95,6 +96,9 @@ def start_run(
     """
     if not body.collection_id:
         raise HTTPException(status_code=422, detail="collection_id is required")
+    brief_errors = validate_briefs(body.briefs)
+    if brief_errors:
+        raise HTTPException(status_code=422, detail=brief_errors)
     try:
         spent = spend.month_to_date_usd()
     except SpendUnavailable as exc:

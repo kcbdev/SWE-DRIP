@@ -99,7 +99,20 @@ def build_client(
     return TestClient(app, raise_server_exceptions=False), starter, audit
 
 
-BODY = {"collection_id": "vibe-coding-tees"}
+BODY = {
+    "collection_id": "vibe-coding-tees",
+    "briefs": [
+        {
+            "id": "b1",
+            "subject": "Vibe Coding",
+            "text": "tee about vibe coding",
+            "style": "mono-log",
+            "engagement": 35,
+            "novelty": 20,
+            "specificity": 15,
+        }
+    ],
+}
 
 
 # ------------------------------------------------------------------- start
@@ -117,7 +130,11 @@ def test_start_returns_202_with_run_identity() -> None:
     # never a fabricated business value).
     assert data["design_id"] == "run-abc"
     assert starter.calls == [
-        {"collection_id": "vibe-coding-tees", "design_id": None, "briefs": None}
+        {
+            "collection_id": "vibe-coding-tees",
+            "design_id": None,
+            "briefs": BODY["briefs"],
+        }
     ]
 
 
@@ -128,17 +145,58 @@ def test_explicit_design_id_and_briefs_are_passed_through() -> None:
         json={
             "collection_id": "c-1",
             "design_id": "d-42",
-            "briefs": [{"subject": "terminal", "text": "cli humor", "style": "minimal"}],
+            "briefs": BODY["briefs"],
         },
     )
     assert response.status_code == 202
     assert response.json()["design_id"] == "d-42"
-    assert starter.calls[0]["briefs"][0]["subject"] == "terminal"
+    assert starter.calls[0]["briefs"][0]["subject"] == "Vibe Coding"
 
 
 def test_empty_collection_id_is_rejected() -> None:
     client, starter, _ = build_client()
-    assert client.post("/api/runs", json={"collection_id": ""}).status_code == 422
+    response = client.post("/api/runs", json={"collection_id": "", "briefs": BODY["briefs"]})
+    assert response.status_code == 422
+    assert starter.calls == []
+
+
+# -------------------------------------------------------- brief validation
+
+
+def test_briefs_are_required_because_node_1_clusters_them() -> None:
+    """First live run finding: an empty brief set cascaded into 8 node errors."""
+    client, starter, _ = build_client()
+    response = client.post("/api/runs", json={"collection_id": "c-1"})
+    assert response.status_code == 422
+    assert "at least one brief" in str(response.json()["detail"])
+    assert starter.calls == []
+
+
+def test_brief_missing_score_fields_is_rejected_before_starting() -> None:
+    client, starter, _ = build_client()
+    response = client.post(
+        "/api/runs",
+        json={"collection_id": "c-1", "briefs": [{"id": "b1", "subject": "x"}]},
+    )
+    assert response.status_code == 422
+    detail = str(response.json()["detail"])
+    assert "engagement" in detail and "novelty" in detail and "specificity" in detail
+    assert starter.calls == []
+
+
+def test_brief_scores_outside_locked_range_are_rejected() -> None:
+    client, starter, _ = build_client()
+    response = client.post(
+        "/api/runs",
+        json={
+            "collection_id": "c-1",
+            "briefs": [
+                {"id": "b1", "engagement": 41, "novelty": 20, "specificity": 15}
+            ],
+        },
+    )
+    assert response.status_code == 422
+    assert "out of locked range" in str(response.json()["detail"])
     assert starter.calls == []
 
 
