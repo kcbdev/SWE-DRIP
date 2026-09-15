@@ -10,8 +10,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sqlalchemy import text
-
 from .db import get_engine
 
 MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations"
@@ -26,7 +24,11 @@ def apply_migrations() -> list[str]:
     engine = get_engine()
     with engine.begin() as conn:
         for path in migration_files():
-            conn.execute(text(path.read_text(encoding="utf-8")))
+            # exec_driver_sql passes the file verbatim to the driver.
+            # text() would misparse JSON `:false`/`:true` literals as
+            # bind parameters ("A value is required for bind parameter
+            # 'false'"). The SQL files contain no driver placeholders.
+            conn.exec_driver_sql(path.read_text(encoding="utf-8"))
             applied.append(path.name)
     return applied
 
