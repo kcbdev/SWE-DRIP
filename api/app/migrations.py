@@ -33,6 +33,42 @@ def apply_migrations() -> list[str]:
     return applied
 
 
+def setup_checkpointer() -> bool:
+    """Create the LangGraph checkpointer tables (idempotent).
+
+    The approvals/runs/designs readers scan ``checkpoints`` via
+    ``PostgresSaver``; without ``setup()`` those pages 500 with
+    ``UndefinedTable``. Uses the RAW ``DATABASE_URL`` (libpq accepts
+    ``postgresql://``/``postgres://``; the ``+psycopg`` SQLAlchemy dialect
+    suffix must NOT be passed here). No-op without ``DATABASE_URL`` so
+    offline gates stay hermetic. Best-effort at startup: returns False
+    (with the traceback printed) instead of taking the whole API down —
+    the affected pages degrade while everything else keeps serving.
+    """
+    import os
+    import traceback
+
+    url = os.environ.get("DATABASE_URL")
+    if not url:
+        return True
+    try:
+        from langgraph.checkpoint.postgres import PostgresSaver
+
+        saver = PostgresSaver.from_conn_string(url)
+        if hasattr(saver, "__enter__"):
+            with saver as opened:
+                opened.setup()
+        else:
+            saver.setup()
+    except Exception:
+        print("checkpointer setup failed (approvals/runs will 500):")
+        traceback.print_exc()
+        return False
+    print("checkpointer tables ready")
+    return True
+
+
 if __name__ == "__main__":  # pragma: no cover - manual/CI invocation
     for name in apply_migrations():
         print(f"applied {name}")
+    setup_checkpointer()
