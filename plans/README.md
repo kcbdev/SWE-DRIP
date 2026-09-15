@@ -68,6 +68,13 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 33 | PBI-033 | settings-agents | 004, 006, 010, 001 | Todo | SWDRP-33 | Settings: HITL toggles, brand lock, integrations |
 | 34 | PBI-034 | settings-agents | 010, 008, 004, 006, 001 | Todo | SWDRP-34 | Agents roster + budget caps (FR-17) |
 | 35 | PBI-035 | hitl-graduation | 033, 022, 027, 024 | Todo | SWDRP-35 | Graduation decision record (A19, manual) |
+| 36 | PBI-036 | — (deploy hardening) | 001–034 | In Review | SWDRP-36 | Coolify deployment + production bug fixes (11 defects) |
+| 37 | PBI-037 | pipeline-runs | 028, 010, 033, 016 | In Review | SWDRP-37 | **Run initiation** — `POST /api/runs` (the pipeline's missing entry point) |
+
+> **State column**: rows for PBI-025/026 were re-pointed to the Platform Open API
+> (ADR-005) and decided hand-rolled Open API (ADR-004) respectively; PBI-027's
+> blocker is cleared; PBI-030/031/033/034 shipped and are `Done` in Plane. The
+> authoritative state is Plane (`kcb/SWRDP`), not this table.
 
 _State moves Todo → In Progress → In Review → Done via `asdlc-execute`; the Plane column is filled by the sync below._
 

@@ -12,8 +12,11 @@ never guessed in the API layer).
 from __future__ import annotations
 
 import threading
+import traceback
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Optional, Protocol
 
 from pipeline.routing import NODE_ORDER
@@ -60,6 +63,64 @@ class HistoryReader(Protocol):
 
 class ReplayExecutor(Protocol):
     def replay(self, run_id: str, node: str, recorded: Any) -> dict[str, Any]: ...
+
+
+class RunStarter(Protocol):
+    def start(
+        self,
+        *,
+        collection_id: str,
+        design_id: Optional[str] = None,
+        briefs: Optional[list[dict[str, Any]]] = None,
+    ) -> dict[str, Any]: ...
+
+
+class SpendReader(Protocol):
+    def month_to_date_usd(self) -> float: ...
+
+
+class SpendUnavailable(RuntimeError):
+    """Month-to-date spend could not be read — refuse to start rather than guess."""
+
+
+def runs_root() -> Path:
+    """Render-artifact root, shared with ``routers/designs.py:get_runs_root``.
+
+    Both must resolve to the same directory or a run's render cannot be served.
+    A test asserts the two agree.
+    """
+    return Path(__file__).resolve().parent.parent.parent / "runs"
+
+
+class SqlSpendReader:
+    """Month-to-date spend from ``model_calls``.
+
+    Without a datastore the answer is a genuine 0 (offline). With one
+    configured, a read failure raises: starting a run we cannot account for
+    would defeat the budget invariant (spec C4, anti-pattern "silently starting
+    a run when the budget cap is already exceeded").
+    """
+
+    def month_to_date_usd(self) -> float:
+        from sqlalchemy import text
+
+        from .config import settings
+        from .db import get_engine
+
+        if not settings.database_url:
+            return 0.0
+        try:
+            with get_engine().connect() as conn:
+                total = conn.execute(
+                    text(
+                        "SELECT COALESCE(SUM(cost_usd), 0) AS total FROM model_calls "
+                        "WHERE to_char(created_at, 'YYYY-MM') = :ym"
+                    ),
+                    {"ym": datetime.now().strftime("%Y-%m")},
+                ).scalar()
+        except Exception as exc:  # noqa: BLE001 - surfaced as a refusal, never a guess
+            raise SpendUnavailable(str(exc)) from exc
+        return float(total or 0.0)
 
 
 def derive_status(values: dict[str, Any], interrupted: bool) -> str:
@@ -193,6 +254,109 @@ class RunService:
 
 
 # ------------------------------------------------------------- prod ports
+
+
+class CheckpointerRunStarter:
+    """Start a pipeline run (spec C1–C5, C7).
+
+    The run's whole record is the checkpointer thread — ``run_id`` IS the
+    ``thread_id`` (NFR-1). Configuration is read from the running system at
+    start time: HITL flags from the settings store (the same source the Settings
+    UI writes) and render artifacts under the root ``designs.py`` serves from.
+
+    Phase lock (C5): ``fw_live`` is never set and no Fourthwall write client is
+    ever injected, so nothing here can create or publish a storefront product.
+    Node 9 records an explicit error instead (PBI-027 owns that path).
+
+    C7: the graph runs on a daemon thread, so the caller's request returns
+    immediately. A failure that escapes the graph is recorded into the run's own
+    state (``errors``) so it shows as ``failed`` in the Runs screen rather than
+    as a zombie "running" row.
+    """
+
+    def __init__(self, saver_factory=None, graph_factory=None) -> None:
+        from .hitl import _default_saver_factory, _saver_session  # same-package reuse
+
+        self._saver_factory = saver_factory or _default_saver_factory
+        self._saver_session = _saver_session
+        self._graph_factory = graph_factory
+
+    def _graph(self, saver):
+        if self._graph_factory is not None:
+            return self._graph_factory(checkpointer=saver)
+        from pipeline.graph import build_graph
+
+        return build_graph(checkpointer=saver)
+
+    def start(
+        self,
+        *,
+        collection_id: str,
+        design_id: Optional[str] = None,
+        briefs: Optional[list[dict[str, Any]]] = None,
+    ) -> dict[str, Any]:
+        from pipeline.llm import OpenRouterClient
+
+        from .db import get_engine
+        from .settings_store import get_hitl_flags
+
+        run_id = uuid.uuid4().hex
+        # A run needs a stable design_id for its state record and render path;
+        # the run id is unique and never a fabricated business value.
+        resolved_design = design_id or run_id
+
+        # Built here, not in the thread, so a missing key is a loud, attributable
+        # failure of this request instead of a silent dead thread.
+        client = OpenRouterClient()
+        cost_engine = get_engine()
+        hitl = get_hitl_flags()
+
+        config = {
+            "configurable": {
+                "thread_id": run_id,
+                "hitl": hitl,
+                "llm_client": client,
+                "cost_engine": cost_engine,
+                "run_dir": str(runs_root() / resolved_design),
+                # fw_live / fw_client deliberately absent — see phase lock (C5).
+            }
+        }
+        state = {
+            "design_id": resolved_design,
+            "collection_id": collection_id,
+            "briefs": briefs or [],
+        }
+        threading.Thread(
+            target=self._execute,
+            args=(run_id, state, config),
+            name=f"pipeline-run-{run_id}",
+            daemon=True,
+        ).start()
+        return {
+            "run_id": run_id,
+            "status": "running",
+            "collection_id": collection_id,
+            "design_id": resolved_design,
+            "hitl": hitl,
+        }
+
+    def _execute(self, run_id: str, state: dict[str, Any], config: dict[str, Any]) -> None:
+        """Run the graph; on failure, record it into the run's own state."""
+        try:
+            with self._saver_session(self._saver_factory) as saver:
+                self._graph(saver).invoke(state, config)
+        except Exception as exc:  # noqa: BLE001 - must surface, never vanish
+            traceback.print_exc()
+            self._record_failure(run_id, config, exc)
+
+    def _record_failure(self, run_id: str, config: dict[str, Any], exc: Exception) -> None:
+        try:
+            with self._saver_session(self._saver_factory) as saver:
+                self._graph(saver).update_state(
+                    config, {"errors": [f"run.start failed: {type(exc).__name__}: {exc}"]}
+                )
+        except Exception:  # noqa: BLE001 - best effort; the traceback above is the record
+            print(f"run {run_id}: could not record failure into state")
 
 
 class CheckpointerRunPorts:
