@@ -70,6 +70,16 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 35 | PBI-035 | hitl-graduation | 033, 022, 027, 024 | Todo | SWDRP-35 | Graduation decision record (A19, manual) |
 | 36 | PBI-036 | — (deploy hardening) | 001–034 | In Review | SWDRP-36 | Coolify deployment + production bug fixes (11 defects) |
 | 37 | PBI-037 | pipeline-runs | 028, 010, 033, 016 | In Review | SWDRP-37 | **Run initiation** — `POST /api/runs` (the pipeline's missing entry point) |
+| 38 | PBI-038 | agent-control-plane | 010, 033, 037 | In Review | SWDRP-38 | Per-node runtime config + current model defaults (routing → defaults) |
+| 39 | PBI-039 | agent-control-plane | 038, 022 | In Review | SWDRP-39 | Prompt overrides + effective prompt version (calibration honesty) |
+| 40 | PBI-040 | agent-control-plane | 038 | In Review | SWDRP-40 | Model catalog API + write-time validation (dead IDs become unsaveable) |
+| 41 | PBI-041 | agent-control-plane | 040, 038, 034 | In Review | SWDRP-41 | Agents UI — model picker, params, prompt editor |
+| 42 | PBI-042 | agent-control-plane | 038, 017, 028 | In Review | SWDRP-42 | Per-node run logs + run visualisation |
+
+> **Epic: agent-control-plane** (specs/agent-control-plane/spec.md) reverses
+> pipeline-core C3: `pipeline/routing.py` is now the reviewed **defaults**, and an
+> operator override in the settings store wins at run start. Reason: the first
+> live run proved every routing ID was absent from OpenRouter's live catalog.
 
 > **State column**: rows for PBI-025/026 were re-pointed to the Platform Open API
 > (ADR-005) and decided hand-rolled Open API (ADR-004) respectively; PBI-027's
