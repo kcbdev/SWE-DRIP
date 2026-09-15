@@ -27,6 +27,20 @@ describe("auth UI", () => {
     expect(middleware).toContain('new URL("/login"');
   });
 
+  it("middleware never gates static assets or API routes", async () => {
+    // Regression: `/icon.svg` was redirected to /login, so the browser received
+    // HTML as its icon. Static files must stay public.
+    const { isPublicPath } = await import("../middleware");
+    expect(isPublicPath("/icon.svg")).toBe(true);
+    expect(isPublicPath("/favicon.ico")).toBe(true);
+    expect(isPublicPath("/images/logo.png")).toBe(true);
+    expect(isPublicPath("/api/health")).toBe(true);
+    expect(isPublicPath("/login")).toBe(true);
+    expect(isPublicPath("/")).toBe(false);
+    expect(isPublicPath("/settings/users")).toBe(false);
+    expect(isPublicPath("/approvals")).toBe(false);
+  });
+
   it("shell gates the admin nav and offers logout", () => {
     const shell = read("components/app-shell.tsx");
     expect(shell).toContain("isAdmin");
