@@ -367,6 +367,9 @@ class CheckpointerRunStarter:
             "collection_id": collection_id,
             "briefs": briefs or [],
             "node_config": node_config,
+            # Frozen so a later resume/replay replays the same gates (a resumed
+            # node only returns its resume value while its gate is still ON).
+            "hitl": hitl,
         }
         threading.Thread(
             target=self._execute,
@@ -474,6 +477,13 @@ class CheckpointerRunPorts:
         return out
 
     def replay(self, run_id: str, node: str, recorded: Any) -> dict[str, Any]:
+        """Re-run the graph from ``node`` on its recorded upstream state.
+
+        Rebuilds the same runtime config the start path supplied — a replay
+        executes every node after ``node``, so it needs `llm_client`,
+        `cost_engine`, the frozen HITL flags, the frozen `node_config` snapshot
+        and the render root, not just a thread id.
+        """
         import os
 
         from pipeline.llm import OpenRouterClient
@@ -482,7 +492,17 @@ class CheckpointerRunPorts:
             raise RuntimeError("replay needs OPENROUTER_API_KEY (model calls bill to the project)")
         with self._saver_session(self._saver_factory) as saver:
             graph = self._graph(saver)
-            config = {"configurable": {"thread_id": run_id, "llm_client": OpenRouterClient()}}
+            state = dict(graph.get_state({"configurable": {"thread_id": run_id}}).values or {})
+            config = {
+                "configurable": {
+                    "thread_id": run_id,
+                    "llm_client": OpenRouterClient(),
+                    "cost_engine": get_engine(),
+                    "hitl": state.get("hitl") or {},
+                    "node_config": state.get("node_config") or {},
+                    "run_dir": str(runs_root() / str(state.get("design_id") or run_id)),
+                }
+            }
             graph.update_state(config, {NODE_STATE_KEY[node]: recorded}, as_node=node)
             result = graph.invoke(None, config)
         visited = (result or {}).get("visited") or []

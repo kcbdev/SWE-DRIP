@@ -262,13 +262,50 @@ class SyncGraphRunner:
         return dict(snapshot.values or {})
 
     def resume(self, thread_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Resume a paused run, rebuilding the runtime config the run started with.
+
+        A resume re-executes the gated node from its start and then continues
+        into the nodes AFTER it, so it needs the same runtime the start path
+        supplied — `llm_client`, `cost_engine`, the frozen HITL flags, the frozen
+        `node_config` snapshot and the render root. Passing only `thread_id`
+        (the previous behaviour) made every approval fail with
+        "no llm_client in config['configurable']" on the first model-calling
+        node, i.e. approving a gate could never progress a run in production.
+
+        The HITL flags must be replayed because LangGraph only returns the
+        resume value while the gate is still ON (see PBI-014).
+        """
         from langgraph.types import Command
+        from pipeline.llm import OpenRouterClient
+
+        from .db import get_engine
+        from .runs import runs_root
 
         with _saver_session(self._saver_factory) as saver:
-            self._graph(saver).invoke(
-                Command(resume=payload), {"configurable": {"thread_id": thread_id}}
-            )
+            graph = self._graph(saver)
+            state = dict(graph.get_state({"configurable": {"thread_id": thread_id}}).values or {})
+            hitl = state.get("hitl") or _resolve_hitl()
+            run_dir = runs_root() / str(state.get("design_id") or thread_id)
+            config = {
+                "configurable": {
+                    "thread_id": thread_id,
+                    "hitl": hitl,
+                    "llm_client": OpenRouterClient(),
+                    "cost_engine": get_engine(),
+                    # Empty snapshot is fine: nodes fall back to code defaults.
+                    "node_config": state.get("node_config") or {},
+                    "run_dir": str(run_dir),
+                }
+            }
+            graph.invoke(Command(resume=payload), config)
         return {"thread_id": thread_id, "resumed": True}
+
+
+def _resolve_hitl() -> dict[str, bool]:
+    """Current HITL flags — fallback for runs started before the state snapshot."""
+    from .settings_store import get_hitl_flags
+
+    return get_hitl_flags()
 
 
 class SqlApprovalIndex:

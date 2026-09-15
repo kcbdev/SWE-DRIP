@@ -69,3 +69,8 @@ class RunState(TypedDict, total=False):
     # Frozen per-node runtime config snapshot (agent control plane, spec C2):
     # the run explains which model/params each node actually used.
     node_config: dict[str, Any]
+    # Frozen HITL flags the run started with. A resume re-executes the gated
+    # node from its start, so LangGraph only hands back the resume value while
+    # the gate is still ON (learnt in PBI-014) — the resume path must replay the
+    # same flags, which means they have to be readable from run state.
+    hitl: dict[str, bool]
