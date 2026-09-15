@@ -45,3 +45,7 @@ coverage/
 Thumbs.db
 .idea/
 .vscode/
+
+# Agent/IDE tooling artifacts (local scratch, never part of the product)
+.freebuff/
+.playwright-mcp/
