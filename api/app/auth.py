@@ -19,6 +19,7 @@ import hmac
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
+from urllib.parse import unquote
 
 from fastapi import HTTPException, Request, status
 from sqlalchemy import text
@@ -57,11 +58,16 @@ def verify_session_cookie(cookie_value: Optional[str], secret: str) -> Optional[
     """Return the raw session token iff ``cookie_value`` is a valid signed value.
 
     Format (Better Auth): ``<token>.<base64url HMAC-SHA256(secret, token)>``.
-    Returns ``None`` for any malformed, tampered, or wrongly-signed input.
+    The cookie value arrives percent-encoded on the wire (``=`` -> ``%3D``
+    etc.), so it is unquoted before splitting. Returns ``None`` for any
+    malformed, tampered, or wrongly-signed input.
     """
-    if not cookie_value or not secret or "." not in cookie_value:
+    if not cookie_value or not secret:
         return None
-    token, _, signature = cookie_value.rpartition(".")
+    value = unquote(cookie_value)
+    if "." not in value:
+        return None
+    token, _, signature = value.rpartition(".")
     if not token or not signature:
         return None
     expected = hmac.new(secret.encode("utf-8"), token.encode("utf-8"), hashlib.sha256).digest()

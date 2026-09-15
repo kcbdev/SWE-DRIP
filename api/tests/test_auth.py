@@ -48,6 +48,15 @@ def test_malformed_cookies_are_rejected(bad: str) -> None:
     assert verify_session_cookie(bad, SECRET) is None
 
 
+def test_percent_encoded_better_call_signature_is_accepted() -> None:
+    # Interop vector produced by better-call's signCookieValue (the real
+    # Better Auth signer): signatures arrive percent-encoded on the wire
+    # (`+` -> `%2B`, `=` -> `%3D`).
+    secret = "interop-test-secret-0123456789abcdef"
+    signed = "tok-abc.IcOeLGSDbnGbDFiG37x%2BD78W7aJfO780zx6rbwgIovY%3D"
+    assert verify_session_cookie(signed, secret) == "tok-abc"
+
+
 # -------------------------------------------------------------- role matrix
 
 
