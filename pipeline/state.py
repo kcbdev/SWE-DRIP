@@ -66,3 +66,6 @@ class RunState(TypedDict, total=False):
     # Run bookkeeping (append-only reducers).
     visited: Annotated[list[str], operator.add]
     errors: Annotated[list[str], operator.add]
+    # Frozen per-node runtime config snapshot (agent control plane, spec C2):
+    # the run explains which model/params each node actually used.
+    node_config: dict[str, Any]

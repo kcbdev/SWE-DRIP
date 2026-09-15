@@ -23,7 +23,13 @@ from pipeline.llm import OpenRouterClient
 from pipeline.nodes.copy import TITLE_MAX_CHARS, SLOGAN_MAX_WORDS, listing_copy, validate_copy
 from pipeline.nodes.design_spec import INHERITED_KEYS, design_spec
 from pipeline.nodes.render import art_render, parse_png_dimensions
-from pipeline.routing import NODE_ORDER
+from pipeline.routing import (
+    CLAUDE_SONNET,
+    GEMINI_FLASH_IMAGE,
+    GPT_IMAGE,
+    GPT_IMAGE_MINI,
+    NODE_ORDER,
+)
 
 BRIEF = {"subject": "Vibe Coding", "text": "a tee about vibe coding", "style": "mono-log"}
 
@@ -125,7 +131,7 @@ def test_copy_node_stores_validated_copy_and_cost() -> None:
     assert out["listing_copy"] == GOOD_COPY
     assert out["visited"] == ["listing_copy"]
     assert "errors" not in out
-    assert captured[0]["model"] == "anthropic/claude-sonnet-4-6"
+    assert captured[0]["model"] == CLAUDE_SONNET
     assert engine.rows[0]["node"] == "listing_copy"
 
 
@@ -215,9 +221,9 @@ def test_render_primary_model_validated_before_state_write(tmp_path: Path) -> No
     engine = _FakeEngine()
     state, extra = _spec_state(tmp_path)
     out = art_render(state, _cfg(_image_client(captured), engine, **extra))
-    assert captured[0]["model"] == "riverflow-v2-pro"
+    assert captured[0]["model"] == GEMINI_FLASH_IMAGE
     ref = out["render_result"]
-    assert ref["model_used"] == "riverflow-v2-pro"
+    assert ref["model_used"] == GEMINI_FLASH_IMAGE
     assert (ref["width"], ref["height"]) == (256, 256)
     assert ref["colorways_valid"] == []
     assert Path(ref["file_url"]).read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
@@ -229,10 +235,10 @@ def test_render_falls_back_on_primary_failure(tmp_path: Path) -> None:
     captured: list[dict] = []
     state, extra = _spec_state(tmp_path)
     out = art_render(
-        state, _cfg(_image_client(captured, fail_models={"riverflow-v2-pro"}), _FakeEngine(), **extra)
+        state, _cfg(_image_client(captured, fail_models={GEMINI_FLASH_IMAGE}), _FakeEngine(), **extra)
     )
-    assert [c["model"] for c in captured] == ["riverflow-v2-pro", "gpt-5-image-mini"]
-    assert out["render_result"]["model_used"] == "gpt-5-image-mini"
+    assert [c["model"] for c in captured] == [GEMINI_FLASH_IMAGE, GPT_IMAGE_MINI]
+    assert out["render_result"]["model_used"] == GPT_IMAGE_MINI
 
 
 def test_render_total_failure_is_loud(tmp_path: Path) -> None:
@@ -242,7 +248,7 @@ def test_render_total_failure_is_loud(tmp_path: Path) -> None:
         art_render(
             state,
             _cfg(
-                _image_client(captured, fail_models={"riverflow-v2-pro", "gpt-5-image-mini", "seedream"}),
+                _image_client(captured, fail_models={GEMINI_FLASH_IMAGE, GPT_IMAGE_MINI, GPT_IMAGE}),
                 _FakeEngine(),
                 **extra,
             ),
@@ -316,7 +322,7 @@ def test_nodes_3_to_5_wired_end_to_end(tmp_path: Path) -> None:
     # Style flows briefs → cluster → drafted contract → spec (verbatim inheritance):
     assert result["design_spec"]["style"] == "mono-log"
     assert result["design_spec"]["palette"] == result["collection_contract"]["illustration_rules"]["palette"]
-    assert result["render_result"]["model_used"] == "riverflow-v2-pro"
+    assert result["render_result"]["model_used"] == GEMINI_FLASH_IMAGE
     # PBI-013: draft contracts carry no placement templates, so placement
     # records the gap (CEO fills templates) while QC passes on the render:
     assert any("no placement template" in e for e in result["errors"])

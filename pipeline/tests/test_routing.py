@@ -1,10 +1,14 @@
 """Routing-table contracts (spec C3, acceptance A6 unit layer).
 
-`routing.py` is the single source of model IDs. These tests prove every node
-is covered, the IDs are exactly the data-spec §3 values, deterministic nodes
-make no model call (None), and the client sends precisely the routed model —
-the deterministic guard against the POC's single-model-override bug. (The
-full per-node A6 harness with real node functions lands in PBI-015.)
+`routing.py` holds the **defaults** for the agent control plane (an operator
+override in the settings store wins at run start — see `pipeline/node_config.py`).
+These tests prove every node is covered, the defaults are current working
+OpenRouter IDs, deterministic nodes make no model call (None), and the client
+sends precisely the routed model — the deterministic guard against the POC's
+single-model-override bug.
+
+ID revision (2026-09-15): the previous "exact data-spec §3" IDs were all absent
+from OpenRouter's live catalog and made the first live run 404.
 """
 
 from __future__ import annotations
@@ -17,22 +21,24 @@ import pytest
 from pipeline.llm import OpenRouterClient
 from pipeline.routing import (
     CLAUDE_SONNET,
-    GEMINI_FLASH,
+    GEMINI_FLASH_IMAGE,
+    GEMINI_FLASH_LITE,
+    GPT_IMAGE,
+    GPT_IMAGE_MINI,
     IMAGE_FALLBACKS,
     MODEL_FOR_NODE,
     NODE_ORDER,
-    RIVERFLOW_PRO,
     model_for,
 )
 
-# Exact data-spec §3 IDs per model-backed node.
+# Defaults per model-backed node (current catalog IDs).
 EXPECTED_MODELS: dict[str, str] = {
-    "trend_research": GEMINI_FLASH,
+    "trend_research": GEMINI_FLASH_LITE,
     "contract_approval": CLAUDE_SONNET,
     "listing_copy": CLAUDE_SONNET,
     "design_spec": CLAUDE_SONNET,
-    "art_render": RIVERFLOW_PRO,
-    "aesthetic_qc": GEMINI_FLASH,
+    "art_render": GEMINI_FLASH_IMAGE,
+    "aesthetic_qc": GEMINI_FLASH_LITE,
 }
 
 # Nodes that must never make a model call (C8 + external/HITL nodes).
@@ -54,8 +60,8 @@ def test_deterministic_and_external_nodes_make_no_model_call(node: str) -> None:
     assert model_for(node) is None
 
 
-def test_art_render_fallbacks_from_spec() -> None:
-    assert IMAGE_FALLBACKS == ("gpt-5-image-mini", "seedream")
+def test_art_render_fallbacks_are_current() -> None:
+    assert IMAGE_FALLBACKS == (GPT_IMAGE_MINI, GPT_IMAGE)
 
 
 def test_unknown_node_is_loud() -> None:
@@ -93,7 +99,7 @@ def test_vision_call_shape() -> None:
     client = OpenRouterClient(api_key="test-key", transport=_transport(captured, CHAT_RESPONSE))
     client.vision(model=model_for("aesthetic_qc"), prompt="score it", image_url="http://x/y.png")  # type: ignore[arg-type]
     content = captured[0]["messages"][0]["content"]
-    assert captured[0]["model"] == GEMINI_FLASH
+    assert captured[0]["model"] == GEMINI_FLASH_LITE
     assert {"type": "image_url", "image_url": {"url": "http://x/y.png"}} in content
 
 
@@ -102,7 +108,7 @@ def test_image_call_shape() -> None:
     response = {"data": [{"url": "http://x/y.png"}], "usage": {}}
     client = OpenRouterClient(api_key="test-key", transport=_transport(captured, response))
     result = client.image(model=model_for("art_render"), prompt="a tee")  # type: ignore[arg-type]
-    assert captured[0] == {"model": RIVERFLOW_PRO, "prompt": "a tee"}
+    assert captured[0] == {"model": GEMINI_FLASH_IMAGE, "prompt": "a tee"}
     assert result.content == "http://x/y.png"
 
 

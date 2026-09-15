@@ -95,7 +95,7 @@ project_structure:
     contains: "ADR-{NNN}.md per decision (ADR-001 = onboarding bootstrap)"
   specs/:
     responsibility: "Living specs — human-reviewed behavior contracts per feature (state). Overrides docs/ for that feature once created."
-    contains: "14 feature specs (app-foundation, auth-rbac, audit-log, dashboard, pipeline-core, pipeline-runs, hitl-approvals, hitl-graduation, collections, design-qc, fourthwall-integration, traceability, catalog-analytics, settings-agents) — authored by asdlc-plan from the delivery spec phases; specs/{feature}/spec.md"
+    contains: "15 feature specs (app-foundation, auth-rbac, audit-log, dashboard, pipeline-core, pipeline-runs, hitl-approvals, hitl-graduation, collections, design-qc, fourthwall-integration, traceability, catalog-analytics, settings-agents, agent-control-plane) — authored by asdlc-plan from the delivery spec phases; specs/{feature}/spec.md"
   tasks/:
     responsibility: "PBIs (deltas) — atomic, dependency-declared task cards derived from specs."
     contains: "PBI-{NNN}.md — populated by asdlc-plan"

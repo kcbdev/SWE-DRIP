@@ -332,6 +332,7 @@ class CheckpointerRunStarter:
         briefs: Optional[list[dict[str, Any]]] = None,
     ) -> dict[str, Any]:
         from pipeline.llm import OpenRouterClient
+        from pipeline.node_config import resolve_all_node_configs
 
         from .db import get_engine
         from .settings_store import get_hitl_flags
@@ -346,6 +347,9 @@ class CheckpointerRunStarter:
         client = OpenRouterClient()
         cost_engine = get_engine()
         hitl = get_hitl_flags()
+        # Resolved ONCE: editing node config never changes a run in flight
+        # (spec C2), and the snapshot rides in state so the run explains itself.
+        node_config = {node: conf.as_dict() for node, conf in resolve_all_node_configs().items()}
 
         config = {
             "configurable": {
@@ -353,6 +357,7 @@ class CheckpointerRunStarter:
                 "hitl": hitl,
                 "llm_client": client,
                 "cost_engine": cost_engine,
+                "node_config": node_config,
                 "run_dir": str(runs_root() / resolved_design),
                 # fw_live / fw_client deliberately absent — see phase lock (C5).
             }
@@ -361,6 +366,7 @@ class CheckpointerRunStarter:
             "design_id": resolved_design,
             "collection_id": collection_id,
             "briefs": briefs or [],
+            "node_config": node_config,
         }
         threading.Thread(
             target=self._execute,

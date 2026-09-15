@@ -20,6 +20,7 @@ from langgraph.types import RunnableConfig, interrupt
 
 from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
+from ..node_config import effective_for_config
 from ..routing import model_for
 from ..state import RunState
 
@@ -64,7 +65,10 @@ def _parse_json_payload(text: str) -> Any:
 
 
 def cluster_briefs(
-    briefs: list[dict[str, Any]], client: Any, model: str
+    briefs: list[dict[str, Any]],
+    client: Any,
+    model: str,
+    params: dict[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], Any | None]:
     """Group passing briefs into collection candidates.
 
@@ -93,7 +97,9 @@ def cluster_briefs(
             for b in briefs
         )
     )
-    result = client.chat(model=model, messages=[{"role": "user", "content": prompt}])
+    result = client.chat(
+        model=model, messages=[{"role": "user", "content": prompt}], **(params or {})
+    )
     payload = _parse_json_payload(result.content if isinstance(result.content, str) else "")
     raw_clusters = (payload.get("clusters") if isinstance(payload, dict) else None) or []
     known = {b["id"] for b in briefs}
@@ -142,9 +148,16 @@ def trend_research(state: RunState, config: RunnableConfig = None) -> dict[str, 
             "trend_research: no llm_client in config['configurable'] "
             "(the production runner injects OpenRouterClient)"
         )
-    model = model_for(NODE)
+    # Resolved node config (frozen into the run at start). Absent → code defaults.
+    conf = effective_for_config(cfg, NODE)
+    if not conf.enabled:
+        return {
+            "clusters": [{"skipped": True, "reason": "disabled by node config"}],
+            "visited": [NODE],
+        }
+    model = conf.model or model_for(NODE)
     assert model is not None  # routed per §3; None would be a routing-table bug
-    clusters, llm_result = cluster_briefs(passing, client, model)
+    clusters, llm_result = cluster_briefs(passing, client, model, conf.params)
 
     errors: list[str] = []
     if llm_result is not None:

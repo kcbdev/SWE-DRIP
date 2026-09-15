@@ -18,16 +18,22 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from pipeline.graph import build_graph
 from pipeline.llm import OpenRouterClient
-from pipeline.routing import MODEL_FOR_NODE, NODE_ORDER
+from pipeline.routing import (
+    CLAUDE_SONNET,
+    GEMINI_FLASH_IMAGE,
+    GEMINI_FLASH_LITE,
+    MODEL_FOR_NODE,
+    NODE_ORDER,
+)
 from pipeline.rubric import CRITERIA
 
 # (node, model): exact expected call counts for a clean single-pass run.
 EXPECTED_CALLS: dict[tuple[str, str], int] = {
-    ("trend_research", "google/gemini-2.0-flash-001"): 1,
-    ("listing_copy", "anthropic/claude-sonnet-4-6"): 1,
-    ("design_spec", "anthropic/claude-sonnet-4-6"): 1,
-    ("art_render", "riverflow-v2-pro"): 1,
-    ("aesthetic_qc", "google/gemini-2.0-flash-001"): 1,
+    ("trend_research", GEMINI_FLASH_LITE): 1,
+    ("listing_copy", CLAUDE_SONNET): 1,
+    ("design_spec", CLAUDE_SONNET): 1,
+    ("art_render", GEMINI_FLASH_IMAGE): 1,
+    ("aesthetic_qc", GEMINI_FLASH_LITE): 1,
 }
 
 MODEL_BACKED_NODES = {node for node, model in MODEL_FOR_NODE.items() if model is not None}

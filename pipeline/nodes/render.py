@@ -25,6 +25,7 @@ from langgraph.types import RunnableConfig, interrupt
 
 from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
+from ..node_config import effective_for_config
 from ..routing import IMAGE_FALLBACKS, model_for
 from ..state import RunState
 
@@ -77,8 +78,16 @@ def art_render(state: RunState, config: RunnableConfig = None) -> dict[str, Any]
             "art_render: no llm_client in config['configurable'] "
             "(the production runner injects OpenRouterClient)"
         )
-    primary = model_for(NODE)
+    conf = effective_for_config(cfg, NODE)
+    if not conf.enabled:
+        return {
+            "render_result": {"skipped": True, "reason": "disabled by node config"},
+            "visited": [NODE],
+        }
+    primary = conf.model or model_for(NODE)
     assert primary is not None  # routed per §3; None would be a routing-table bug
+    # Config-disabled image fallbacks stay in place; an explicit override of
+    # `art_render.model` replaces only the primary candidate.
     models = [primary, *IMAGE_FALLBACKS]
 
     # Regeneration feedback from aesthetic QC (PBI-013) augments the prompt.
@@ -93,7 +102,7 @@ def art_render(state: RunState, config: RunnableConfig = None) -> dict[str, Any]
     failures: list[str] = []
     for candidate in models:
         try:
-            result = client.image(model=candidate, prompt=prompt)
+            result = client.image(model=candidate, prompt=prompt, **conf.params)
             used_model = candidate
             break
         except Exception as exc:  # try next model; all failing is loud below

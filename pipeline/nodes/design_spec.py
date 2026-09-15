@@ -16,6 +16,7 @@ from langgraph.types import RunnableConfig, interrupt
 
 from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
+from ..node_config import effective_for_config
 from ..routing import model_for
 from ..state import RunState
 
@@ -47,7 +48,13 @@ def design_spec(state: RunState, config: RunnableConfig = None) -> dict[str, Any
             "design_spec: no llm_client in config['configurable'] "
             "(the production runner injects OpenRouterClient)"
         )
-    model = model_for(NODE)
+    conf = effective_for_config(cfg, NODE)
+    if not conf.enabled:
+        return {
+            "design_spec": {"skipped": True, "reason": "disabled by node config"},
+            "visited": [NODE],
+        }
+    model = conf.model or model_for(NODE)
     assert model is not None  # routed per §3; None would be a routing-table bug
     prompt = (
         "Using the RCAO framework (Reason, Creative direction, Audience, Output), "
@@ -57,7 +64,9 @@ def design_spec(state: RunState, config: RunnableConfig = None) -> dict[str, Any
         f"Collection theme: {contract.get('theme', '')}\n"
         f"Locked style: {contract.get('style_archetype', '')}"
     )
-    result = client.chat(model=model, messages=[{"role": "user", "content": prompt}])
+    result = client.chat(
+        model=model, messages=[{"role": "user", "content": prompt}], **conf.params
+    )
     try:
         reasoning = json.loads(result.content if isinstance(result.content, str) else "")
     except (json.JSONDecodeError, TypeError) as exc:

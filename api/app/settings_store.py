@@ -263,8 +263,56 @@ def get_integrations() -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Per-node runtime config (agent control plane)
+# ---------------------------------------------------------------------------
+
+NODE_CONFIG_KEY = "node_config"
+
+
+def get_node_config_overrides() -> dict[str, Any]:
+    """Raw per-node overrides from the settings store (``{}`` when unset)."""
+    _load_from_db()
+    raw = _cache.get(NODE_CONFIG_KEY, {})
+    return dict(raw) if isinstance(raw, dict) else {}
+
+
+def get_node_config_override(node: str) -> dict[str, Any]:
+    """Raw override for one node (``{}`` when unset)."""
+    raw = get_node_config_overrides().get(node)
+    return dict(raw) if isinstance(raw, dict) else {}
+
+
+def set_node_config_override(node: str, patch: dict[str, Any]) -> dict[str, Any]:
+    """Merge ``patch`` into one node's override. An empty patch clears the node.
+
+    Only known fields are accepted, so a typo cannot write junk into config.
+    Clearing every field removes the node's entry entirely, which makes it fall
+    back to code defaults (rather than storing a no-op override).
+    """
+    from pipeline.node_config import CONFIG_FIELDS
+
+    current = get_node_config_overrides()
+    entry = dict(current.get(node) or {})
+    for key, value in patch.items():
+        if key not in CONFIG_FIELDS:
+            continue
+        if value is None:
+            entry.pop(key, None)
+        else:
+            entry[key] = value
+    if entry:
+        current[node] = entry
+    else:
+        current.pop(node, None)
+    _cache[NODE_CONFIG_KEY] = current
+    _write_to_db(NODE_CONFIG_KEY, current)
+    return dict(current.get(node) or {})
+
+
+# ---------------------------------------------------------------------------
 # Generic setting accessors (used by agents module)
 # ---------------------------------------------------------------------------
+
 
 def get_setting(key: str, default: Any = None) -> Any:
     """Return any settings key, falling back to *default*."""

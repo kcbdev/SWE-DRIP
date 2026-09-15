@@ -33,7 +33,7 @@ from pipeline.nodes.trend import (
     score_brief,
     trend_research,
 )
-from pipeline.routing import NODE_ORDER
+from pipeline.routing import GEMINI_FLASH_LITE, NODE_ORDER
 
 BRIEFS = [
     {"id": "b1", "subject": "Vibe Coding", "text": "tee about vibe coding", "style": "mono-log",
@@ -109,7 +109,7 @@ def test_out_of_range_scores_are_loud(args: tuple) -> None:
 def test_clustering_groups_deterministically() -> None:
     captured: list[dict] = []
     client = _client({"clusters": [{"theme": "Vibe Coding", "brief_ids": ["b2", "b1"]}]}, captured)
-    clusters, result = cluster_briefs(BRIEFS[:2], client, "google/gemini-2.0-flash-001")
+    clusters, result = cluster_briefs(BRIEFS[:2], client, GEMINI_FLASH_LITE)
     assert len(captured) == 1  # exactly one synthesis call
     assert clusters == [{"cluster_id": "cluster-1", "theme": "Vibe Coding", "brief_ids": ["b1", "b2"]}]
     assert result is not None
@@ -167,7 +167,7 @@ def test_trend_node_filters_and_clusters() -> None:
     assert "errors" not in out
     assert engine.rows[0] == {
         "node": "trend_research",
-        "model": "google/gemini-2.0-flash-001",
+        "model": GEMINI_FLASH_LITE,
         "tokens_in": 12,
         "tokens_out": 8,
         "cost_usd": 0.004,

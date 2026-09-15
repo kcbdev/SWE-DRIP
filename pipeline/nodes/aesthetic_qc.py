@@ -22,6 +22,7 @@ from langgraph.types import RunnableConfig, interrupt
 from .. import rubric
 from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
+from ..node_config import effective_for_config
 from ..routing import model_for
 from ..state import RunState
 
@@ -47,7 +48,13 @@ def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
             "aesthetic_qc: no llm_client in config['configurable'] "
             "(the production runner injects OpenRouterClient)"
         )
-    model = model_for(NODE)
+    conf = effective_for_config(cfg, NODE)
+    if not conf.enabled:
+        return {
+            "aesthetic_qc": {"skipped": True, "reason": "disabled by node config"},
+            "visited": [NODE],
+        }
+    model = conf.model or model_for(NODE)
     assert model is not None  # routed per §3; None would be a routing-table bug
 
     previous = state.get("aesthetic_qc") or {}
@@ -60,7 +67,9 @@ def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
         attempt=attempt,
         previous_feedback=previous.get("feedback") or "",
     )
-    result = client.vision(model=model, prompt=prompt, image_url=render["file_url"])
+    result = client.vision(
+        model=model, prompt=prompt, image_url=render["file_url"], **conf.params
+    )
     try:
         scores = rubric.parse_scores(
             json.loads(result.content if isinstance(result.content, str) else "")
