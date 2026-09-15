@@ -13,6 +13,20 @@ describe("auth UI", () => {
     expect(page).toContain("Invite-only");
   });
 
+  it("login page redirects signed-in users away and refreshes session after sign-in", () => {
+    const page = read("app/(auth)/login/page.tsx");
+    expect(page).toContain('router.replace("/")');
+    expect(page).toContain("router.refresh()");
+    expect(page).toContain("useSession");
+  });
+
+  it("middleware gates every page on session-cookie presence", () => {
+    const middleware = read("middleware.ts");
+    expect(middleware).toContain("__Secure-better-auth.session_token");
+    expect(middleware).toContain("better-auth.session_token");
+    expect(middleware).toContain('new URL("/login"');
+  });
+
   it("shell gates the admin nav and offers logout", () => {
     const shell = read("components/app-shell.tsx");
     expect(shell).toContain("isAdmin");
