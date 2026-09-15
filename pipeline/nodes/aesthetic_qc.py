@@ -14,7 +14,9 @@ state — no new keys smuggled through the graph).
 
 from __future__ import annotations
 
+import base64
 import json
+from pathlib import Path
 from typing import Any
 
 from langgraph.types import RunnableConfig, interrupt
@@ -27,6 +29,23 @@ from ..routing import model_for
 from ..state import RunState
 
 NODE = "aesthetic_qc"
+
+
+def image_ref(file_url: str) -> str:
+    """Return something OpenRouter accepts as an image URL.
+
+    The render node records a LOCAL artifact path (`runs/<design>/render.png`),
+    not a URL, and the vision endpoint rejects a bare path with HTTP 400 — which
+    is exactly how the first live run died at aesthetic QC. Local artifacts are
+    inlined as a base64 data URI; anything already addressable passes through.
+    """
+    if file_url.startswith(("http://", "https://", "data:")):
+        return file_url
+    path = Path(file_url)
+    if not path.is_file():
+        raise ValueError(f"aesthetic_qc: render artifact not found: {file_url!r}")
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
 
 
 def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, Any]:  # type: ignore[assignment]
@@ -68,7 +87,7 @@ def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
         previous_feedback=previous.get("feedback") or "",
     )
     result = client.vision(
-        model=model, prompt=prompt, image_url=render["file_url"], **conf.params
+        model=model, prompt=prompt, image_url=image_ref(render["file_url"]), **conf.params
     )
     try:
         scores = rubric.parse_scores(
