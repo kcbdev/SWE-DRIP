@@ -14,6 +14,17 @@ import { SYSTEM_ACTOR, authEventForPath, writeAudit } from "./audit";
  * `next build` needs no database.
  */
 export const auth = betterAuth({
+  // Cross-origin API calls (panel origin -> api subdomain) only carry the
+  // session cookie when it is scoped to the shared parent domain. Set
+  // COOKIE_DOMAIN=.kcb.ma in production; leave unset for localhost dev.
+  advanced: process.env.COOKIE_DOMAIN
+    ? {
+        crossSubDomainCookies: {
+          enabled: true,
+          domain: process.env.COOKIE_DOMAIN,
+        },
+      }
+    : undefined,
   database: new Pool({ connectionString: process.env.DATABASE_URL }),
   secret: process.env.BETTER_AUTH_SECRET ?? "dev-only-secret-change-me",
   baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",

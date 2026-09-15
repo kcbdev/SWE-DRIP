@@ -20,13 +20,17 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import Cookie, Depends, HTTPException, status
+from fastapi import HTTPException, Request, status
 from sqlalchemy import text
 
 from .config import settings
 from .db import get_engine
 
 SESSION_COOKIE = "better-auth.session_token"
+# Better Auth prefixes cookie names with `__Secure-` when its baseURL is
+# https (production) but not on http (local dev). Accept both so the same
+# build validates sessions in every environment.
+SECURE_SESSION_COOKIE = f"__Secure-{SESSION_COOKIE}"
 
 # Roles are exact strings everywhere (DB, API, UI) — see spec C2.
 ROLE_ADMIN = "admin"
@@ -92,11 +96,12 @@ def resolve_session_token(token: str) -> Optional[Actor]:
     return Actor(user_id=str(row["user_id"]), email=row["email"], role=role)
 
 
-def get_current_actor(
-    session_cookie: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE),
-) -> Actor:
+def get_current_actor(request: Request) -> Actor:
     """FastAPI dependency: resolve the caller or raise 401."""
-    token = verify_session_cookie(session_cookie, settings.better_auth_secret)
+    raw_cookie = request.cookies.get(SECURE_SESSION_COOKIE)
+    if raw_cookie is None:
+        raw_cookie = request.cookies.get(SESSION_COOKIE)
+    token = verify_session_cookie(raw_cookie, settings.better_auth_secret)
     if token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

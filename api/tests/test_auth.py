@@ -76,6 +76,39 @@ def test_missing_session_is_401_without_db() -> None:
     assert TestClient(_admin_only_app()).get("/admin-only").status_code == 401
 
 
+def _whoami_app() -> FastAPI:
+    from api.app.auth import get_current_actor as live_actor
+
+    app = FastAPI()
+
+    @app.get("/whoami")
+    def whoami(actor: Actor = Depends(live_actor)) -> dict[str, str]:
+        return {"role": actor.role}
+
+    return app
+
+
+def test_both_session_cookie_names_are_accepted(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Prod (https baseURL) uses the `__Secure-` cookie prefix, local dev does
+    not. The API must accept both; missing cookie stays 401."""
+    import api.app.auth as auth_module
+    from api.app.config import settings as app_settings
+
+    monkeypatch.setattr(app_settings, "better_auth_secret", SECRET)
+    monkeypatch.setattr(
+        auth_module,
+        "resolve_session_token",
+        lambda token: Actor("u-1", "a@b.c", ROLE_ADMIN) if token == "tok-123" else None,
+    )
+    client = TestClient(_whoami_app())
+    assert (
+        client.get("/whoami", cookies={"__Secure-better-auth.session_token": sign("tok-123")}).status_code
+        == 200
+    )
+    assert client.get("/whoami", cookies={"better-auth.session_token": sign("tok-123")}).status_code == 200
+    assert client.get("/whoami").status_code == 401
+
+
 def test_me_endpoint_returns_actor() -> None:
     from api.app.main import app as main_app
 
