@@ -47,20 +47,23 @@ export async function patchBrand(patch: Partial<BrandConstants>): Promise<BrandC
 // ---------------------------------------------------------------------------
 
 export interface IntegrationsStatus {
-  /** Fourthwall MCP URL + token both present. */
-  fourthwall_mcp: boolean;
+  /** Fourthwall Open API username + password both present. */
+  fourthwall: boolean;
   /** OpenRouter API key present. */
   openrouter: boolean;
-  /** Non-secret endpoint hint (may be empty). */
-  fourthwall_mcp_url: string;
+  /** Non-secret endpoint hint. */
+  fourthwall_base_url: string;
+  /** Non-secret identifier (the API user name). */
+  fourthwall_username: string;
   /** Non-secret endpoint hint. */
   openrouter_base_url: string;
 }
 
 export interface IntegrationsPatch {
-  fourthwall_mcp_url?: string;
+  fourthwall_api_base_url?: string;
+  fourthwall_api_username?: string;
   /** Write-only: never returned by the API. Empty string clears it. */
-  fourthwall_mcp_token?: string;
+  fourthwall_api_password?: string;
   /** Write-only: never returned by the API. Empty string clears it. */
   openrouter_api_key?: string;
   openrouter_base_url?: string;
@@ -69,6 +72,7 @@ export interface IntegrationsPatch {
 export interface IntegrationTestResult {
   ok: boolean;
   error?: string;
+  products_seen?: number;
 }
 
 /** Fetch integration presence + non-secret endpoints (never secret values). */
@@ -86,7 +90,7 @@ export async function saveIntegrations(
   });
 }
 
-/** Probe the configured Fourthwall MCP. Admin-only; degraded read is not an error. */
+/** Probe the configured Fourthwall API. Admin-only; degraded read is not an error. */
 export async function testFourthwall(): Promise<IntegrationTestResult> {
   return apiFetch<IntegrationTestResult>("/api/settings/integrations/test", {
     method: "POST",

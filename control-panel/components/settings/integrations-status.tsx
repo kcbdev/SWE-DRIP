@@ -21,8 +21,9 @@ export function IntegrationsStatus({ role }: { role?: string }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const [fourthwallUrl, setFourthwallUrl] = useState("");
-  const [fourthwallToken, setFourthwallToken] = useState("");
+  const [fourthwallBaseUrl, setFourthwallBaseUrl] = useState("");
+  const [fourthwallUsername, setFourthwallUsername] = useState("");
+  const [fourthwallPassword, setFourthwallPassword] = useState("");
   const [openrouterKey, setOpenrouterKey] = useState("");
   const [openrouterBaseUrl, setOpenrouterBaseUrl] = useState("");
 
@@ -30,7 +31,8 @@ export function IntegrationsStatus({ role }: { role?: string }) {
     void fetchIntegrations()
       .then((next) => {
         setStatus(next);
-        setFourthwallUrl(next.fourthwall_mcp_url ?? "");
+        setFourthwallBaseUrl(next.fourthwall_base_url ?? "");
+        setFourthwallUsername(next.fourthwall_username ?? "");
         setOpenrouterBaseUrl(next.openrouter_base_url ?? "");
       })
       .catch((err: unknown) => setError(String(err)));
@@ -44,9 +46,10 @@ export function IntegrationsStatus({ role }: { role?: string }) {
     try {
       const patch: Record<string, string> = {};
       // Blank secrets mean "leave unchanged" — only send non-empty values.
-      if (fourthwallUrl) patch.fourthwall_mcp_url = fourthwallUrl;
+      if (fourthwallBaseUrl) patch.fourthwall_api_base_url = fourthwallBaseUrl;
+      if (fourthwallUsername) patch.fourthwall_api_username = fourthwallUsername;
       if (openrouterBaseUrl) patch.openrouter_base_url = openrouterBaseUrl;
-      if (fourthwallToken) patch.fourthwall_mcp_token = fourthwallToken;
+      if (fourthwallPassword) patch.fourthwall_api_password = fourthwallPassword;
       if (openrouterKey) patch.openrouter_api_key = openrouterKey;
       if (Object.keys(patch).length === 0) {
         setNotice("Nothing to save — enter a credential first.");
@@ -54,7 +57,7 @@ export function IntegrationsStatus({ role }: { role?: string }) {
       }
       const next = await saveIntegrations(patch);
       setStatus(next);
-      setFourthwallToken("");
+      setFourthwallPassword("");
       setOpenrouterKey("");
       setNotice("Credentials saved. Stored values override environment variables.");
     } catch (err: unknown) {
@@ -70,8 +73,8 @@ export function IntegrationsStatus({ role }: { role?: string }) {
     setNotice(null);
     try {
       const result = await testFourthwall();
-      if (result.ok) setNotice("Fourthwall MCP reachable.");
-      else setError(`Fourthwall MCP degraded: ${result.error ?? "unknown error"}`);
+      if (result.ok) setNotice("Fourthwall API reachable.");
+      else setError(`Fourthwall reads degraded: ${result.error ?? "unknown error"}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "test failed");
     } finally {
@@ -92,13 +95,13 @@ export function IntegrationsStatus({ role }: { role?: string }) {
   }
 
   const items = [
-    { key: "fourthwall_mcp" as const, label: "Fourthwall MCP" },
+    { key: "fourthwall" as const, label: "Fourthwall Open API" },
     { key: "openrouter" as const, label: "OpenRouter API Key" },
   ];
 
   const field =
     "mt-1 block w-full border border-border bg-background px-3 py-2 font-mono text-sm text-foreground outline-none focus:border-primary";
-  const label = "font-mono text-xs uppercase tracking-widest text-muted-foreground";
+  const fieldLabel = "font-mono text-xs uppercase tracking-widest text-muted-foreground";
 
   return (
     <section className="border border-border bg-card p-4" data-testid="integrations-status">
@@ -136,27 +139,42 @@ export function IntegrationsStatus({ role }: { role?: string }) {
           <h3 className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Set credentials
           </h3>
-          <label className={label}>
-            Fourthwall MCP URL
+          <p className="font-mono text-[11px] text-muted-foreground">
+            Fourthwall: create an API user under your shop&apos;s{" "}
+            <span className="text-primary">Settings → For developers</span> and use its
+            username + password (HTTP Basic).
+          </p>
+          <label className={fieldLabel}>
+            Fourthwall API base URL
             <input
               type="url"
-              value={fourthwallUrl}
-              onChange={(event) => setFourthwallUrl(event.target.value)}
-              placeholder="https://mcp.fourthwall.com/mcp"
+              value={fourthwallBaseUrl}
+              onChange={(event) => setFourthwallBaseUrl(event.target.value)}
+              placeholder="https://api.fourthwall.com"
               className={field}
             />
           </label>
-          <label className={label}>
-            Fourthwall MCP token
+          <label className={fieldLabel}>
+            Fourthwall API username
+            <input
+              type="text"
+              value={fourthwallUsername}
+              onChange={(event) => setFourthwallUsername(event.target.value)}
+              placeholder="fw_api_...@fourthwall.com"
+              className={field}
+            />
+          </label>
+          <label className={fieldLabel}>
+            Fourthwall API password
             <input
               type="password"
-              value={fourthwallToken}
-              onChange={(event) => setFourthwallToken(event.target.value)}
+              value={fourthwallPassword}
+              onChange={(event) => setFourthwallPassword(event.target.value)}
               placeholder="leave blank to keep current"
               className={field}
             />
           </label>
-          <label className={label}>
+          <label className={fieldLabel}>
             OpenRouter API key
             <input
               type="password"
@@ -166,7 +184,7 @@ export function IntegrationsStatus({ role }: { role?: string }) {
               className={field}
             />
           </label>
-          <label className={label}>
+          <label className={fieldLabel}>
             OpenRouter base URL
             <input
               type="url"

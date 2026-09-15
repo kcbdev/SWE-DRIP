@@ -110,6 +110,14 @@ describe("BrandConstantsView", () => {
 // IntegrationsStatus
 // ---------------------------------------------------------------------------
 
+const STATUS = {
+  fourthwall: false,
+  openrouter: false,
+  fourthwall_base_url: "https://api.fourthwall.com",
+  fourthwall_username: "",
+  openrouter_base_url: "https://openrouter.ai/api/v1",
+};
+
 describe("IntegrationsStatus", () => {
   it("shows loading state initially", () => {
     render(<IntegrationsStatus />);
@@ -121,60 +129,43 @@ describe("IntegrationsStatus", () => {
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
-        json: () =>
-          Promise.resolve({
-            fourthwall_mcp: true,
-            openrouter: false,
-            fourthwall_mcp_url: "",
-            openrouter_base_url: "https://openrouter.ai/api/v1",
-          }),
+        json: () => Promise.resolve({ ...STATUS, fourthwall: true, openrouter: false }),
       }),
     );
     render(<IntegrationsStatus />);
     await waitFor(() => {
-      expect(screen.getByText("Fourthwall MCP")).toBeTruthy();
+      expect(screen.getByText("Fourthwall Open API")).toBeTruthy();
       expect(screen.getByText("OpenRouter API Key")).toBeTruthy();
     });
-    const configured = screen.getByText("Configured");
-    const notConfigured = screen.getByText("Not configured");
-    expect(configured).toBeTruthy();
-    expect(notConfigured).toBeTruthy();
+    expect(screen.getByText("Configured")).toBeTruthy();
+    expect(screen.getByText("Not configured")).toBeTruthy();
   });
 
   it("hides the credential form for non-admins", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            fourthwall_mcp: false,
-            openrouter: false,
-            fourthwall_mcp_url: "",
-            openrouter_base_url: "https://openrouter.ai/api/v1",
-          }),
-      }),
+      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(STATUS) }),
     );
     render(<IntegrationsStatus role="viewer" />);
-    await waitFor(() => expect(screen.getByText("Fourthwall MCP")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Fourthwall Open API")).toBeTruthy());
     expect(screen.queryByText("Set credentials")).toBeNull();
   });
 
-  it("lets admins set credentials and test the connection", async () => {
+  it("lets admins set Fourthwall and OpenRouter credentials", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: () =>
-        Promise.resolve({
-          fourthwall_mcp: false,
-          openrouter: false,
-          fourthwall_mcp_url: "",
-          openrouter_base_url: "https://openrouter.ai/api/v1",
-        }),
+      json: () => Promise.resolve(STATUS),
     });
     vi.stubGlobal("fetch", fetchMock);
     render(<IntegrationsStatus role="admin" />);
     await waitFor(() => expect(screen.getByText("Set credentials")).toBeTruthy());
 
+    fireEvent.change(screen.getByLabelText(/Fourthwall API username/i), {
+      target: { value: "fw_api_test@fourthwall.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/Fourthwall API password/i), {
+      target: { value: "fw-password" },
+    });
     fireEvent.change(screen.getByLabelText(/OpenRouter API key/i), {
       target: { value: "openrouter-test-key" },
     });
@@ -185,7 +176,55 @@ describe("IntegrationsStatus", () => {
         ([, init]) => (init as RequestInit | undefined)?.method === "PATCH",
       );
       expect(patchCall).toBeTruthy();
-      expect((patchCall![1] as RequestInit).body).toContain("openrouter-test-key");
+      const body = (patchCall![1] as RequestInit).body as string;
+      expect(body).toContain("openrouter-test-key");
+      expect(body).toContain("fw-password");
+      expect(body).toContain("fw_api_test@fourthwall.com");
+    });
+  });
+
+  it("never sends blank secrets (leave-unchanged)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ...STATUS, fourthwall_username: "existing-user" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<IntegrationsStatus role="admin" />);
+    await waitFor(() => expect(screen.getByText("Set credentials")).toBeTruthy());
+
+    fireEvent.click(screen.getByText("Save credentials"));
+
+    await waitFor(() => {
+      const patchCall = fetchMock.mock.calls.find(
+        ([, init]) => (init as RequestInit | undefined)?.method === "PATCH",
+      );
+      expect(patchCall).toBeTruthy();
+      const body = (patchCall![1] as RequestInit).body as string;
+      // Blank password/key inputs are omitted entirely — never sent as "".
+      expect(body).not.toContain("fourthwall_api_password");
+      expect(body).not.toContain("openrouter_api_key");
+      // The non-secret identity/endpoints are re-affirmed.
+      expect(body).toContain("existing-user");
+    });
+  });
+
+  it("surfaces a degraded Fourthwall test result", async () => {
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (init?.method === "POST") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ ok: false, error: "GET products failed: HTTP 401" }),
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(STATUS) });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<IntegrationsStatus role="admin" />);
+    await waitFor(() => expect(screen.getByText("Set credentials")).toBeTruthy());
+
+    fireEvent.click(screen.getByText("Test Fourthwall"));
+    await waitFor(() => {
+      expect(screen.getByText(/Fourthwall reads degraded/)).toBeTruthy();
     });
   });
 });
