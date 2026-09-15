@@ -9,13 +9,13 @@ style is overruled deterministically (asserted in tests).
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from langgraph.types import RunnableConfig, interrupt
 
 from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
+from ..json_parse import parse_json_object
 from ..node_config import effective_for_config
 from ..routing import model_for
 from ..state import RunState
@@ -68,8 +68,8 @@ def design_spec(state: RunState, config: RunnableConfig = None) -> dict[str, Any
         model=model, messages=[{"role": "user", "content": prompt}], **conf.params
     )
     try:
-        reasoning = json.loads(result.content if isinstance(result.content, str) else "")
-    except (json.JSONDecodeError, TypeError) as exc:
+        reasoning = parse_json_object(result.content)
+    except (TypeError, ValueError) as exc:
         raise ValueError(f"design_spec: model did not return JSON: {exc}") from None
     if not isinstance(reasoning, dict) or not reasoning.get("render_prompt"):
         raise ValueError("design_spec: model returned no render_prompt")

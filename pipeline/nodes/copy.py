@@ -9,13 +9,13 @@ never flow downstream silently (relaxations need founder spec change).
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from langgraph.types import RunnableConfig, interrupt
 
 from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
+from ..json_parse import parse_json_object
 from ..node_config import effective_for_config
 from ..routing import model_for
 from ..state import RunState
@@ -98,8 +98,8 @@ def listing_copy(state: RunState, config: RunnableConfig = None) -> dict[str, An
         model=model, messages=[{"role": "user", "content": prompt}], **conf.params
     )
     try:
-        copy = json.loads(result.content if isinstance(result.content, str) else "")
-    except (json.JSONDecodeError, TypeError) as exc:
+        copy = parse_json_object(result.content)
+    except (TypeError, ValueError) as exc:
         raise ValueError(f"listing_copy: model did not return JSON: {exc}") from None
     violations = validate_copy(copy)
     if violations:  # brand-locked: never propagate silently

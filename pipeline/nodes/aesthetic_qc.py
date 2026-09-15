@@ -15,7 +15,6 @@ state — no new keys smuggled through the graph).
 from __future__ import annotations
 
 import base64
-import json
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +23,7 @@ from langgraph.types import RunnableConfig, interrupt
 from .. import rubric
 from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
+from ..json_parse import parse_json_object
 from ..node_config import effective_for_config
 from ..routing import model_for
 from ..state import RunState
@@ -90,10 +90,8 @@ def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
         model=model, prompt=prompt, image_url=image_ref(render["file_url"]), **conf.params
     )
     try:
-        scores = rubric.parse_scores(
-            json.loads(result.content if isinstance(result.content, str) else "")
-        )
-    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        scores = rubric.parse_scores(parse_json_object(result.content))
+    except (TypeError, ValueError) as exc:
         raise ValueError(f"aesthetic_qc: vision model returned unusable scores: {exc}") from None
     evaluation = rubric.evaluate(scores)
 
