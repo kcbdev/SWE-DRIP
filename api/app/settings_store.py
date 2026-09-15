@@ -1,9 +1,15 @@
 """Runtime settings store — key/value JSON backed by Postgres (spec C5).
 
 Provides typed accessors for HITL flags, brand-lock constants, and
-integrations status. The pipeline reads HITL flags via this module at
-run start (pipeline/settings.py). All accessors are pure except the
-DB-touching get/set helpers. Tests mock or bypass the DB layer.
+integrations credentials/status. The pipeline reads HITL flags and the
+OpenRouter key via this module at run start (pipeline/settings.py). All
+accessors are pure except the DB-touching get/set helpers. Tests mock or
+bypass the DB layer.
+
+Integration credentials are stored as one JSON row in ``settings`` so an admin
+can configure Fourthwall/OpenRouter from the Control Panel; a stored value
+takes precedence over the matching environment variable. Secret fields are
+never returned by the API (presence only).
 
 The store is DB-optional: when DATABASE_URL is not configured, accessors
 return in-memory defaults. This keeps unit tests fully offline.
@@ -143,18 +149,99 @@ def set_brand(brand: dict[str, Any]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Integrations status (read-only from env)
+# Integration credentials (admin-configurable, DB over env)
 # ---------------------------------------------------------------------------
 
-def get_integrations() -> dict[str, bool]:
-    """Return configured/not-configured status for integrations (presence only)."""
+_INTEGRATIONS_KEY = "integrations_credentials"
+
+# Credential field -> Pydantic Settings attribute used as the env fallback.
+_CREDENTIAL_ENV_FALLBACK: dict[str, str] = {
+    "fourthwall_mcp_url": "fourthwall_mcp_url",
+    "fourthwall_mcp_token": "fourthwall_mcp_token",
+    "openrouter_api_key": "openrouter_api_key",
+    "openrouter_base_url": "openrouter_base_url",
+}
+
+# Never echoed by the API — presence only.
+SECRET_CREDENTIAL_FIELDS = ("fourthwall_mcp_token", "openrouter_api_key")
+
+OPENROUTER_DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
+
+
+def get_integration_credentials() -> dict[str, str]:
+    """Return stored (non-empty) credential overrides from the settings store."""
+    _load_from_db()
+    raw = _cache.get(_INTEGRATIONS_KEY) or {}
+    if not isinstance(raw, dict):
+        return {}
+    return {
+        name: value
+        for name, value in raw.items()
+        if isinstance(value, str) and value
+    }
+
+
+def set_integration_credentials(patch: dict[str, Any]) -> dict[str, str]:
+    """Merge a credential patch into the store. An empty string clears a field.
+
+    Only known credential fields are accepted; unknown keys are ignored so a
+    typo cannot silently write junk into the config row. Secrets are never
+    logged or returned by callers.
+    """
+    current = dict(get_integration_credentials())
+    for name, value in patch.items():
+        if name not in _CREDENTIAL_ENV_FALLBACK:
+            continue
+        if value is None:
+            continue
+        if value == "":
+            current.pop(name, None)
+        else:
+            current[name] = str(value)
+    _cache[_INTEGRATIONS_KEY] = current
+    _write_to_db(_INTEGRATIONS_KEY, current)
+    return current
+
+
+def resolve_integration(name: str, default: str = "") -> str:
+    """Resolve one credential: settings store first, environment second.
+
+    The Control Panel settings UI is the runtime source of truth (spec C5), so
+    a value saved there wins over the deployment env var; env remains the
+    bootstrap/fallback path. Never raises — resolution failures degrade to the
+    env value or *default*.
+    """
+    try:
+        stored = get_integration_credentials().get(name)
+    except Exception:
+        stored = None
+    if stored:
+        return stored
     try:
         from .config import settings as cfg
     except Exception:
-        return {"fourthwall_mcp": False, "openrouter": False}
+        return default
+    attribute = _CREDENTIAL_ENV_FALLBACK.get(name)
+    env_value = getattr(cfg, attribute, "") if attribute else ""
+    return env_value or default
+
+
+def get_integrations() -> dict[str, Any]:
+    """Return integration presence plus non-secret endpoint hints.
+
+    Contract: booleans for configured status, strings ONLY for non-secret
+    endpoints. Tokens/keys are never included (asserted by tests).
+    """
+    fourthwall_url = resolve_integration("fourthwall_mcp_url")
+    fourthwall_token = resolve_integration("fourthwall_mcp_token")
+    openrouter_key = resolve_integration("openrouter_api_key")
     return {
-        "fourthwall_mcp": bool(cfg.fourthwall_mcp_url and cfg.fourthwall_mcp_token),
-        "openrouter": bool(cfg.openrouter_api_key),
+        "fourthwall_mcp": bool(fourthwall_url and fourthwall_token),
+        "openrouter": bool(openrouter_key),
+        "fourthwall_mcp_url": fourthwall_url,
+        "openrouter_base_url": resolve_integration(
+            "openrouter_base_url", OPENROUTER_DEFAULT_BASE_URL
+        ),
     }
 
 

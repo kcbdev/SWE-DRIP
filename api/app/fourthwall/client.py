@@ -189,11 +189,23 @@ class FourthwallReadClient:
 def get_fourthwall_client(
     session_factory: Optional[SessionFactory] = None,
 ) -> FourthwallReadClient:
-    """Prod wiring: server-side env only (spec C7)."""
-    import os
+    """Prod wiring: Control Panel settings store first, env fallback (spec C7).
 
+    Credentials never leave the server; an admin-configured value (set in the
+    Settings UI) takes precedence over the deployment env var.
+    """
+    try:
+        from ..settings_store import resolve_integration
+
+        url = resolve_integration("fourthwall_mcp_url")
+        token = resolve_integration("fourthwall_mcp_token")
+    except Exception:  # pragma: no cover - store unavailable outside the API
+        import os
+
+        url = os.environ.get("FOURTHWALL_MCP_URL", "")
+        token = os.environ.get("FOURTHWALL_MCP_TOKEN", "")
     return FourthwallReadClient(
-        url=os.environ.get("FOURTHWALL_MCP_URL", ""),
-        token=os.environ.get("FOURTHWALL_MCP_TOKEN", ""),
+        url=url,
+        token=token,
         session_factory=session_factory,
     )

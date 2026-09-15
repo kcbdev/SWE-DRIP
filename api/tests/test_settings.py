@@ -282,13 +282,18 @@ class TestIntegrations:
         assert isinstance(data["openrouter"], bool)
 
     def test_no_secrets_leaked(self) -> None:
-        """Ensure no secret values are exposed."""
+        """Only presence booleans and non-secret endpoints may be exposed."""
         reset_cache()
         resp = _viewer_client().get("/api/settings/integrations")
         data = resp.json()
-        for key, val in data.items():
-            # Values must be booleans, never strings
-            assert isinstance(val, bool), f"{key} should be bool, got {type(val)}"
+        assert set(data) == {
+            "fourthwall_mcp",
+            "openrouter",
+            "fourthwall_mcp_url",
+            "openrouter_base_url",
+        }
+        for key in ("fourthwall_mcp_token", "openrouter_api_key"):
+            assert key not in data
 
     def test_viewer_can_read(self) -> None:
         reset_cache()
@@ -300,6 +305,136 @@ class TestIntegrations:
             resp = _viewer_client().get("/api/settings/integrations")
             assert resp.json()["fourthwall_mcp"] is False
             assert resp.json()["openrouter"] is False
+
+
+class TestIntegrationsCredentials:
+    """Admin-configurable credentials: store round-trip, role gate, audit."""
+
+    def test_admin_can_set_and_read_back_presence(self) -> None:
+        reset_cache()
+        resp = _admin_client().patch(
+            "/api/settings/integrations",
+            json={
+                "fourthwall_mcp_url": "https://mcp.example/fourthwall",
+                "fourthwall_mcp_token": "fw-secret-token",
+                "openrouter_api_key": "openrouter-test-key",
+                "confirm": True,
+            },
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["fourthwall_mcp"] is True
+        assert data["openrouter"] is True
+        assert data["fourthwall_mcp_url"] == "https://mcp.example/fourthwall"
+        # Secrets are never echoed back, even in the write response.
+        assert "fourthwall_mcp_token" not in data
+        assert "openrouter_api_key" not in data
+        assert "fw-secret-token" not in resp.text
+        assert "openrouter-test-key" not in resp.text
+
+    def test_stored_value_beats_env_and_clear_reverts(self) -> None:
+        reset_cache()
+        from api.app.settings_store import resolve_integration
+
+        with patch("api.app.config.settings.openrouter_api_key", "env-key"):
+            assert resolve_integration("openrouter_api_key") == "env-key"
+            _admin_client().patch(
+                "/api/settings/integrations",
+                json={"openrouter_api_key": "ui-key", "confirm": True},
+            )
+            assert resolve_integration("openrouter_api_key") == "ui-key"
+            _admin_client().patch(
+                "/api/settings/integrations",
+                json={"openrouter_api_key": "", "confirm": True},
+            )
+            assert resolve_integration("openrouter_api_key") == "env-key"
+
+    def test_confirm_required(self) -> None:
+        reset_cache()
+        resp = _admin_client().patch(
+            "/api/settings/integrations",
+            json={"openrouter_api_key": "k", "confirm": False},
+        )
+        assert resp.status_code == 400
+
+    def test_empty_patch_rejected(self) -> None:
+        reset_cache()
+        resp = _admin_client().patch(
+            "/api/settings/integrations",
+            json={"confirm": True},
+        )
+        assert resp.status_code == 400
+
+    def test_operator_cannot_write(self) -> None:
+        reset_cache()
+        resp = _client(ROLE_OPERATOR).patch(
+            "/api/settings/integrations",
+            json={"openrouter_api_key": "k", "confirm": True},
+        )
+        assert resp.status_code == 403
+
+    def test_update_is_audited_without_secrets(self) -> None:
+        reset_cache()
+        app = _app()
+        calls: list[dict] = []
+
+        class _RecordingAudit:
+            def record(self, **kwargs: Any) -> None:
+                calls.append(kwargs)
+
+        from api.app.audit import get_audit_writer
+        from api.app.auth import get_current_actor as live_actor
+
+        app.dependency_overrides[get_audit_writer] = lambda: _RecordingAudit()
+        app.dependency_overrides[live_actor] = lambda: Actor("u-9", "a@b.c", ROLE_ADMIN)
+        client = TestClient(app, raise_server_exceptions=False)
+        client.patch(
+            "/api/settings/integrations",
+            json={"fourthwall_mcp_token": "top-secret", "confirm": True},
+        )
+        assert len(calls) == 1
+        assert calls[0]["action"] == "settings.integrations.update"
+        assert calls[0]["entity_id"] == "integrations"
+        assert "top-secret" not in str(calls[0])
+
+    def test_test_endpoint_reports_missing_config(self) -> None:
+        reset_cache()
+        resp = _admin_client().post("/api/settings/integrations/test")
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is False
+        assert "not both configured" in resp.json()["error"]
+
+    def test_test_endpoint_reports_probe_failure(self) -> None:
+        reset_cache()
+        from api.app.fourthwall.client import FourthwallError
+
+        _admin_client().patch(
+            "/api/settings/integrations",
+            json={"fourthwall_mcp_url": "https://mcp.example", "fourthwall_mcp_token": "t", "confirm": True},
+        )
+
+        def _boom(self: Any, *, limit: int = 50) -> Any:
+            raise FourthwallError("list_products failed: connection refused")
+
+        with patch("api.app.fourthwall.client.FourthwallReadClient.list_products", _boom):
+            resp = _admin_client().post("/api/settings/integrations/test")
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is False
+        assert "connection refused" in resp.json()["error"]
+
+    def test_test_endpoint_success(self) -> None:
+        reset_cache()
+        _admin_client().patch(
+            "/api/settings/integrations",
+            json={"fourthwall_mcp_url": "https://mcp.example", "fourthwall_mcp_token": "t", "confirm": True},
+        )
+        with patch(
+            "api.app.fourthwall.client.FourthwallReadClient.list_products",
+            lambda self, *, limit=50: [],
+        ):
+            resp = _admin_client().post("/api/settings/integrations/test")
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
 
 
 # ---------------------------------------------------------------------------

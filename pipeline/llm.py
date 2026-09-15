@@ -5,8 +5,9 @@ shared gateway payload/template layer. ``transport`` is injectable so tests
 capture exact per-call model params with ``httpx.MockTransport``; no live
 network ever runs in gates.
 
-A missing ``OPENROUTER_API_KEY`` is a loud ``RuntimeError`` at construction,
-never a silent empty key.
+Credential resolution order: explicit ``api_key`` argument, then the Control
+Panel settings store (admin-configured in the UI), then ``OPENROUTER_API_KEY``.
+A missing key is a loud ``RuntimeError`` at construction, never a silent empty.
 """
 
 from __future__ import annotations
@@ -18,6 +19,31 @@ from typing import Any
 import httpx
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
+
+def _resolve_api_key() -> str:
+    """Settings store (admin UI) first, environment second. Cycle-safe import."""
+    try:
+        from pipeline.settings import resolve_openrouter_api_key
+
+        value = resolve_openrouter_api_key()
+        if value:
+            return value
+    except Exception:
+        pass
+    return os.environ.get("OPENROUTER_API_KEY", "")
+
+
+def _resolve_base_url() -> str:
+    try:
+        from pipeline.settings import resolve_openrouter_base_url
+
+        value = resolve_openrouter_base_url()
+        if value:
+            return value
+    except Exception:
+        pass
+    return os.environ.get("OPENROUTER_BASE_URL", "")
 
 
 @dataclass
@@ -39,15 +65,16 @@ class OpenRouterClient:
         transport: httpx.BaseTransport | None = None,
         timeout: float = 60.0,
     ) -> None:
-        key = api_key or os.environ.get("OPENROUTER_API_KEY")
+        key = api_key or _resolve_api_key()
         if not key:
             raise RuntimeError(
-                "OPENROUTER_API_KEY is not set — pass api_key explicitly or "
-                "export OPENROUTER_API_KEY (see .env.example)"
+                "OPENROUTER_API_KEY is not set — pass api_key explicitly, set it "
+                "in Settings → Integrations, or export OPENROUTER_API_KEY "
+                "(see .env.example)"
             )
         self.api_key = key
         self.base_url = (
-            base_url or os.environ.get("OPENROUTER_BASE_URL") or OPENROUTER_BASE_URL
+            base_url or _resolve_base_url() or OPENROUTER_BASE_URL
         ).rstrip("/")
         self._client = httpx.Client(
             base_url=self.base_url,
