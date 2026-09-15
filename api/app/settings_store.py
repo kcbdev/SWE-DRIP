@@ -82,18 +82,29 @@ def _write_to_db(key: str, value: Any) -> None:
     if not _db_available():
         return
     from .db import get_engine
-    from sqlalchemy import text
     import json
+
     engine = get_engine()
     with engine.begin() as conn:
-        conn.execute(
-            text(
-                "INSERT INTO settings (key, value_json, updated_at) "
-                "VALUES (:key, :val::jsonb, now()) "
-                "ON CONFLICT (key) DO UPDATE SET value_json = :val::jsonb, updated_at = now()"
-            ),
-            {"key": key, "val": json.dumps(value)},
-        )
+        conn.execute(_upsert_statement(), {"key": key, "val": json.dumps(value)})
+
+
+def _upsert_statement() -> Any:
+    """Return the settings upsert statement.
+
+    Uses ``CAST(:val AS jsonb)`` rather than the Postgres ``::`` shorthand:
+    SQLAlchemy's ``text()`` bind-parameter parser does not recognise ``:val``
+    when it is immediately followed by ``:``, so ``:val::jsonb`` is emitted
+    verbatim and Postgres rejects the statement ("syntax error at or near :").
+    """
+    from sqlalchemy import text
+
+    return text(
+        "INSERT INTO settings (key, value_json, updated_at) "
+        "VALUES (:key, CAST(:val AS jsonb), now()) "
+        "ON CONFLICT (key) DO UPDATE SET "
+        "value_json = CAST(:val AS jsonb), updated_at = now()"
+    )
 
 
 # ---------------------------------------------------------------------------

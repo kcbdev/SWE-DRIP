@@ -438,6 +438,27 @@ class TestIntegrationsCredentials:
 
 
 # ---------------------------------------------------------------------------
+# Settings store SQL (offline — no DB)
+# ---------------------------------------------------------------------------
+
+class TestSettingsSql:
+    """The upsert statement must survive SQLAlchemy's bind-parameter parser."""
+
+    def test_upsert_compiles_with_bind_params(self) -> None:
+        from sqlalchemy.dialects import postgresql
+
+        from api.app.settings_store import _upsert_statement
+
+        statement = _upsert_statement()
+        assert set(statement._bindparams) == {"key", "val"}
+        compiled = str(statement.compile(dialect=postgresql.dialect()))
+        # The Postgres `::` shorthand must never be emitted next to a bind
+        # param — that renders as a literal `:val::jsonb` and fails at runtime.
+        assert ":val::" not in compiled
+        assert compiled.count("%(val)s") == 2
+
+
+# ---------------------------------------------------------------------------
 # Pipeline settings wiring
 # ---------------------------------------------------------------------------
 
