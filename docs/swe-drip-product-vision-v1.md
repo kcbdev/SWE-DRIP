@@ -59,7 +59,7 @@ Read the checkpointer directly for status/debugging (reusing existing Postgres a
 ## 4. Fourthwall integration strategy
 
 **Hybrid, decided as follows:**
-- **Reads (orders, analytics, KPI pulls for the Analytics Agent):** official Fourthwall MCP server (`mcp.fourthwall.com`, OAuth2) immediately — very unlikely that read-tool coverage is a constraint.
+- **Reads (orders, analytics, KPI pulls for the Analytics Agent):** Fourthwall Platform Open API (`https://api.fourthwall.com/open-api/v1.0/*`) with a shop-level Open API user (HTTP Basic), configured server-side — see ADR-005. The official MCP server (`mcp.fourthwall.com`) is OAuth-2.0-interactive-only and cannot accept a configured static credential, so it is deferred for reads; its report tools remain available if a later PBI adds an MCP OAuth connect flow.
 - **Product creation:** spike the MCP server's artwork-to-product write tool against the placement matrix (front/back/sleeve, multi-region) before committing. If its parameter coverage matches what the placement matrix needs, retire the hand-rolled signed-URL flow (current steps 6-8) entirely — real code deletion. If it's coarser (e.g. can't address multi-region placement), keep the hand-rolled flow for product-create specifically while still using MCP for everything else.
 - **Shop provisioning / multi-shop concerns:** out of scope for SWE Drip specifically (Channel API is invite-only beta, relevant only if SWE Drip becomes a platform for other creators' shops — not the current goal).
 
