@@ -138,8 +138,9 @@ def patch_brand(
 class IntegrationsPatch(BaseModel):
     """Credential patch. Omitted fields are unchanged; "" clears a field."""
 
-    fourthwall_mcp_url: Optional[str] = None
-    fourthwall_mcp_token: Optional[str] = None
+    fourthwall_api_base_url: Optional[str] = None
+    fourthwall_api_username: Optional[str] = None
+    fourthwall_api_password: Optional[str] = None
     openrouter_api_key: Optional[str] = None
     openrouter_base_url: Optional[str] = None
     confirm: bool  # must be true — Admin confirmation required
@@ -148,7 +149,7 @@ class IntegrationsPatch(BaseModel):
 def _presence_only(status_payload: dict[str, Any]) -> dict[str, bool]:
     """Strip non-secret endpoints for the audit row (never log secrets)."""
     return {
-        "fourthwall_mcp": bool(status_payload.get("fourthwall_mcp")),
+        "fourthwall": bool(status_payload.get("fourthwall")),
         "openrouter": bool(status_payload.get("openrouter")),
     }
 
@@ -207,21 +208,16 @@ def patch_integrations(
 
 @router.post("/integrations/test")
 def test_integrations(actor: Actor = AdminOnly) -> dict[str, Any]:
-    """Probe the Fourthwall MCP with the configured credentials.
+    """Probe the Fourthwall Platform Open API with the configured credentials.
 
     Returns ``{"ok": true}`` or ``{"ok": false, "error": "..."}`` — a degraded
     read is a normal outcome, never a 500. No credential values are echoed.
     """
-    from ..fourthwall.client import FourthwallError, FourthwallReadClient
-    from ..settings_store import resolve_integration
+    from ..fourthwall.client import FourthwallError, get_fourthwall_client
 
-    url = resolve_integration("fourthwall_mcp_url")
-    token = resolve_integration("fourthwall_mcp_token")
-    if not url or not token:
-        return {"ok": False, "error": "Fourthwall MCP URL and token are not both configured"}
-    client = FourthwallReadClient(url=url, token=token, timeout=10.0)
+    client = get_fourthwall_client()
     try:
-        client.list_products(limit=1)
+        products = client.list_products(limit=1)
     except FourthwallError as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True}
+    return {"ok": True, "products_seen": len(products)}

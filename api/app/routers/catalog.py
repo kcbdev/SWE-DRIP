@@ -28,8 +28,13 @@ PRICE_INVARIANTS: dict[str, float] = {"tee": 32.0, "hoodie": 62.0, "mug": 20.0}
 
 
 def _category_of(raw: dict[str, Any]) -> Optional[str]:
-    """Map payload category hints to the invariant table (pure)."""
-    for key in ("category", "product_type", "type"):
+    """Map payload category hints to the invariant table (pure).
+
+    Fourthwall exposes no product-category field (``type`` is only
+    STANDARD/GIFT_CARD/UNKNOWN), so the keyword scan also covers the product
+    ``name``/``title``/``slug`` — the only place "Tee"/"Hoodie"/"Mug" appears.
+    """
+    for key in ("category", "product_type", "type", "name", "title", "slug"):
         value = raw.get(key)
         if isinstance(value, str):
             lowered = value.lower()

@@ -31,8 +31,21 @@ def _price_for(raw: dict[str, Any]) -> float:
 
 
 def _category_of(raw: dict[str, Any]) -> Optional[str]:
-    for key in ("category", "product_type", "type"):
-        value = raw.get(key)
+    """Map a raw order/product hint onto a product type (pure).
+
+    Fourthwall orders carry the product name under ``offers[].name``; products
+    carry it under ``name``/``title``/``slug``. There is no category field, so
+    the keyword scan covers all of those.
+    """
+    values: list[Any] = [
+        raw.get(key) for key in ("category", "product_type", "type", "name", "title", "slug")
+    ]
+    offers = raw.get("offers")
+    if isinstance(offers, list):
+        values.extend(
+            offer.get("name") for offer in offers if isinstance(offer, dict)
+        )
+    for value in values:
         if isinstance(value, str):
             lowered = value.lower()
             if "hoodie" in lowered:

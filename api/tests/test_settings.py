@@ -276,9 +276,9 @@ class TestIntegrations:
         resp = _viewer_client().get("/api/settings/integrations")
         assert resp.status_code == 200
         data = resp.json()
-        assert "fourthwall_mcp" in data
+        assert "fourthwall" in data
         assert "openrouter" in data
-        assert isinstance(data["fourthwall_mcp"], bool)
+        assert isinstance(data["fourthwall"], bool)
         assert isinstance(data["openrouter"], bool)
 
     def test_no_secrets_leaked(self) -> None:
@@ -287,12 +287,13 @@ class TestIntegrations:
         resp = _viewer_client().get("/api/settings/integrations")
         data = resp.json()
         assert set(data) == {
-            "fourthwall_mcp",
+            "fourthwall",
             "openrouter",
-            "fourthwall_mcp_url",
+            "fourthwall_base_url",
+            "fourthwall_username",
             "openrouter_base_url",
         }
-        for key in ("fourthwall_mcp_token", "openrouter_api_key"):
+        for key in ("fourthwall_api_password", "openrouter_api_key"):
             assert key not in data
 
     def test_viewer_can_read(self) -> None:
@@ -301,9 +302,9 @@ class TestIntegrations:
 
     def test_unconfigured_by_default(self) -> None:
         reset_cache()
-        with patch("api.app.settings_store.get_integrations", return_value={"fourthwall_mcp": False, "openrouter": False}):
+        with patch("api.app.settings_store.get_integrations", return_value={"fourthwall": False, "openrouter": False}):
             resp = _viewer_client().get("/api/settings/integrations")
-            assert resp.json()["fourthwall_mcp"] is False
+            assert resp.json()["fourthwall"] is False
             assert resp.json()["openrouter"] is False
 
 
@@ -315,21 +316,23 @@ class TestIntegrationsCredentials:
         resp = _admin_client().patch(
             "/api/settings/integrations",
             json={
-                "fourthwall_mcp_url": "https://mcp.example/fourthwall",
-                "fourthwall_mcp_token": "fw-secret-token",
+                "fourthwall_api_base_url": "https://api.example.com",
+                "fourthwall_api_username": "fw_api_test@fourthwall.com",
+                "fourthwall_api_password": "fw-secret-password",
                 "openrouter_api_key": "openrouter-test-key",
                 "confirm": True,
             },
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["fourthwall_mcp"] is True
+        assert data["fourthwall"] is True
         assert data["openrouter"] is True
-        assert data["fourthwall_mcp_url"] == "https://mcp.example/fourthwall"
+        assert data["fourthwall_base_url"] == "https://api.example.com"
+        assert data["fourthwall_username"] == "fw_api_test@fourthwall.com"
         # Secrets are never echoed back, even in the write response.
-        assert "fourthwall_mcp_token" not in data
+        assert "fourthwall_api_password" not in data
         assert "openrouter_api_key" not in data
-        assert "fw-secret-token" not in resp.text
+        assert "fw-secret-password" not in resp.text
         assert "openrouter-test-key" not in resp.text
 
     def test_stored_value_beats_env_and_clear_reverts(self) -> None:
@@ -390,7 +393,7 @@ class TestIntegrationsCredentials:
         client = TestClient(app, raise_server_exceptions=False)
         client.patch(
             "/api/settings/integrations",
-            json={"fourthwall_mcp_token": "top-secret", "confirm": True},
+            json={"fourthwall_api_password": "top-secret", "confirm": True},
         )
         assert len(calls) == 1
         assert calls[0]["action"] == "settings.integrations.update"
@@ -402,7 +405,7 @@ class TestIntegrationsCredentials:
         resp = _admin_client().post("/api/settings/integrations/test")
         assert resp.status_code == 200
         assert resp.json()["ok"] is False
-        assert "not both configured" in resp.json()["error"]
+        assert "FOURTHWALL_API_USERNAME" in resp.json()["error"]
 
     def test_test_endpoint_reports_probe_failure(self) -> None:
         reset_cache()
@@ -410,11 +413,15 @@ class TestIntegrationsCredentials:
 
         _admin_client().patch(
             "/api/settings/integrations",
-            json={"fourthwall_mcp_url": "https://mcp.example", "fourthwall_mcp_token": "t", "confirm": True},
+            json={
+                "fourthwall_api_username": "fw_api_test@fourthwall.com",
+                "fourthwall_api_password": "pw",
+                "confirm": True,
+            },
         )
 
         def _boom(self: Any, *, limit: int = 50) -> Any:
-            raise FourthwallError("list_products failed: connection refused")
+            raise FourthwallError("GET /open-api/v1.0/products failed: connection refused")
 
         with patch("api.app.fourthwall.client.FourthwallReadClient.list_products", _boom):
             resp = _admin_client().post("/api/settings/integrations/test")
@@ -426,7 +433,11 @@ class TestIntegrationsCredentials:
         reset_cache()
         _admin_client().patch(
             "/api/settings/integrations",
-            json={"fourthwall_mcp_url": "https://mcp.example", "fourthwall_mcp_token": "t", "confirm": True},
+            json={
+                "fourthwall_api_username": "fw_api_test@fourthwall.com",
+                "fourthwall_api_password": "pw",
+                "confirm": True,
+            },
         )
         with patch(
             "api.app.fourthwall.client.FourthwallReadClient.list_products",

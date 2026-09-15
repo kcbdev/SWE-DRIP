@@ -36,9 +36,10 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
 
-    # Storefront (Fourthwall MCP)
-    fourthwall_mcp_url: str = ""
-    fourthwall_mcp_token: str = ""
+    # Storefront (Fourthwall Platform Open API — HTTP Basic shop credentials)
+    fourthwall_api_base_url: str = "https://api.fourthwall.com"
+    fourthwall_api_username: str = ""
+    fourthwall_api_password: str = ""
 
     # Fourthwall webhook (HMAC-SHA256 signature verification)
     fourthwall_webhook_secret: str = ""

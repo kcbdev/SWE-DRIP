@@ -34,15 +34,17 @@ def _webhook_secret() -> str:
 
 
 def _optional_fourthwall_client() -> Optional[FourthwallReadClient]:
-    """Return a Fourthwall read client if MCP env is configured, else None.
+    """Return a Fourthwall read client if it is configured, else None.
 
     The webhook endpoint must never hard-fail when Fourthwall is unreachable
     — the trigger falls back to degraded mode (synthetic order from event).
     """
-    import os
-    url = os.environ.get("FOURTHWALL_MCP_URL", "")
-    token = os.environ.get("FOURTHWALL_MCP_TOKEN", "")
-    if not url or not token:
+    from ..settings_store import resolve_integration
+
+    if not (
+        resolve_integration("fourthwall_api_username")
+        and resolve_integration("fourthwall_api_password")
+    ):
         return None
     return get_fourthwall_client()
 

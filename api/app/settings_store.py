@@ -167,16 +167,18 @@ _INTEGRATIONS_KEY = "integrations_credentials"
 
 # Credential field -> Pydantic Settings attribute used as the env fallback.
 _CREDENTIAL_ENV_FALLBACK: dict[str, str] = {
-    "fourthwall_mcp_url": "fourthwall_mcp_url",
-    "fourthwall_mcp_token": "fourthwall_mcp_token",
+    "fourthwall_api_base_url": "fourthwall_api_base_url",
+    "fourthwall_api_username": "fourthwall_api_username",
+    "fourthwall_api_password": "fourthwall_api_password",
     "openrouter_api_key": "openrouter_api_key",
     "openrouter_base_url": "openrouter_base_url",
 }
 
 # Never echoed by the API — presence only.
-SECRET_CREDENTIAL_FIELDS = ("fourthwall_mcp_token", "openrouter_api_key")
+SECRET_CREDENTIAL_FIELDS = ("fourthwall_api_password", "openrouter_api_key")
 
 OPENROUTER_DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
+FOURTHWALL_DEFAULT_BASE_URL = "https://api.fourthwall.com"
 
 
 def get_integration_credentials() -> dict[str, str]:
@@ -241,15 +243,19 @@ def get_integrations() -> dict[str, Any]:
     """Return integration presence plus non-secret endpoint hints.
 
     Contract: booleans for configured status, strings ONLY for non-secret
-    endpoints. Tokens/keys are never included (asserted by tests).
+    endpoints/identifiers. Passwords/keys are never included (asserted by tests).
     """
-    fourthwall_url = resolve_integration("fourthwall_mcp_url")
-    fourthwall_token = resolve_integration("fourthwall_mcp_token")
+    fourthwall_base = resolve_integration(
+        "fourthwall_api_base_url", FOURTHWALL_DEFAULT_BASE_URL
+    )
+    fourthwall_user = resolve_integration("fourthwall_api_username")
+    fourthwall_password = resolve_integration("fourthwall_api_password")
     openrouter_key = resolve_integration("openrouter_api_key")
     return {
-        "fourthwall_mcp": bool(fourthwall_url and fourthwall_token),
+        "fourthwall": bool(fourthwall_user and fourthwall_password),
         "openrouter": bool(openrouter_key),
-        "fourthwall_mcp_url": fourthwall_url,
+        "fourthwall_base_url": fourthwall_base,
+        "fourthwall_username": fourthwall_user,
         "openrouter_base_url": resolve_integration(
             "openrouter_base_url", OPENROUTER_DEFAULT_BASE_URL
         ),

@@ -93,6 +93,48 @@ def test_missing_price_is_unknown() -> None:
     assert invariant_status({"category": "tee"})["status"] == "unknown"
 
 
+def test_invariant_reads_live_open_api_product_shape() -> None:
+    """The real Fourthwall payload must produce a verdict, not 'unmapped'.
+
+    Live shape (verified 2026-09-15): no category field; the product name carries
+    "Tee" and the price sits at variants[0].unitPrice.value. The client is the
+    integration boundary that flattens it; the router consumes the flattened dict.
+    """
+    from api.app.fourthwall.client import Product
+
+    live = {
+        "id": "b0b861ca-2318-498f-8d85-b6ddb32d27dd",
+        "name": "EXIT 0 — Terminal Tee",
+        "slug": "exit-0-terminal-tee",
+        "type": "STANDARD",
+        "state": {"type": "AVAILABLE"},
+        "variants": [{"id": "v-1", "unitPrice": {"value": 32.0, "currency": "USD"}}],
+    }
+    product = Product.model_validate(live)
+    assert product.price == 32.0 and product.currency == "USD"
+    verdict = invariant_status(product.model_dump())
+    assert verdict["status"] == "pass"
+    assert verdict["actual"] == 32.0
+    assert verdict["expected"] == 32.0
+
+
+def test_invariant_flags_mispriced_live_shape() -> None:
+    """A draft tee priced below the invariant must FAIL, not pass silently."""
+    from api.app.fourthwall.client import Product
+
+    live = {
+        "id": "cf6288ea",
+        "name": "EXIT 0 — Terminal Tee (draft)",
+        "type": "STANDARD",
+        "variants": [{"unitPrice": {"value": 22.0, "currency": "USD"}}],
+    }
+    product = Product.model_validate(live)
+    assert product.price == 22.0
+    verdict = invariant_status(product.model_dump())
+    assert verdict["status"] == "fail"
+    assert verdict["actual"] == 22.0
+
+
 # --------------------------------------------------------------------- API
 
 
