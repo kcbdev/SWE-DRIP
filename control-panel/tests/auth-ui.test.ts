@@ -40,4 +40,37 @@ describe("auth UI", () => {
     expect(page).toContain("Admin role required");
     expect(page).toContain("deactivate");
   });
+
+  it("users screen creates real accounts via Better Auth, not a credential-less row", () => {
+    // The Python store cannot create credentials; an invite must go through
+    // Better Auth's admin plugin or the invitee can never sign in.
+    const page = read("app/settings/users/page.tsx");
+    expect(page).toContain("authClient.admin.createUser");
+    expect(page).not.toContain('apiFetch("/api/users", {');
+    const client = read("lib/auth-client.ts");
+    expect(client).toContain("adminClient");
+  });
+
+  it("users screen surfaces server refusals instead of failing silently", () => {
+    // Regression: role changes used to `await apiFetch(...)` with no catch, so
+    // the last-admin 409 vanished and the dropdown kept a rejected value.
+    const page = read("app/settings/users/page.tsx");
+    expect(page).toContain("catch (err: unknown)");
+    expect(page).toContain("setError(err instanceof Error ? err.message");
+    expect(page).toContain("await refresh()");
+  });
+
+  it("apiFetch surfaces the server's detail message", () => {
+    const api = read("lib/api.ts");
+    expect(api).toContain("detail");
+    expect(api).toContain("ApiError");
+  });
+
+  it("declares the brand favicon so browsers stop requesting /favicon.ico", () => {
+    const layout = read("app/layout.tsx");
+    expect(layout).toContain("/icon.svg");
+    const icon = read("app/icon.svg");
+    expect(icon).toContain("#0D0D0D");
+    expect(icon).toContain("#00FF41");
+  });
 });

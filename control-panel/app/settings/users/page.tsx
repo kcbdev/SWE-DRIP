@@ -13,8 +13,11 @@ export default function UsersPage() {
   const role = (session?.user as unknown as { role?: string } | undefined)?.role;
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [newRole, setNewRole] = useState<Role>("viewer");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function refresh() {
     try {
@@ -39,27 +42,84 @@ export default function UsersPage() {
     );
   }
 
+  /**
+   * Create a REAL user in two steps, each owned by the right component:
+   *  1. Better Auth's admin plugin creates the `user` + `account` rows
+   *     (credentials) — spec C1: Better Auth owns credential storage.
+   *  2. Our API sets the role, because role is ours to manage, audit and
+   *     last-admin-guard (Better Auth's plugin only types admin/user).
+   *
+   * The old flow called `POST /api/users`, which wrote a `user` row with no
+   * `account` row — an account that could never sign in.
+   */
   async function invite(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await apiFetch("/api/users", {
-      method: "POST",
-      body: JSON.stringify({ email, name: email.split("@")[0], role: newRole }),
-    });
-    setEmail("");
-    await refresh();
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      if (password.length < 8) {
+        throw new Error("Password must be at least 8 characters.");
+      }
+      const result = await authClient.admin.createUser({
+        email,
+        password,
+        name: email.split("@")[0],
+      });
+      if (result.error) {
+        throw new Error(result.error.message ?? "could not create the account");
+      }
+      const created = result.data?.user as { id?: string } | undefined;
+      if (newRole !== "viewer") {
+        if (!created?.id) {
+          throw new Error(
+            "Account created but its id was not returned — set the role from the table below.",
+          );
+        }
+        await apiFetch(`/api/users/${created.id}/role`, {
+          method: "PATCH",
+          body: JSON.stringify({ role: newRole }),
+        });
+      }
+      setNotice(`Created ${email} as ${newRole}. Share the password with them directly.`);
+      setEmail("");
+      setPassword("");
+      await refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "invite failed");
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function changeRole(userId: string, nextRole: Role) {
-    await apiFetch(`/api/users/${userId}/role`, {
-      method: "PATCH",
-      body: JSON.stringify({ role: nextRole }),
-    });
-    await refresh();
+    setError(null);
+    setNotice(null);
+    try {
+      await apiFetch(`/api/users/${userId}/role`, {
+        method: "PATCH",
+        body: JSON.stringify({ role: nextRole }),
+      });
+      await refresh();
+    } catch (err: unknown) {
+      // Surface the server's reason (e.g. the last-admin refusal) and re-sync
+      // so the dropdown cannot keep showing a role the server rejected.
+      setError(err instanceof Error ? err.message : "failed to change role");
+      await refresh();
+    }
   }
 
   async function deactivate(userId: string) {
-    await apiFetch(`/api/users/${userId}/deactivate`, { method: "POST" });
-    await refresh();
+    setError(null);
+    setNotice(null);
+    try {
+      await apiFetch(`/api/users/${userId}/deactivate`, { method: "POST" });
+      await refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "failed to deactivate");
+      await refresh();
+    }
   }
 
   return (
@@ -79,6 +139,18 @@ export default function UsersPage() {
             />
           </label>
           <label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+            Initial password
+            <input
+              type="password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="min 8 characters"
+              className="mt-1 block border border-border bg-background px-3 py-2 font-mono text-sm text-foreground outline-none focus:border-primary"
+            />
+          </label>
+          <label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             Role
             <select
               value={newRole}
@@ -94,13 +166,19 @@ export default function UsersPage() {
           </label>
           <button
             type="submit"
-            className="bg-primary px-4 py-2 font-mono text-sm text-primary-foreground hover:bg-primary/90"
+            disabled={busy}
+            className="bg-primary px-4 py-2 font-mono text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
-            Invite
+            {busy ? "Creating..." : "Create user"}
           </button>
         </form>
+        <p className="-mt-2 font-mono text-[11px] text-muted-foreground">
+          The account is created with this password and can sign in immediately. There is no
+          self-service reset in this environment — share it directly and rotate here if leaked.
+        </p>
 
         {error ? <p className="font-mono text-xs text-destructive">{error}</p> : null}
+        {notice ? <p className="font-mono text-xs text-primary">{notice}</p> : null}
 
         <table className="w-full border border-border text-left font-mono text-sm">
           <thead className="bg-secondary text-xs uppercase tracking-widest text-muted-foreground">

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- SWE Drip: terminal-green prompt on void black. Brand invariants:
+       #0D0D0D void black, #00FF41 terminal green, sharp corners only. -->
+  <rect width="32" height="32" fill="#0D0D0D"/>
+  <path d="M10 10 L16 16 L10 22" fill="none" stroke="#00FF41" stroke-width="3.5"
+        stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M18 22 H24" fill="none" stroke="#00FF41" stroke-width="3.5"
+        stroke-linecap="square"/>
+</svg>
