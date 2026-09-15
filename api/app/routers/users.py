@@ -3,6 +3,12 @@
 Every route is gated by ``require_role(admin)`` — Operator and Viewer receive
 403 regardless of any UI state.
 
+**User creation is not here.** Better Auth owns credential storage (spec C1), so
+new accounts are created through its admin plugin (`authClient.admin.createUser`
+in the Control Panel). An earlier Python-side invite inserted a ``user`` row with
+no ``account`` row, which produced accounts that could never sign in; that route
+was removed rather than fixed. This router manages profile/role/activation only.
+
 Two safety properties beyond the role gate:
 - Role changes and deactivations are **audited** (before/after, append-only).
 - The invariant **at least one active admin must always remain** is enforced
@@ -28,12 +34,6 @@ AdminOnly = Depends(require_role(ROLE_ADMIN))
 LAST_ADMIN_REFUSAL = (
     "Refusing: this would leave no active admin. Promote another user to admin first."
 )
-
-
-class InviteRequest(BaseModel):
-    email: str
-    name: str = ""
-    role: str = "viewer"
 
 
 class RoleRequest(BaseModel):
@@ -83,18 +83,6 @@ def list_users(
     store: UserStore = Depends(get_user_store),
 ) -> list[dict[str, object]]:
     return [_record(user) for user in store.list_users()]
-
-
-@router.post("", status_code=status.HTTP_201_CREATED)
-def invite_user(
-    payload: InviteRequest,
-    actor: Actor = AdminOnly,
-    store: UserStore = Depends(get_user_store),
-) -> dict[str, object]:
-    _validate_role(payload.role)
-    if not payload.email or "@" not in payload.email:
-        raise HTTPException(status_code=422, detail="valid email required")
-    return _record(store.invite_user(payload.email, payload.name, payload.role))
 
 
 @router.patch("/{user_id}/role")

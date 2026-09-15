@@ -3,13 +3,13 @@
 The store is a small protocol so the API can be tested offline with an
 in-memory fake; the SQL implementation targets Better Auth's own ``user`` table
 (Better Auth remains the single owner of credentials — this store manages
-profile/role/activation only; credential creation is delegated to Better Auth's
-admin create-user flow at integration time).
+profile/role/activation only). Account creation is deliberately absent: it must
+go through Better Auth's admin create-user flow, which writes the ``account``
+row that makes a login possible.
 """
 
 from __future__ import annotations
 
-import uuid
 from dataclasses import dataclass
 from typing import Optional, Protocol
 
@@ -30,8 +30,6 @@ class UserRecord:
 
 class UserStore(Protocol):
     def list_users(self) -> list[UserRecord]: ...
-
-    def invite_user(self, email: str, name: str, role: str) -> UserRecord: ...
 
     def set_role(self, user_id: str, role: str) -> Optional[UserRecord]: ...
 
@@ -57,19 +55,6 @@ class SqlUserStore:
         with get_engine().connect() as conn:
             rows = conn.execute(text(f"{self._SELECT} ORDER BY email")).mappings().all()
         return [_row_to_record(row) for row in rows]
-
-    def invite_user(self, email: str, name: str, role: str) -> UserRecord:
-        user_id = str(uuid.uuid4())
-        with get_engine().begin() as conn:
-            conn.execute(
-                text(
-                    'INSERT INTO "user" (id, email, name, role, "emailVerified", banned, '
-                    '"createdAt", "updatedAt") '
-                    "VALUES (:id, :email, :name, :role, false, false, now(), now())"
-                ),
-                {"id": user_id, "email": email, "name": name, "role": role},
-            )
-        return UserRecord(id=user_id, email=email, name=name, role=role, active=True)
 
     def set_role(self, user_id: str, role: str) -> Optional[UserRecord]:
         with get_engine().begin() as conn:

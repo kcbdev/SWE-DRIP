@@ -33,13 +33,6 @@ class FakeUserStore:
     def list_users(self) -> list[UserRecord]:
         return list(self.users.values())
 
-    def invite_user(self, email: str, name: str, role: str) -> UserRecord:
-        new_id = f"u-{self._next}"
-        self._next += 1
-        record = UserRecord(new_id, email, name, role, True)
-        self.users[new_id] = record
-        return record
-
     def set_role(self, user_id: str, role: str) -> Optional[UserRecord]:
         current = self.users.get(user_id)
         if current is None:
@@ -84,7 +77,6 @@ def build_client(
 # last-admin guard, which is tested separately below.
 ENDPOINTS = [
     ("GET", "/api/users", None),
-    ("POST", "/api/users", {"email": "new@example.com", "name": "New", "role": "viewer"}),
     ("PATCH", "/api/users/u-2/role", {"role": "viewer"}),
     ("POST", "/api/users/u-2/deactivate", None),
 ]
@@ -105,20 +97,19 @@ def test_admin_is_allowed(method: str, path: str, body) -> None:
     assert response.status_code in (200, 201)
 
 
-def test_admin_invite_creates_user_and_rejects_bad_role() -> None:
+def test_user_creation_is_not_exposed_by_this_api() -> None:
+    """Better Auth owns credential storage (spec C1) — the Python invite route
+    created credential-less users who could never sign in, so it was removed."""
     client, store, _ = build_client(ROLE_ADMIN)
-    created = client.post(
-        "/api/users", json={"email": "design@example.com", "name": "Design", "role": "operator"}
+    response = client.post(
+        "/api/users",
+        json={"email": "design@example.com", "name": "Design", "role": "operator"},
     )
-    assert created.status_code == 201
-    assert created.json()["role"] == "operator"
-    assert len(store.users) == 3
-
-    bad = client.post("/api/users", json={"email": "x@example.com", "role": "superuser"})
-    assert bad.status_code == 422
+    assert response.status_code == 405  # Method Not Allowed
+    assert len(store.users) == 2  # nothing created
 
 
-def test_admin_role_change_and_deactivate() -> None:
+def test_role_change_and_deactivate() -> None:
     client, _, _ = build_client(ROLE_ADMIN)
     changed = client.patch("/api/users/u-2/role", json={"role": "viewer"})
     assert changed.status_code == 200 and changed.json()["role"] == "viewer"
