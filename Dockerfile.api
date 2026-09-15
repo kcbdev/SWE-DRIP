@@ -38,4 +38,7 @@ RUN mkdir -p /app/data/runs
 EXPOSE 8000
 
 # Run migrations on startup, then start uvicorn
-CMD ["sh", "-c", "python -m api.app.migrations && uvicorn api.app.main:app --host 0.0.0.0 --port 8000 --workers 2"]
+# DIAGNOSTIC (revert to && once Coolify DB connectivity is proven): `;` lets
+# uvicorn serve /api/health even when migrations cannot reach the database,
+# isolating image/uvicorn crashes from DB-connectivity crashes.
+CMD ["sh", "-c", "python -m api.app.migrations; echo MIGRATIONS_EXIT=$?; uvicorn api.app.main:app --host 0.0.0.0 --port 8000 --workers 2"]
