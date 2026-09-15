@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { AppShell } from "@/components/app-shell";
 import { OverviewChart } from "@/components/analytics/analytics-view";
 import { apiFetch } from "@/lib/api";
 import type { OverviewResponse } from "@/lib/analytics";
@@ -16,15 +17,20 @@ export default function AnalyticsPage() {
       .catch((err: unknown) => setError(String(err)));
   }, []);
 
-  if (error) {
-    return (
-      <p className="border border-destructive p-4 font-mono text-xs text-destructive">
-        Failed to load analytics: {error}
-      </p>
-    );
-  }
-  if (!overview) {
-    return <p className="font-mono text-xs text-muted-foreground">Loading analytics…</p>;
-  }
-  return <OverviewChart overview={overview} />;
+  return (
+    <AppShell>
+      <div className="flex flex-col gap-4">
+        <h1 className="font-sans text-2xl font-semibold">Analytics</h1>
+        {error ? (
+          <p className="border border-destructive p-4 font-mono text-xs text-destructive">
+            Failed to load analytics: {error}
+          </p>
+        ) : overview ? (
+          <OverviewChart overview={overview} />
+        ) : (
+          <p className="font-mono text-xs text-muted-foreground">Loading analytics…</p>
+        )}
+      </div>
+    </AppShell>
+  );
 }
