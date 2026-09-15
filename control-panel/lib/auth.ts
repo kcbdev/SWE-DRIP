@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
 import { admin } from "better-auth/plugins";
 import { Pool } from "pg";
 
@@ -33,7 +34,10 @@ export const auth = betterAuth({
   hooks: {
     // Auth events are written to the shared audit_log table (spec C4). Failures
     // never block authentication; the event is best-effort from the hook.
-    after: async (ctx: any) => {
+    // NOTE: the hook MUST be wrapped in createAuthMiddleware — a raw async
+    // function returns undefined and crashes better-auth's after-hook runner
+    // (`result.headers` of undefined).
+    after: createAuthMiddleware(async (ctx: any) => {
       const event = authEventForPath(ctx?.path ?? "");
       if (!event) return;
       const session = ctx?.context?.newSession;
@@ -43,6 +47,6 @@ export const auth = betterAuth({
         entityType: event.entityType,
         entityId: session?.id ?? null,
       }).catch(() => undefined);
-    },
+    }),
   },
 });
