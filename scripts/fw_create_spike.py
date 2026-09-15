@@ -1,17 +1,20 @@
-"""Fourthwall product-create spike — A13 evidence (PBI-026).
+"""Fourthwall product-create spike — SUPERSEDED (see ADR-004, Accepted 2026-09-15).
 
-MANUAL/LIVE SPIKE: exercises the official Fourthwall MCP product-create tool
-against the placement matrix (front/back/sleeve, multi-region, colorways) and
-records parameter coverage — which placement fields survive, which are dropped
-or unsupported — with raw request/response shapes. DRAFT/sandbox targets ONLY;
-never spikes against live published products.
+STATUS: NOT EVIDENCE. ADR-004 decided the v1 product-create mechanism is the
+hand-rolled Platform Open API flow. This harness exercised the MCP write tool,
+which v1 does not use, and its ``CREATE_TOOL_CANDIDATES`` match no real MCP tool
+(the real ones are ``ecommerce_create-digital-offer``,
+``ecommerce_create-offers-from-designs``, ``ecommerce_update-offer``), so a
+``--live`` run today would report a false negative.
 
-Usage:
+Kept for history only. The ``--dry-run`` shape test still runs in CI.
+
+If an MCP write path is ever revisited, it first needs an OAuth connect flow
+(ADR-005), then a harness pointed at the real tool names above.
+
+Usage (historical):
     python scripts/fw_create_spike.py --dry-run        # offline shape test (mocked), exit 0
     python scripts/fw_create_spike.py --live            # real MCP session (needs env + founder)
-
-Live env: FOURTHWALL_MCP_URL, FOURTHWALL_MCP_TOKEN. The live run creates a
-DRAFT product only and prints the coverage matrix + raw evidence for ADR-004.
 """
 
 from __future__ import annotations
