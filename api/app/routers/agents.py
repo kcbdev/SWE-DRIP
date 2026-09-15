@@ -102,8 +102,8 @@ def patch_agent_config(
         action="agents.budget_cap.update",
         entity_type="agent",
         entity_id=node,
-        before_json={"cap_usd": before_cap, "cost_impact_note": None},
-        after_json={"cap_usd": after_cap, "cost_impact_note": body.cost_impact_note},
+        before={"cap_usd": before_cap, "cost_impact_note": None},
+        after={"cap_usd": after_cap, "cost_impact_note": body.cost_impact_note},
         actor_user_id=actor.user_id,
     )
 

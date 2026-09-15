@@ -223,7 +223,7 @@ class TestAgentConfigPatch:
             assert len(calls) == 1
             assert calls[0]["action"] == "agents.budget_cap.update"
             assert calls[0]["entity_id"] == "contract_approval"
-            assert calls[0]["after_json"]["cost_impact_note"] == "Audit test"
+            assert calls[0]["after"]["cost_impact_note"] == "Audit test"
 
 
 # ---------------------------------------------------------------------------

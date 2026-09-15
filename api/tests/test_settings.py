@@ -171,8 +171,8 @@ class TestHitlPatch:
         assert len(calls) == 1
         assert calls[0]["action"] == "settings.hitl.toggle"
         assert calls[0]["entity_id"] == "publish_gate"
-        assert calls[0]["before_json"]["enabled"] is True
-        assert calls[0]["after_json"]["enabled"] is False
+        assert calls[0]["before"]["enabled"] is True
+        assert calls[0]["after"]["enabled"] is False
 
 
 # ---------------------------------------------------------------------------
@@ -456,6 +456,48 @@ class TestSettingsSql:
         # param — that renders as a literal `:val::jsonb` and fails at runtime.
         assert ":val::" not in compiled
         assert compiled.count("%(val)s") == 2
+
+
+# ---------------------------------------------------------------------------
+# Audit writer contract (offline — no DB)
+# ---------------------------------------------------------------------------
+
+def test_router_audit_calls_match_writer_signature() -> None:
+    """Every `audit.record(...)` call site must use SqlAuditWriter's kwargs.
+
+    Regression gate: the routers previously passed ``before_json=`` /
+    ``after_json=`` while the writer accepts ``before=`` / ``after=``. Test
+    doubles with ``**kwargs`` hid it, and the mismatch only surfaced as a 500
+    against the real writer. Parsing the call sites closes that gap offline.
+    """
+    import ast
+    import inspect
+    from pathlib import Path
+
+    from api.app.audit import SqlAuditWriter
+
+    allowed = set(inspect.signature(SqlAuditWriter.record).parameters) - {"self"}
+    routers = Path(__file__).resolve().parent.parent / "app" / "routers"
+
+    offenders: list[tuple[str, str]] = []
+    seen_calls = 0
+    for path in routers.glob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            if not (isinstance(func, ast.Attribute) and func.attr == "record"):
+                continue
+            seen_calls += 1
+            for keyword in node.keywords:
+                if keyword.arg is None:
+                    offenders.append((path.name, "**kwargs"))
+                elif keyword.arg not in allowed:
+                    offenders.append((path.name, keyword.arg))
+
+    assert seen_calls > 0, "expected audit.record call sites in the routers"
+    assert offenders == [], offenders
 
 
 # ---------------------------------------------------------------------------

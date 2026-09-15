@@ -74,8 +74,8 @@ def patch_hitl(
         action="settings.hitl.toggle",
         entity_type="settings",
         entity_id=body.node,
-        before_json={"enabled": before[body.node]},
-        after_json={"enabled": body.enabled},
+        before={"enabled": before[body.node]},
+        after={"enabled": body.enabled},
         actor_user_id=actor.user_id,
     )
     return after
@@ -124,8 +124,8 @@ def patch_brand(
         action="settings.brand.update",
         entity_type="settings",
         entity_id="brand",
-        before_json=before,
-        after_json=after,
+        before=before,
+        after=after,
         actor_user_id=actor.user_id,
     )
     return after
@@ -198,8 +198,8 @@ def patch_integrations(
         action="settings.integrations.update",
         entity_type="settings",
         entity_id="integrations",
-        before_json=_presence_only(before),
-        after_json=_presence_only(after),
+        before=_presence_only(before),
+        after=_presence_only(after),
         actor_user_id=actor.user_id,
     )
     return get_integrations_status(actor)
