@@ -57,6 +57,12 @@ def collection_gate(
                 # The draft's identity never changes under edit-and-approve.
                 merged["collection_id"] = draft.get("collection_id")
                 merged["status"] = "draft"
+                from .contract import validate_contract
+
+                problems = validate_contract(merged)
+                if problems:
+                    raise ValueError(
+                        f"{NODE}: edited contract is invalid: {problems!r}")
                 decision["edited_contract"] = merged
         log.info(NODE, f"decision recorded: approved={decision['approved']}", run_id=rid)
     else:

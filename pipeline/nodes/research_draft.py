@@ -28,6 +28,7 @@ def assemble_draft(
     style_archetype: str,
     synthesis: dict[str, Any],
     inspiration: dict[str, Any],
+    board_version: int = 1,
 ) -> dict[str, Any]:
     """Build the v2 draft from research outputs (pure, deterministic)."""
     refs = [
@@ -55,7 +56,7 @@ def assemble_draft(
         "mood_board": [],
         "inspiration_refs": refs,
         "avoid": list(synthesis.get("avoid") or []),
-        "board_version": 1,
+        "board_version": board_version,
     }
 
 
@@ -97,6 +98,7 @@ def contract_draft(
         style_archetype=str(state.get("style_archetype")),
         synthesis=synthesis,
         inspiration=inspiration,
+        board_version=int((state.get("board") or {}).get("board_version") or 1),
     )
     problems = validate_contract(draft)
     if problems:  # self-invalid draft is a code bug — loud, never silent

@@ -69,6 +69,11 @@ def register_research_node(name: str, fn: Callable[..., dict[str, Any]]) -> None
 
 def _placeholder(name: str) -> Callable[..., dict[str, Any]]:
     def run(state: CollectionResearchState, config: RunnableConfig = None) -> dict[str, Any]:  # type: ignore[assignment]
+        from langgraph.types import interrupt as _interrupt
+
+        flags = ((config or {}).get("configurable") or {}).get("hitl", {})
+        if flags.get(name, RESEARCH_DEFAULT_HITL.get(name, False)):
+            _interrupt({"node": name, "status": "awaiting_approval"})
         return {"visited": [name]}
 
     run.__name__ = f"research_{name}"

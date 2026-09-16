@@ -91,6 +91,13 @@ def style_synthesis(
         raise ValueError(f"{NODE}: model did not return JSON: {exc}") from None
     if not isinstance(directives, dict) or not directives.get("style_descriptors"):
         raise ValueError(f"{NODE}: model returned no style_descriptors")
+    descriptors = directives.get("style_descriptors")
+    if not isinstance(descriptors, list) or not descriptors or not all(
+        isinstance(d, str) and d.strip() for d in descriptors
+    ):
+        raise ValueError(f"{NODE}: style_descriptors must be non-empty strings")
+    # Membership against the locked vocabulary is PBI-051's scoring job
+    # (style_conformance criterion) — here we enforce shape, not taste.
     synthesis = {
         "style_descriptors": directives.get("style_descriptors"),
         "motifs": directives.get("motifs", []),

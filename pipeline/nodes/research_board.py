@@ -102,7 +102,7 @@ def mood_board(
         "model_used": used_model,
         "width": width,
         "height": height,
-        "board_version": int(state.get("board_version") or 0) + 1,
+        "board_version": int((state.get("board") or {}).get("board_version") or 0) + 1,
     }
     errors: list[str] = []
     usage = result.raw.get("usage") or {}

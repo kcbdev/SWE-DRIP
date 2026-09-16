@@ -231,7 +231,7 @@ class TestBoard:
         state: dict[str, Any] = {"collection_slug": "vibe",
                                  "synthesis": dict(GOOD_DIRECTIVES)}
         first = mood_board(state, cfg)["board"]  # type: ignore[arg-type]
-        second = mood_board({**state, "board_version": 1}, cfg)["board"]  # type: ignore[arg-type]
+        second = mood_board({**state, "board": {"board_version": 1}}, cfg)["board"]  # type: ignore[arg-type]
         assert first["file_ref"] != second["file_ref"]
         assert second["board_version"] == 2
 
@@ -286,6 +286,61 @@ class TestGate:
         )
         assert out["gate_decision"] == {"approved": False, "draft_collection_id": "v",
                                         "board_version": None}
+
+    def _run_to_gate(self, tmp_path: Path, thread: str):
+        from langgraph.types import Command  # noqa: F401 (used by callers)
+
+        graph = build_collection_graph(checkpointer=MemorySaver())
+        cfg: dict[str, Any] = {"configurable": {
+            "llm_client": _StubClient(json.dumps(GOOD_DIRECTIVES)),
+            "cost_engine": _FakeEngine(), "run_logger": MemoryRunLogger(),
+            "thread_id": thread, "research_assets_dir": str(tmp_path / "assets"),
+            "hitl": {n: (n == "collection_gate") for n in RESEARCH_ORDER}}}
+        out = graph.invoke(
+            {"collection_slug": "vibe", "collection_theme": "Vibe",
+             "style_archetype": "mono-log", "inspiration": dict(INSPIRATION),
+             "avoid": []},
+            cfg,
+        )
+        return graph, cfg, out
+
+    def test_interrupt_carries_draft_and_board(self, tmp_path: Path) -> None:
+        _, _, out = self._run_to_gate(tmp_path, "r-gate-1")
+        (interrupt,) = out["__interrupt__"]
+        assert interrupt.value["node"] == "collection_gate"
+        assert interrupt.value["draft"]["collection_id"] == "vibe"
+        assert interrupt.value["draft"]["status"] == "draft"
+        assert interrupt.value["board"]["board_version"] == 1
+
+    def test_resume_approve_reject_and_edit(self, tmp_path: Path) -> None:
+        from langgraph.types import Command
+
+        graph, cfg, _ = self._run_to_gate(tmp_path, "r-gate-2")
+        approved = graph.invoke(Command(resume={"approved": True, "note": "go"}), cfg)
+        assert approved["gate_decision"]["approved"] is True
+
+        graph2, cfg2, _ = self._run_to_gate(tmp_path, "r-gate-3")
+        rejected = graph2.invoke(Command(resume={"approved": False}), cfg2)
+        assert rejected["gate_decision"]["approved"] is False
+
+        graph3, cfg3, _ = self._run_to_gate(tmp_path, "r-gate-4")
+        edited = graph3.invoke(
+            Command(resume={"approved": True,
+                            "contract": {"theme": "Vibe Coding v2"}}), cfg3)
+        decision = edited["gate_decision"]
+        assert decision["approved"] is True
+        assert decision["edited_contract"]["theme"] == "Vibe Coding v2"
+        assert decision["edited_contract"]["collection_id"] == "vibe"
+        assert decision["edited_contract"]["status"] == "draft"
+
+    def test_resume_malformed_edit_is_loud(self, tmp_path: Path) -> None:
+        from langgraph.types import Command
+
+        graph, cfg, _ = self._run_to_gate(tmp_path, "r-gate-5")
+        with pytest.raises(ValueError, match="edited contract is invalid"):
+            graph.invoke(
+                Command(resume={"approved": True,
+                                "contract": {"style_archetype": ""}}), cfg)
 
 
 class TestFullGraph:
