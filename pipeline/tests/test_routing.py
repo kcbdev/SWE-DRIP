@@ -103,6 +103,16 @@ def test_vision_call_shape() -> None:
     assert {"type": "image_url", "image_url": {"url": "http://x/y.png"}} in content
 
 
+def test_vision_extra_images_appended() -> None:
+    captured: list[dict] = []
+    client = OpenRouterClient(api_key="test-key", transport=_transport(captured, CHAT_RESPONSE))
+    client.vision(model=model_for("aesthetic_qc"), prompt="score it", image_url="http://x/y.png",  # type: ignore[arg-type]
+                  extra_image_urls=["data:image/png;base64,AAA"])
+    content = captured[0]["messages"][0]["content"]
+    images = [b for b in content if b.get("type") == "image_url"]
+    assert [b["image_url"]["url"] for b in images] == ["http://x/y.png", "data:image/png;base64,AAA"]
+
+
 def test_image_call_shape() -> None:
     captured: list[dict] = []
     response = {"data": [{"url": "http://x/y.png"}], "usage": {}}

@@ -151,3 +151,38 @@ def test_rejection_feedback_names_failing_criteria() -> None:
     evaluation = rubric.evaluate(rubric.parse_scores(_pin("ninja")["pinned_vision_response"]))
     feedback = rubric.rejection_feedback(evaluation, 1)
     assert "style_cohesion" in feedback and "35" in feedback
+
+
+# ------------------------------------------------------------------- style (PBI-051)
+
+
+def test_style_betrayal_fails_naming_the_criterion() -> None:
+    pin = _pin("style_fail")
+    evaluation = rubric.evaluate(rubric.parse_scores(pin["pinned_vision_response"]))
+    assert evaluation["result"] == "fail"
+    assert evaluation["style_status"] == "fail"
+    assert "style_conformance" in evaluation["failing"]
+    feedback = rubric.rejection_feedback(evaluation, 1)
+    assert "style_conformance" in feedback and "40" in feedback
+
+
+def test_style_faithful_passes() -> None:
+    pin = _pin("style_pass")
+    evaluation = rubric.evaluate(rubric.parse_scores(pin["pinned_vision_response"]))
+    assert evaluation["result"] == "pass"
+    assert evaluation["style_status"] == "pass"
+
+
+def test_missing_style_is_unscored_not_failed() -> None:
+    evaluation = rubric.evaluate(rubric.parse_scores(_pin("rocket")["pinned_vision_response"]))
+    assert evaluation["result"] == "pass"
+    assert evaluation["style_status"] == "unscored"
+
+
+def test_style_pins_match_current_versions() -> None:
+    for name in ("style_fail", "style_pass"):
+        pin = _pin(name)
+        assert pin["rubric_version"] == rubric.RUBRIC_VERSION
+        from pipeline.prompts import prompt_version
+
+        assert pin["prompt_version"] == prompt_version("aesthetic_qc")

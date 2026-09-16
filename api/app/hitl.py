@@ -280,7 +280,7 @@ class SyncGraphRunner:
         from pipeline.runlog import SqlRunLogger
 
         from .db import get_engine
-        from .runs import runs_root
+        from .runs import resolve_board_image, runs_root
 
         with _saver_session(self._saver_factory) as saver:
             graph = self._graph(saver)
@@ -299,6 +299,9 @@ class SyncGraphRunner:
                     # logs go silent mid-run (found on the first MCP-driven
                     # live run — only trend/contract rows existed).
                     "run_logger": SqlRunLogger(engine, thread_id),
+                    # Mood board follows the contract in state (recomputed,
+                    # never inferred — same rule as design_type).
+                    "board_image": resolve_board_image(state.get("collection_contract") or {}),
                     # Carried from state (starter records it): placement
                     # refuses to infer one, so a dropped value errors every
                     # resumed run (found on the second MCP-driven live run).

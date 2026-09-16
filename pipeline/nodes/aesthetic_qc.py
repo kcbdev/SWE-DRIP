@@ -100,11 +100,21 @@ def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
         ),
         conf.prompt_override,
     )
+    # Mood board travels from run config (inlined data URI by the API layer);
+    # absent means style_conformance goes unscored, never guessed.
+    board_image = cfg.get("board_image")
+    extra_images = [board_image] if board_image else []
     result = client.vision(
-        model=model, prompt=prompt, image_url=image_ref(render["file_url"]), **conf.params
+        model=model, prompt=prompt, image_url=image_ref(render["file_url"]),
+        extra_image_urls=extra_images, **conf.params
     )
     try:
-        scores = rubric.parse_scores(parse_json_object(result.content))
+        payload = parse_json_object(result.content)
+        scores = rubric.parse_scores(payload)
+        if not board_image:
+            # A hallucinated style score without a board is discarded: style
+            # conformance is board-scored or unscored, never guessed.
+            scores.pop(rubric.STYLE_CRITERION, None)
     except (TypeError, ValueError) as exc:
         raise ValueError(f"aesthetic_qc: vision model returned unusable scores: {exc}") from None
     evaluation = rubric.evaluate(scores)
@@ -130,6 +140,7 @@ def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
         "result": evaluation["result"],
         "scores": evaluation["scores"],
         "failing": evaluation["failing"],
+        "style_status": evaluation["style_status"],
         "attempts": attempt,
         "model_used": model,
         "rubric_version": rubric.RUBRIC_VERSION,

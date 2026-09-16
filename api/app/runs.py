@@ -104,6 +104,49 @@ def _stored_contract(collection_id: str) -> dict[str, Any]:
     return dict(contract) if isinstance(contract, dict) else {}
 
 
+def resolve_board_image(contract: dict[str, Any]) -> Optional[str]:
+    """Inline the collection's mood board as a data URI for aesthetic QC.
+
+    The first ``mood_board`` ref resolving under the collection's asset dir
+    wins; anything missing/unreadable degrades to ``None`` (the node records
+    style ``unscored`` rather than failing). Never raises — a board problem
+    must not take a run down.
+    """
+    try:
+        from .inspiration import resolve_collections_root
+
+        refs = contract.get("mood_board") or []
+        slug = contract.get("collection_id") or ""
+        assets_dir = resolve_collections_root() / f"{slug}.assets"
+        import base64
+
+        for ref in refs:
+            if not isinstance(ref, str) or not ref.strip():
+                continue
+            candidate = assets_dir / ref.strip()
+            try:
+                resolved = candidate.resolve()
+            except OSError:
+                continue
+            try:
+                base = assets_dir.resolve()
+            except OSError:
+                return None
+            if resolved.parent != base or not resolved.is_file():
+                continue
+            raw = resolved.read_bytes()
+            if raw[:8] == b"\x89PNG\r\n\x1a\n":
+                mime = "image/png"
+            elif raw[:3] == b"\xff\xd8\xff":
+                mime = "image/jpeg"
+            else:
+                continue
+            return f"data:{mime};base64," + base64.b64encode(raw).decode("ascii")
+    except Exception:
+        pass
+    return None
+
+
 def validate_briefs(briefs: Optional[list[dict[str, Any]]]) -> list[str]:
     """Return the reasons a brief set cannot start a run (empty list = valid).
 
@@ -467,6 +510,9 @@ class CheckpointerRunStarter:
                 # failure never breaks the run, and rows fan out as run.log
                 # SSE events for live viewing.
                 "run_logger": SqlRunLogger(cost_engine, run_id, publish=broker.publish),
+                # Mood board for style-conformance QC (PBI-051): inlined once
+                # here so resume/replay inherit it from state, below.
+                "board_image": resolve_board_image(contract),
                 "run_dir": str(runs_root() / resolved_design),
                 # Per-design choice; `placement` reads it from config and refuses
                 # to infer one (locked vocabulary).
@@ -608,7 +654,6 @@ class CheckpointerRunPorts:
         from pipeline.runlog import SqlRunLogger
 
         from .db import get_engine
-
         if not os.environ.get("OPENROUTER_API_KEY"):
             raise RuntimeError("replay needs OPENROUTER_API_KEY (model calls bill to the project)")
         with self._saver_session(self._saver_factory) as saver:
@@ -621,6 +666,7 @@ class CheckpointerRunPorts:
                     "llm_client": OpenRouterClient(),
                     "cost_engine": engine,
                     "run_logger": SqlRunLogger(engine, run_id),
+                    "board_image": resolve_board_image(state.get("collection_contract") or {}),
                     "hitl": state.get("hitl") or {},
                     "node_config": state.get("node_config") or {},
                     "design_type": state.get("design_type"),

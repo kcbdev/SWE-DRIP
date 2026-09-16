@@ -47,7 +47,7 @@ BASE_VERSIONS: dict[str, str] = {
     "trend_clustering": "v1",
     "listing_copy": "v1",
     "design_spec_rcao": "v1",
-    "qc_rubric": "v1",
+    "qc_rubric": "v2",
 }
 
 
@@ -135,15 +135,23 @@ def build_qc_prompt(
     attempt: int,
     previous_feedback: str = "",
 ) -> str:
-    """Vision scoring prompt: rubric + strict JSON schema instruction (node 7)."""
+    """Vision scoring prompt: rubric + strict JSON schema instruction (node 7).
+
+    The fifth criterion (style_conformance, PBI-051) is always requested:
+    when no mood board travels with the call the model omits it and the
+    verdict records ``unscored`` — the node, not the prompt, decides.
+    """
     prompt = (
-        "Score this t-shirt render against the four-criterion aesthetic rubric, "
+        "Score this t-shirt render against the five-criterion aesthetic rubric, "
         "0–100 per criterion. Reply ONLY with JSON: "
         '{"style_cohesion": int, "focal_point": int, "placement_fit": int, '
-        '"contrast": int, "notes": string}.\n'
+        '"contrast": int, "style_conformance": int, "notes": string}. '
+        "If no mood board image was provided alongside the render, omit "
+        "style_conformance from the JSON rather than guessing it.\n"
         "Criteria: style_cohesion (matches the locked style, no mixed styles); "
         "focal_point (exactly one clear focal point); placement_fit (design fits "
-        "its placement zone); contrast (readable on every valid colorway).\n"
+        "its placement zone); contrast (readable on every valid colorway); "
+        "style_conformance (matches the provided mood board's graphic language).\n"
         f"Design subject: {design_subject}\nLocked style: {style}\n"
         f"Scoring attempt: {attempt}"
     )

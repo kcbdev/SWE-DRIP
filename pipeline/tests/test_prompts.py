@@ -118,7 +118,7 @@ class TestBuiltinPromptsUnchanged:
 
     def test_qc_builder_matches_todays_text(self) -> None:
         prompt = prompts.build_qc_prompt(design_subject="x", style="y", attempt=1)
-        assert "four-criterion" in prompt
+        assert "five-criterion" in prompt
         for criterion in rubric.CRITERIA:
             assert criterion in prompt
 

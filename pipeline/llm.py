@@ -14,8 +14,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Any
-
+from typing import Any, Optional
 import httpx
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
@@ -110,18 +109,22 @@ class OpenRouterClient:
         return LLMResult(content=content, model=model, tokens_in=tokens_in, tokens_out=tokens_out, raw=data)
 
     def vision(
-        self, model: str, prompt: str, image_url: str, **params: Any
+        self, model: str, prompt: str, image_url: str,
+        extra_image_urls: Optional[list[str]] = None, **params: Any
     ) -> LLMResult:
-        """Vision call: text prompt + image URL as multimodal content."""
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": image_url}},
-                ],
-            }
+        """Vision call: text prompt + image URL as multimodal content.
+
+        ``extra_image_urls`` appends further images (e.g. a mood board
+        alongside the render) — additive, existing single-image calls send
+        byte-identical payloads.
+        """
+        content: list[dict[str, Any]] = [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": image_url}},
         ]
+        for extra in extra_image_urls or []:
+            content.append({"type": "image_url", "image_url": {"url": extra}})
+        messages = [{"role": "user", "content": content}]
         return self.chat(model, messages, **params)
 
     def image(self, model: str, prompt: str, **params: Any) -> LLMResult:

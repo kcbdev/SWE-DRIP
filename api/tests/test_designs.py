@@ -101,6 +101,7 @@ def test_detail_shape_from_fixture_state() -> None:
                               "colorways_valid": ["black"]}
     assert body["qc"]["scores"]["contrast"] == 90
     assert body["qc"]["result"] == "pass" and body["qc"]["rubric_version"] == 1
+    assert body["qc"]["style_status"] is None  # pre-board verdict: unscored
     assert body["placement"]["front"] == "chest"
     assert body["context"]["brief"]["subject"] == "Rocket"
     assert body["context"]["collection_id"] == "vibe-coding"

@@ -77,7 +77,10 @@ def test_resume_supplies_the_full_runtime_config() -> None:
     assert not isinstance(configurable["run_logger"], NullLogger)
     # design_type rides in state so resumed/replayed runs keep it: placement
     # refuses to infer one (found on the second MCP-driven live run).
-    assert configurable["design_type"] == "hero-icon"    # Render artifacts land under the root the render endpoint serves from.
+    assert configurable["design_type"] == "hero-icon"
+    # Mood board resolves (None without a contract board — the node records
+    # unscored rather than failing).
+    assert "board_image" in configurable    # Render artifacts land under the root the render endpoint serves from.
     assert configurable["run_dir"].endswith("runs\\d-7") or configurable["run_dir"].endswith(
         "runs/d-7"
     )

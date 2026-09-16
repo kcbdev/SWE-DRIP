@@ -400,3 +400,79 @@ def test_regen_cap_without_hitl_records_error(tmp_path: Path) -> None:
     assert len(image_captured) == rubric.MAX_REGEN_RETRIES + 1
     assert any("HITL off" in e for e in result["errors"])
     assert result["visited"].count("art_render") == rubric.MAX_REGEN_RETRIES + 1
+
+
+# ------------------------------------------------- style board (PBI-051)
+
+
+def _board_vision_client(scores_list: list[dict], bodies: list[dict]) -> OpenRouterClient:
+    """Vision fake capturing full request bodies (to count image parts)."""
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        bodies.append(body)
+        reply = scores_list[min(calls["n"], len(scores_list) - 1)]
+        calls["n"] += 1
+        return httpx.Response(
+            200, json={"choices": [{"message": {"content": json.dumps(reply)}}], "usage": {}}
+        )
+
+    return OpenRouterClient(api_key="test-key", transport=httpx.MockTransport(handler))
+
+
+def _board_uri() -> str:
+    return 'data:image/png;base64,' + base64.b64encode(_png_bytes()).decode()
+
+
+def _image_parts(body: dict) -> list[dict]:
+    return [b for b in body['messages'][0]['content'] if b.get('type') == 'image_url']
+
+
+def test_board_image_travels_as_second_image(tmp_path: Path) -> None:
+    bodies: list[dict] = []
+    board = _board_uri()
+    out = aesthetic_qc(
+        _render_state(tmp_path),
+        _cfg(_board_vision_client([PASS_SCORES], bodies), board_image=board),
+    )
+    assert out['aesthetic_qc']['result'] == 'pass'
+    assert out['aesthetic_qc']['style_status'] == 'unscored'
+    images = _image_parts(bodies[0])
+    assert len(images) == 2
+    assert images[1]['image_url']['url'] == board
+
+
+def test_no_board_marks_unscored(tmp_path: Path) -> None:
+    bodies: list[dict] = []
+    out = aesthetic_qc(
+        _render_state(tmp_path), _cfg(_board_vision_client([PASS_SCORES], bodies))
+    )
+    assert out['aesthetic_qc']['result'] == 'pass'
+    assert out['aesthetic_qc']['style_status'] == 'unscored'
+    assert len(_image_parts(bodies[0])) == 1
+
+
+def test_hallucinated_style_without_board_discarded(tmp_path: Path) -> None:
+    bodies: list[dict] = []
+    scored = dict(PASS_SCORES); scored['style_conformance'] = 12
+    out = aesthetic_qc(
+        _render_state(tmp_path), _cfg(_board_vision_client([scored], bodies))
+    )
+    assert out['aesthetic_qc']['result'] == 'pass'
+    assert out['aesthetic_qc']['style_status'] == 'unscored'
+    assert 'style_conformance' not in out['aesthetic_qc']['scores']
+
+
+def test_style_fail_names_criterion(tmp_path: Path) -> None:
+    bodies: list[dict] = []
+    scored = dict(PASS_SCORES); scored['style_conformance'] = 40
+    out = aesthetic_qc(
+        _render_state(tmp_path),
+        _cfg(_board_vision_client([scored], bodies), board_image=_board_uri()),
+    )
+    assert out['aesthetic_qc']['result'] == 'fail'
+    assert out['aesthetic_qc']['style_status'] == 'fail'
+    assert 'style_conformance' in out['aesthetic_qc']['failing']
+    assert 'style_conformance' in out['render_feedback']
+

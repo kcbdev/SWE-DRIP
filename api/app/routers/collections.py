@@ -56,6 +56,32 @@ def list_collections(
     return {"items": [_detail(record) for record in store.list(status=status_filter)]}
 
 
+@router.get("/rotation")
+def get_rotation_queue(
+    actor: Actor = ReadAllowed,
+    store: CollectionsStore = Depends(get_collections_store),
+) -> dict[str, Any]:
+    """Rotation queue at a glance (Viewer+): next queued candidate + counts.
+
+    Declared before ``/{slug}`` so "rotation" is never captured as a slug.
+    The next candidate is the oldest draft by creation time — rotation never
+    stalls waiting on research while a draft waits.
+    """
+    drafts = store.list(status="draft")
+    actives = store.list(status="active")
+
+    def _created(record: dict[str, Any]) -> str:
+        return str(record["contract"].get("created_at") or "")
+
+    ordered = sorted(drafts, key=_created)
+    next_candidate = ordered[0]["contract"]["collection_id"] if ordered else None
+    return {
+        "next_candidate": next_candidate,
+        "drafts": len(drafts),
+        "actives": len(actives),
+    }
+
+
 @router.get("/{slug}")
 def get_collection(
     slug: str,

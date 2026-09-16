@@ -44,6 +44,8 @@ def _reset() -> None:
 
 class TestPromptMeta:
     def test_qc_meta_shape(self) -> None:
+        from pipeline.prompts import BASE_VERSIONS
+
         _reset()
         resp = _client().get("/api/agents/aesthetic_qc/prompt")
         assert resp.status_code == 200
@@ -51,7 +53,7 @@ class TestPromptMeta:
         assert body == {
             "node": "aesthetic_qc",
             "prompt_key": "qc_rubric",
-            "base_version": "v1",
+            "base_version": BASE_VERSIONS["qc_rubric"],
             "prompt_version": prompt_version("aesthetic_qc"),
             "has_override": False,
             "override_chars": 0,

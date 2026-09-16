@@ -30,6 +30,7 @@ def design_detail_from_state(values: dict[str, Any], run_id: str) -> dict[str, A
             "pass_threshold": qc.get("pass_threshold", 70),
             "result": qc.get("result"),
             "failing": qc.get("failing") or [],
+            "style_status": qc.get("style_status"),
             "rubric_version": qc.get("rubric_version"),
             "prompt_key": qc.get("prompt_key"),
             "prompt_version": qc.get("prompt_version"),
@@ -111,6 +112,7 @@ def calibration_for(
         "rubric": {
             "result": qc.get("result"),
             "scores": qc.get("scores"),
+            "style_status": qc.get("style_status"),
             "rubric_version": qc.get("rubric_version"),
             "prompt_version": qc.get("prompt_version"),
         },

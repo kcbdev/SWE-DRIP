@@ -1,9 +1,9 @@
 {
   "name": "rocket (known positive)",
   "description": "Single mono-line rocket icon, bold terminal-green stroke on void black, centered in the chest zone with clear margins, one focal point, high contrast on every valid colorway.",
-  "image_provenance": "Pinned representation — no binary fixture is stored in the repo. The live script (scripts/qc_calibration.py --live) scores the real render; this file pins the model response that run produced, plus the rubric version it was scored under.",
-  "rubric_version": 1,
-  "prompt_version": "e01d513a5ce4",
+  "image_provenance": "Pinned representation \u2014 no binary fixture is stored in the repo. The live script (scripts/qc_calibration.py --live) scores the real render; this file pins the model response that run produced, plus the rubric version it was scored under.",
+  "rubric_version": 2,
+  "prompt_version": "bcc4eb822687",
   "pass_threshold": 70,
   "pinned_vision_response": {
     "style_cohesion": 88,
