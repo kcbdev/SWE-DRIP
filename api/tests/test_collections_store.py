@@ -76,6 +76,15 @@ def test_list_filter_by_status(store: CollectionsStore) -> None:
     assert [r["contract"]["collection_id"] for r in store.list(status="active")] == ["b"]
 
 
+def test_list_skips_reserved_non_contract_files(store: CollectionsStore) -> None:
+    """styles.yaml lives beside contracts — listing must not validate it
+    (otherwise GET /api/collections 500s in production)."""
+    store.create(_draft("a"))
+    root = Path(store._root)  # type: ignore[attr-defined]
+    (root / "styles.yaml").write_text("version: 1\nstyles: []\n", encoding="utf-8")
+    assert {r["contract"]["collection_id"] for r in store.list()} == {"a"}
+
+
 def test_unknown_slug_is_not_found(store: CollectionsStore) -> None:
     with pytest.raises(CollectionNotFound):
         store.get("nope")

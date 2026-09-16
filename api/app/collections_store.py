@@ -34,6 +34,12 @@ class MtimeConflict(ValueError):
     """The file changed under us (manual edit?) — refusing to clobber."""
 
 
+# Non-contract YAML living beside contracts (never listed, never validated
+# as a contract — listing validates every file it touches, so an
+# unskipped reserved file is a 500 on GET /api/collections).
+RESERVED_FILENAMES = frozenset({"styles.yaml"})
+
+
 def contract_to_dict(contract: CollectionContract) -> dict[str, Any]:
     return contract.model_dump(mode="json")
 
@@ -131,7 +137,10 @@ class CollectionsStore:
     def _path_glob(self) -> list[Path]:
         if not self._root.is_dir():
             return []
-        return [p for p in self._root.glob("*.yaml") if p.is_file()]
+        return [
+            p for p in self._root.glob("*.yaml")
+            if p.is_file() and p.name not in RESERVED_FILENAMES
+        ]
 
     @staticmethod
     def _write_atomic(path: Path, record: dict[str, Any]) -> None:
