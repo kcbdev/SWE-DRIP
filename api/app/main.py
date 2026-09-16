@@ -48,3 +48,8 @@ app.include_router(webhooks.router)
 app.include_router(agents.router)
 app.include_router(settings_router.router)
 app.include_router(operator_tokens.router)
+
+# Operator MCP doorway (specs/operator-mcp): same deployable, Bearer tokens.
+from .mcp.server import mount_operator_mcp
+
+mount_operator_mcp(app)

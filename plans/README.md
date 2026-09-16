@@ -76,8 +76,8 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 40 | PBI-040 | agent-control-plane | 038 | In Review | SWDRP-40 | Model catalog API + write-time validation (dead IDs become unsaveable) |
 | 41 | PBI-041 | agent-control-plane | 040, 038, 034 | In Review | SWDRP-41 | Agents UI — model picker, params, prompt editor |
 | 42 | PBI-042 | agent-control-plane | 038, 017, 028 | In Review | SWDRP-42 | Per-node run logs + run visualisation |
-| 43 | PBI-043 | operator-mcp | 004 | In Review | SWDRP-45 | Operator token auth (scoped Bearer, issuance/revocation, audit) |
-| 44 | PBI-044 | operator-mcp | 043 | Todo | SWDRP-44 | MCP mount + read tools + read-only graph inspection |
+| 43 | PBI-043 | operator-mcp | 004 | Done | SWDRP-45 | Operator token auth (scoped Bearer, issuance/revocation, audit) |
+| 44 | PBI-044 | operator-mcp | 043 | Active | SWDRP-44 | MCP mount + read tools + read-only graph inspection |
 | 45 | PBI-045 | operator-mcp | 044 | Todo | SWDRP-46 | MCP write tools (start/decide/config/replay, same enforcement) |
 | 46 | PBI-046 | operator-mcp | 045 | Todo | SWDRP-43 | ADR-006 + operator runbook + live MCP smoke (manual) |
 
