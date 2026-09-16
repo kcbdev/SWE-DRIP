@@ -31,6 +31,8 @@ def design_detail_from_state(values: dict[str, Any], run_id: str) -> dict[str, A
             "result": qc.get("result"),
             "failing": qc.get("failing") or [],
             "rubric_version": qc.get("rubric_version"),
+            "prompt_key": qc.get("prompt_key"),
+            "prompt_version": qc.get("prompt_version"),
             "attempts": qc.get("attempts"),
             "model_used": qc.get("model_used"),
         }
@@ -65,11 +67,44 @@ def _agreement(qc_result: Optional[str], decisions: list[dict[str, Any]]) -> Opt
     return None  # mixed decisions — no single agreement statement
 
 
+def _prompt_mismatch_note(qc: dict[str, Any]) -> Optional[str]:
+    """Like-with-like guard (spec C4): an override changes the effective prompt,
+    so a verdict recorded under a different prompt version must never silently
+    look "calibrated". Returns a note when mismatched, else None.
+
+    Verdicts that predate versioning carry no ``prompt_version`` — they were all
+    recorded under the built-in prompt, so a missing version is treated as the
+    current base version rather than a mismatch.
+    """
+    try:
+        from pipeline.prompts import prompt_version as current_prompt_version
+    except Exception:
+        return None
+    recorded = qc.get("prompt_version") or current_prompt_version("aesthetic_qc")
+    current = current_prompt_version("aesthetic_qc")
+    if recorded != current:
+        return (
+            f"prompt changed since this verdict (recorded {recorded} vs current "
+            f"{current}) — agreement is unknown, not agreement"
+        )
+    return None
+
+
 def calibration_for(
     detail: dict[str, Any], decisions: list[dict[str, Any]]
 ) -> dict[str, Any]:
     """Side-by-side rubric verdict + human decision(s) for one design (pure)."""
     qc = detail.get("qc") or {}
+    prompt_note = _prompt_mismatch_note(qc)
+    agreement = None if prompt_note else _agreement(qc.get("result"), decisions)
+    if prompt_note is not None:
+        note: Optional[str] = prompt_note
+    else:
+        note = (
+            None
+            if decisions and agreement is not None
+            else "no human decision recorded yet — agreement is unknown, not agreement"
+        )
     return {
         "design_id": detail.get("design_id"),
         "run_id": detail.get("run_id"),
@@ -77,6 +112,7 @@ def calibration_for(
             "result": qc.get("result"),
             "scores": qc.get("scores"),
             "rubric_version": qc.get("rubric_version"),
+            "prompt_version": qc.get("prompt_version"),
         },
         "human_decisions": [
             {
@@ -89,8 +125,6 @@ def calibration_for(
             }
             for d in decisions
         ],
-        "agreement": _agreement(qc.get("result"), decisions),
-        "note": None
-        if decisions and _agreement(qc.get("result"), decisions) is not None
-        else "no human decision recorded yet — agreement is unknown, not agreement",
+        "agreement": agreement,
+        "note": note,
     }

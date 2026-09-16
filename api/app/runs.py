@@ -72,6 +72,7 @@ class RunStarter(Protocol):
         collection_id: str,
         design_id: Optional[str] = None,
         briefs: Optional[list[dict[str, Any]]] = None,
+        design_type: Optional[str] = None,
     ) -> dict[str, Any]: ...
 
 
@@ -81,6 +82,26 @@ class SpendReader(Protocol):
 
 class SpendUnavailable(RuntimeError):
     """Month-to-date spend could not be read — refuse to start rather than guess."""
+
+
+def _stored_contract(collection_id: str) -> dict[str, Any]:
+    """The collection's contract from the YAML store, or ``{}`` when there is none.
+
+    Spec C3: the contract is read from the store — the single source of truth
+    (NFR-1) — so a run against an existing collection uses that collection's real
+    placement templates and colorways instead of drafting placeholders. A store
+    failure is not fatal here: the run falls back to node 2 drafting a candidate.
+    """
+    try:
+        from .collections_store import CollectionNotFound, get_collections_store
+
+        record = get_collections_store().get(collection_id)
+    except CollectionNotFound:
+        return {}
+    except Exception:  # noqa: BLE001 - store unavailable → draft path
+        return {}
+    contract = record.get("contract") if isinstance(record, dict) else None
+    return dict(contract) if isinstance(contract, dict) else {}
 
 
 def validate_briefs(briefs: Optional[list[dict[str, Any]]]) -> list[str]:
@@ -251,6 +272,7 @@ class RunService:
         return {
             **summarize(run_id, values, history[0].interrupted, None, history[0].at),
             "nodes": node_detail(history),
+            "node_config": _config_summary(values.get("node_config") or {}),
             "errors": values.get("errors") or [],
         }
 
@@ -292,6 +314,82 @@ class RunService:
 # ------------------------------------------------------------- prod ports
 
 
+class LogReader(Protocol):
+    def for_run(self, run_id: str, *, node: Optional[str] = None,
+                level: Optional[str] = None, since: Optional[str] = None,
+                limit: int = 500) -> list[dict[str, Any]]: ...
+
+
+def _config_summary(node_config: dict[str, Any]) -> dict[str, Any]:
+    """Trimmed per-node runtime config so a run explains itself (spec C2).
+
+    Only the operator-meaningful fields travel — prompt text stays in the
+    settings store, never in a run payload.
+    """
+    summary: dict[str, Any] = {}
+    for node in NODE_ORDER:
+        entry = node_config.get(node)
+        if isinstance(entry, dict):
+            summary[node] = {
+                "model": entry.get("model"),
+                "params": entry.get("params") or {},
+                "enabled": bool(entry.get("enabled", True)),
+            }
+        else:
+            summary[node] = {"model": None, "params": {}, "enabled": True}
+    return summary
+
+
+class SqlLogReader:
+    """Per-run log reads over ``run_logs`` (PBI-042, spec C7).
+
+    No ``DATABASE_URL`` → ``[]`` (offline runs keep no rows server-side, so
+    empty is the honest answer). A configured-but-broken database raises —
+    callers surface it, never synthesize rows.
+    """
+
+    def for_run(self, run_id: str, *, node: Optional[str] = None,
+                level: Optional[str] = None, since: Optional[str] = None,
+                limit: int = 500) -> list[dict[str, Any]]:
+        from sqlalchemy import text
+
+        from .config import settings
+        from .db import get_engine
+
+        if not settings.database_url:
+            return []
+        clauses = ["run_id = :run_id"]
+        params: dict[str, Any] = {"run_id": run_id, "limit": max(1, min(limit, 1000))}
+        if node is not None:
+            clauses.append("node = :node")
+            params["node"] = node
+        if level is not None:
+            clauses.append("level = :level")
+            params["level"] = level
+        if since is not None:
+            clauses.append("created_at >= :since")
+            params["since"] = since
+        with get_engine().connect() as conn:
+            rows = (
+                conn.execute(
+                    text(
+                        "SELECT node, level, message, detail_json, "
+                        "to_char(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.MSOF') AS ts "
+                        "FROM run_logs WHERE " + " AND ".join(clauses) + " "
+                        "ORDER BY created_at ASC LIMIT :limit"
+                    ),
+                    params,
+                )
+                .mappings()
+                .all()
+            )
+        return [
+            {"node": r["node"], "level": r["level"], "message": r["message"],
+             "detail": r["detail_json"] or {}, "ts": r["ts"]}
+            for r in rows
+        ]
+
+
 class CheckpointerRunStarter:
     """Start a pipeline run (spec C1–C5, C7).
 
@@ -330,12 +428,15 @@ class CheckpointerRunStarter:
         collection_id: str,
         design_id: Optional[str] = None,
         briefs: Optional[list[dict[str, Any]]] = None,
+        design_type: Optional[str] = None,
     ) -> dict[str, Any]:
         from pipeline.llm import OpenRouterClient
         from pipeline.node_config import resolve_all_node_configs
+        from pipeline.runlog import SqlRunLogger
 
         from .db import get_engine
         from .settings_store import get_hitl_flags
+        from .stream import broker
 
         run_id = uuid.uuid4().hex
         # A run needs a stable design_id for its state record and render path;
@@ -346,10 +447,14 @@ class CheckpointerRunStarter:
         # failure of this request instead of a silent dead thread.
         client = OpenRouterClient()
         cost_engine = get_engine()
-        hitl = get_hitl_flags()
-        # Resolved ONCE: editing node config never changes a run in flight
+        hitl = get_hitl_flags()        # Resolved ONCE: editing node config never changes a run in flight
         # (spec C2), and the snapshot rides in state so the run explains itself.
         node_config = {node: conf.as_dict() for node, conf in resolve_all_node_configs().items()}
+        # The collection contract is read from the YAML store (spec C3) — the
+        # single source of truth (NFR-1). A run against an existing collection
+        # must use ITS contract (with real placement templates), not a fresh
+        # placeholder draft.
+        contract = _stored_contract(collection_id)
 
         config = {
             "configurable": {
@@ -358,11 +463,18 @@ class CheckpointerRunStarter:
                 "llm_client": client,
                 "cost_engine": cost_engine,
                 "node_config": node_config,
+                # Per-node logs (spec C7): SQL-backed, best-effort — a logging
+                # failure never breaks the run, and rows fan out as run.log
+                # SSE events for live viewing.
+                "run_logger": SqlRunLogger(cost_engine, run_id, publish=broker.publish),
                 "run_dir": str(runs_root() / resolved_design),
+                # Per-design choice; `placement` reads it from config and refuses
+                # to infer one (locked vocabulary).
+                "design_type": design_type,
                 # fw_live / fw_client deliberately absent — see phase lock (C5).
             }
         }
-        state = {
+        state: dict[str, Any] = {
             "design_id": resolved_design,
             "collection_id": collection_id,
             "briefs": briefs or [],
@@ -371,6 +483,8 @@ class CheckpointerRunStarter:
             # node only returns its resume value while its gate is still ON).
             "hitl": hitl,
         }
+        if contract:
+            state["collection_contract"] = contract
         threading.Thread(
             target=self._execute,
             args=(run_id, state, config),
@@ -487,17 +601,22 @@ class CheckpointerRunPorts:
         import os
 
         from pipeline.llm import OpenRouterClient
+        from pipeline.runlog import SqlRunLogger
+
+        from .db import get_engine
 
         if not os.environ.get("OPENROUTER_API_KEY"):
             raise RuntimeError("replay needs OPENROUTER_API_KEY (model calls bill to the project)")
         with self._saver_session(self._saver_factory) as saver:
             graph = self._graph(saver)
             state = dict(graph.get_state({"configurable": {"thread_id": run_id}}).values or {})
+            engine = get_engine()
             config = {
                 "configurable": {
                     "thread_id": run_id,
                     "llm_client": OpenRouterClient(),
-                    "cost_engine": get_engine(),
+                    "cost_engine": engine,
+                    "run_logger": SqlRunLogger(engine, run_id),
                     "hitl": state.get("hitl") or {},
                     "node_config": state.get("node_config") or {},
                     "run_dir": str(runs_root() / str(state.get("design_id") or run_id)),

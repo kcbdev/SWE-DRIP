@@ -19,6 +19,7 @@ from typing import Any
 from langgraph.types import RunnableConfig, interrupt
 
 from ..graph import DEFAULT_HITL, register_node
+from ..runlog import get_logger
 from ..state import RunState
 
 NODE = "placement"
@@ -49,12 +50,16 @@ def placement(state: RunState, config: RunnableConfig = None) -> dict[str, Any]:
         interrupt({"node": NODE, "status": "awaiting_approval"})
 
     contract = state.get("collection_contract") or {}
+    log = get_logger(cfg)
+    rid = str(cfg.get("thread_id") or "")
     if not contract:
+        log.error(NODE, "no collection contract in state", run_id=rid)
         return {"placement": {}, "visited": [NODE], "errors": [f"{NODE}: no collection contract in state"]}
     spec = state.get("design_spec") or {}
     brief = state.get("brief") or {}
     design_type = spec.get("design_type") or brief.get("design_type") or cfg.get("design_type")
     if not design_type:
+        log.error(NODE, "no design_type (spec, brief, or config) — not inferring one", run_id=rid)
         return {
             "placement": {},
             "visited": [NODE],
@@ -63,8 +68,11 @@ def placement(state: RunState, config: RunnableConfig = None) -> dict[str, Any]:
     try:
         resolved = resolve_placement(contract, design_type)
     except ValueError as exc:
+        log.error(NODE, str(exc), run_id=rid)
         return {"placement": {}, "visited": [NODE], "errors": [f"{NODE}: {exc}"]}
 
+    log.info(NODE, f"{design_type}: zones {resolved['zones']} "
+                   f"({len(resolved['colorways_valid'])} valid colorways)", run_id=rid)
     output: dict[str, Any] = {"placement": resolved["zones"], "visited": [NODE]}
     render = state.get("render")
     if render:

@@ -16,6 +16,7 @@ from typing import Any
 from langgraph.types import RunnableConfig, interrupt
 
 from ..graph import DEFAULT_HITL, register_node
+from ..runlog import get_logger
 from ..state import RunState
 
 NODE = "shelf"
@@ -61,6 +62,8 @@ def shelf(state: RunState, config: RunnableConfig = None) -> dict[str, Any]:  # 
 
     product = state.get("fw_product") or {}
     contract = state.get("collection_contract") or {}
+    log = get_logger(cfg)
+    rid = str(cfg.get("thread_id") or "")
     errors: list[str] = []
     if not product:
         errors.append(f"{NODE}: no FW product in state")
@@ -78,6 +81,10 @@ def shelf(state: RunState, config: RunnableConfig = None) -> dict[str, Any]:  # 
     output: dict[str, Any] = {"shelf_result": result, "visited": [NODE]}
     if errors:
         output["errors"] = [f"{NODE}: rejected run: {'; '.join(errors)}"]
+        log.error(NODE, f"rejected run: {'; '.join(errors)}", run_id=rid)
+    else:
+        log.info(NODE, f"accepted {result['product_type']} at ${result['price']:g} "
+                       f"→ {result['collection_id']!r}", run_id=rid)
     return output
 
 

@@ -21,7 +21,9 @@ from langgraph.types import RunnableConfig, interrupt
 from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
 from ..node_config import effective_for_config
+from ..prompts import build_trend_prompt, effective_prompt
 from ..routing import model_for
+from ..runlog import get_logger
 from ..state import RunState
 
 NODE = "trend_research"
@@ -69,6 +71,7 @@ def cluster_briefs(
     client: Any,
     model: str,
     params: dict[str, Any] | None = None,
+    prompt_override: str | None = None,
 ) -> tuple[list[dict[str, Any]], Any | None]:
     """Group passing briefs into collection candidates.
 
@@ -76,6 +79,9 @@ def cluster_briefs(
     model call was needed. Cluster assignment is deterministic post-processing:
     brief IDs sorted, clusters ordered by (theme, first brief id), stable
     ``cluster-N`` IDs. Unknown brief IDs in the synthesis are loud, not dropped.
+
+    ``prompt_override`` (operator text from the resolved node config) replaces
+    the built-in clustering prompt verbatim when set — data, never templated.
     """
     for brief in briefs:
         if not brief.get("id"):
@@ -87,15 +93,8 @@ def cluster_briefs(
         theme = str(only.get("subject") or "untitled").strip() or "untitled"
         return [{"cluster_id": "cluster-1", "theme": theme, "brief_ids": [only["id"]]}], None
 
-    prompt = (
-        "Group these t-shirt design briefs into thematic clusters for collection "
-        "candidates. Reply ONLY with JSON of the form "
-        '{"clusters": [{"theme": string, "brief_ids": [string]}]}.\n'
-        + "\n".join(
-            f"- id={b['id']} style={b.get('style', '?')} subject={b.get('subject', '?')}: "
-            f"{b.get('text', '')}"
-            for b in briefs
-        )
+    prompt = effective_prompt(
+        NODE, build_trend_prompt(briefs), prompt_override
     )
     result = client.chat(
         model=model, messages=[{"role": "user", "content": prompt}], **(params or {})
@@ -125,7 +124,8 @@ def trend_research(state: RunState, config: RunnableConfig = None) -> dict[str, 
     cfg = (config or {}).get("configurable") or {}
     if cfg.get("hitl", {}).get(NODE, DEFAULT_HITL[NODE]):
         interrupt({"node": NODE, "status": "awaiting_approval"})
-
+    log = get_logger(cfg)
+    rid = str(cfg.get("thread_id") or "")
     briefs = state.get("briefs") or []
     scored = []
     for brief in briefs:
@@ -140,6 +140,7 @@ def trend_research(state: RunState, config: RunnableConfig = None) -> dict[str, 
         )
     passing = [b for b in scored if b["score"]["passed"]]
     if not passing:
+        log.info(NODE, f"scored {len(scored)} briefs, none passing — no model call", run_id=rid)
         return {"clusters": [], "visited": [NODE]}
 
     client = cfg.get("llm_client")
@@ -151,13 +152,16 @@ def trend_research(state: RunState, config: RunnableConfig = None) -> dict[str, 
     # Resolved node config (frozen into the run at start). Absent → code defaults.
     conf = effective_for_config(cfg, NODE)
     if not conf.enabled:
+        log.warn(NODE, "skipped — disabled by node config", run_id=rid)
         return {
             "clusters": [{"skipped": True, "reason": "disabled by node config"}],
             "visited": [NODE],
         }
     model = conf.model or model_for(NODE)
     assert model is not None  # routed per §3; None would be a routing-table bug
-    clusters, llm_result = cluster_briefs(passing, client, model, conf.params)
+    log.info(NODE, f"clustering {len(passing)} briefs with {model}",
+             run_id=rid, detail={"model": model, "params": conf.params})
+    clusters, llm_result = cluster_briefs(passing, client, model, conf.params, conf.prompt_override)
 
     errors: list[str] = []
     if llm_result is not None:
@@ -180,6 +184,9 @@ def trend_research(state: RunState, config: RunnableConfig = None) -> dict[str, 
     output: dict[str, Any] = {"clusters": clusters, "visited": [NODE]}
     if errors:
         output["errors"] = errors
+        log.warn(NODE, f"cost row not recorded: {errors[0]}", run_id=rid)
+    else:
+        log.info(NODE, f"{len(clusters)} clusters from {len(passing)} briefs", run_id=rid)
     return output
 
 

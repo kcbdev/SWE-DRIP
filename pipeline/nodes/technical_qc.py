@@ -16,6 +16,7 @@ from typing import Any
 from langgraph.types import RunnableConfig, interrupt
 
 from ..graph import DEFAULT_HITL, register_node
+from ..runlog import get_logger
 from ..state import RunState
 
 NODE = "technical_qc"
@@ -56,7 +57,10 @@ def technical_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
         interrupt({"node": NODE, "status": "awaiting_approval"})
 
     render = state.get("render_result") or {}
+    log = get_logger(cfg)
+    rid = str(cfg.get("thread_id") or "")
     if not render or not render.get("file_url"):
+        log.error(NODE, "no render artifact in state", run_id=rid)
         return {
             "technical_qc": {"passed": False, "reason": "no render"},
             "visited": [NODE],
@@ -65,12 +69,17 @@ def technical_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
     try:
         data = Path(render["file_url"]).read_bytes()
     except OSError as exc:
+        log.error(NODE, f"cannot read render artifact: {exc}", run_id=rid)
         return {
             "technical_qc": {"passed": False, "reason": "unreadable artifact"},
             "visited": [NODE],
             "errors": [f"{NODE}: cannot read render artifact: {exc}"],
         }
     verdict = inspect_png(data)
+    if verdict["passed"]:
+        log.info(NODE, f"passed: {'; '.join(verdict['checks'])}", run_id=rid)
+    else:
+        log.error(NODE, f"failed: {'; '.join(verdict['checks'])}", run_id=rid)
     return {"technical_qc": verdict, "visited": [NODE]}
 
 

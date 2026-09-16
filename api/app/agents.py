@@ -29,6 +29,13 @@ class AgentInfo:
     model: str | None
     cap_usd: float
     spend_usd: float
+    model_source: str = "default"  # "default" (routing.py) or "store" (operator override)
+    params: dict[str, Any] | None = None  # effective generation params ({} = defaults)
+    enabled: bool = True  # False skips the node's model call (still recorded)
+    overridden: tuple[str, ...] = ()  # store-overridden fields (model/params/enabled/...)
+    prompt_key: str | None = None  # stable key for the four prompted nodes, else None
+    prompt_version: str | None = None  # effective version (base + override hash)
+    has_prompt_override: bool = False
 
 
 def _spend_by_node() -> dict[str, float]:
@@ -37,11 +44,11 @@ def _spend_by_node() -> dict[str, float]:
 
     from .db import get_engine
 
-    engine = get_engine()
     now = datetime.now(timezone.utc)
     year_month = now.strftime("%Y-%m")
 
     try:
+        engine = get_engine()
         with engine.connect() as conn:
             rows = (
                 conn.execute(
@@ -76,15 +83,60 @@ def set_budget_cap(node: str, cap_usd: float) -> dict[str, float]:
 
 
 def get_roster() -> list[AgentInfo]:
-    """Build the full agent roster."""
+    """Build the full agent roster.
+
+    The effective model is layered (spec C1): code defaults from
+    ``pipeline/routing.py`` < settings-store ``node_config`` override. An empty
+    store resolves to the defaults, so behaviour is unchanged until someone
+    opts in. ``model_source`` tells the UI which layer won.
+    """
     from pipeline.routing import MODEL_FOR_NODE, NODE_ORDER
 
     caps = get_budget_caps()
     spend = _spend_by_node()
+    try:
+        overrides = get_setting("node_config", {}) or {}
+        if not isinstance(overrides, dict):
+            overrides = {}
+    except Exception:
+        overrides = {}
 
     agents = []
     for node in NODE_ORDER:
-        model = MODEL_FOR_NODE.get(node)
+        default_model = MODEL_FOR_NODE.get(node)
+        model = default_model
+        model_source = "default"
+        raw = overrides.get(node)
+        if isinstance(raw, dict) and isinstance(raw.get("model"), str) and raw["model"].strip():
+            model = raw["model"].strip()
+            model_source = "store"
+        # Effective params/enabled come from the layered resolution (spec C1):
+        # an empty store resolves to defaults (params {}, enabled True).
+        try:
+            from pipeline.node_config import resolve_node_config
+
+            resolved = resolve_node_config(node, overrides)
+            params: dict[str, Any] = dict(resolved.params)
+            enabled = bool(resolved.enabled)
+            overridden = tuple(sorted(resolved.overridden))
+            prompt_text = resolved.prompt_override
+        except Exception:
+            params = {}
+            enabled = True
+            overridden = ()
+            prompt_text = None
+        # Effective prompt version (spec C4) — the override hash travels, never
+        # the text.
+        try:
+            from pipeline.prompts import PROMPT_KEYS, prompt_version
+
+            prompt_key = PROMPT_KEYS.get(node)
+            prompt_version_str = (
+                prompt_version(node, prompt_text) if prompt_key is not None else None
+            )
+        except Exception:
+            prompt_key = None
+            prompt_version_str = None
         role = _role_for_node(node, model)
         agents.append(
             AgentInfo(
@@ -93,6 +145,13 @@ def get_roster() -> list[AgentInfo]:
                 model=model,
                 cap_usd=caps.get(node, _DEFAULT_CAP),
                 spend_usd=spend.get(node, 0.0),
+                model_source=model_source,
+                params=params,
+                enabled=enabled,
+                overridden=overridden,
+                prompt_key=prompt_key,
+                prompt_version=prompt_version_str,
+                has_prompt_override=isinstance(prompt_text, str) and bool(prompt_text.strip()),
             )
         )
     return agents

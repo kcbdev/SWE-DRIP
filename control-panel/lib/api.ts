@@ -30,7 +30,8 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 /**
  * Prefer the server's own wording (FastAPI `detail`, or `message`) over a bare
  * status code — a 409 that explains *why* is the difference between a working
- * control and a silently dead one.
+ * control and a silently dead one. Object details (e.g. the model catalog's
+ * `{message, suggestions}` 422) are flattened so the UI can show them.
  */
 async function _errorMessage(response: Response): Promise<string> {
   const fallback = `API ${response.status}`;
@@ -39,6 +40,16 @@ async function _errorMessage(response: Response): Promise<string> {
     if (body && typeof body === "object") {
       const detail = (body as { detail?: unknown }).detail;
       if (typeof detail === "string" && detail) return detail;
+      if (detail && typeof detail === "object") {
+        const message = (detail as { message?: unknown }).message;
+        if (typeof message === "string" && message) {
+          const suggestions = (detail as { suggestions?: unknown }).suggestions;
+          if (Array.isArray(suggestions) && suggestions.length > 0) {
+            return `${message} (did you mean: ${suggestions.filter((s) => typeof s === "string").join(", ")})?`;
+          }
+          return message;
+        }
+      }
       const message = (body as { message?: unknown }).message;
       if (typeof message === "string" && message) return message;
     }

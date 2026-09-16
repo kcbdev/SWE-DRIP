@@ -133,6 +133,31 @@ def test_calibration_disagreement() -> None:
     assert body["agreement"] is False  # rubric pass vs human reject
 
 
+def test_calibration_prompt_mismatch_flags_unknown() -> None:
+    """A verdict recorded under an overridden prompt never looks calibrated."""
+    from pipeline.prompts import prompt_version
+
+    state = _state()
+    state["aesthetic_qc"] = {**state["aesthetic_qc"], "prompt_version": "000000000000",
+                             "prompt_key": "qc_rubric"}
+    body = Harness(states={"run-1": state}).client.get("/api/designs/run-1/calibration").json()
+    assert body["agreement"] is None
+    assert "prompt changed" in body["note"]
+    assert body["rubric"]["prompt_version"] == "000000000000"
+
+
+def test_calibration_matching_prompt_version_agrees() -> None:
+    from pipeline.prompts import prompt_version
+
+    state = _state()
+    state["aesthetic_qc"] = {**state["aesthetic_qc"],
+                             "prompt_version": prompt_version("aesthetic_qc"),
+                             "prompt_key": "qc_rubric"}
+    body = Harness(states={"run-1": state}).client.get("/api/designs/run-1/calibration").json()
+    assert body["agreement"] is True
+    assert body["rubric"]["prompt_version"] == prompt_version("aesthetic_qc")
+
+
 def test_calibration_without_decision_is_explicit() -> None:
     body = Harness(rows=[]).client.get("/api/designs/run-1/calibration").json()
     assert body["human_decisions"] == []

@@ -9,10 +9,14 @@ reference).
 
 from __future__ import annotations
 
+import asyncio
+import json
+from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
+from sse_starlette.sse import EventSourceResponse
 
 from ..agents import GLOBAL_MONTHLY_CAP
 from ..audit import AuditWriter, get_audit_writer
@@ -21,15 +25,18 @@ from ..rbac import require_role
 from ..runs import (
     CheckpointerRunPorts,
     CheckpointerRunStarter,
+    LogReader,
     NodeNotReached,
     RunService,
     RunStarter,
     SpendReader,
     SpendUnavailable,
+    SqlLogReader,
     SqlSpendReader,
     UnknownNode,
     validate_briefs,
 )
+from ..stream import StreamBroker, broker, heartbeat_event, is_run_log_event
 
 router = APIRouter(prefix="/api/runs", tags=["runs"])
 
@@ -46,6 +53,8 @@ class StartBody(BaseModel):
     collection_id: str
     design_id: Optional[str] = None
     briefs: Optional[list[dict[str, Any]]] = None
+    #: Locked vocabulary from the contract node — `placement` refuses to infer one.
+    design_type: Optional[str] = None
 
 
 def get_ports() -> CheckpointerRunPorts:
@@ -65,6 +74,18 @@ def get_run_starter() -> RunStarter:
 
 def get_spend_reader() -> SpendReader:
     return SqlSpendReader()
+
+
+def get_log_reader() -> LogReader:
+    return SqlLogReader()
+
+
+def get_broker() -> StreamBroker:
+    return broker
+
+
+def get_heartbeat_seconds() -> float:
+    return 15.0
 
 
 @router.get("")
@@ -96,6 +117,17 @@ def start_run(
     """
     if not body.collection_id:
         raise HTTPException(status_code=422, detail="collection_id is required")
+    if body.design_type is not None:
+        from pipeline.nodes.contract import DESIGN_TYPES
+
+        if body.design_type not in DESIGN_TYPES:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"design_type must be one of {', '.join(sorted(DESIGN_TYPES))} "
+                    f"— got {body.design_type!r}"
+                ),
+            )
     brief_errors = validate_briefs(body.briefs)
     if brief_errors:
         raise HTTPException(status_code=422, detail=brief_errors)
@@ -118,6 +150,7 @@ def start_run(
         collection_id=body.collection_id,
         design_id=body.design_id,
         briefs=body.briefs,
+        design_type=body.design_type,
     )
     writer.record(
         actor_user_id=actor.user_id,
@@ -128,6 +161,7 @@ def start_run(
         after={
             "collection_id": result["collection_id"],
             "design_id": result["design_id"],
+            "design_type": body.design_type,
             "hitl": result.get("hitl", {}),
             "spend_usd_before": spent,
         },
@@ -167,3 +201,69 @@ def replay_run(
         raise HTTPException(status_code=422, detail=str(exc))
     except NodeNotReached as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+
+
+@router.get("/{run_id}/logs")
+def get_run_logs(
+    run_id: str,
+    actor: Actor = ReadAllowed,
+    service: RunService = Depends(get_run_service),
+    reader: LogReader = Depends(get_log_reader),
+    node: Optional[str] = Query(default=None),
+    level: Optional[str] = Query(default=None),
+    since: Optional[str] = Query(default=None, description="ISO timestamp floor"),
+    limit: int = Query(default=500, ge=1, le=1000),
+) -> dict[str, Any]:
+    """Per-node log rows for one run (Viewer+). Empty when the run kept no
+    server-side rows (offline runs log in-memory only)."""
+    try:
+        service.run_detail(run_id)
+    except KeyError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="unknown run")
+    if since is not None:
+        try:
+            datetime.fromisoformat(since)
+        except ValueError:
+            raise HTTPException(
+                status_code=422,
+                detail=f"since must be an ISO timestamp, got {since!r}",
+            )
+    return {"items": reader.for_run(run_id, node=node, level=level, since=since, limit=limit)}
+
+
+@router.get("/{run_id}/logs/stream")
+async def stream_run_logs(
+    run_id: str,
+    request: Request,
+    actor: Actor = ReadAllowed,
+    stream_broker: StreamBroker = Depends(get_broker),
+    heartbeat_seconds: float = Depends(get_heartbeat_seconds),
+) -> EventSourceResponse:
+    """Live per-node log rows for one run (Viewer+), reusing the SSE broker.
+
+    Same heartbeat/disconnect discipline as ``GET /api/stream/runs`` — only
+    ``run.log`` events for this run pass the filter.
+    """
+    async def generator() -> Any:
+        queue = stream_broker.new_subscriber()
+        try:
+            while True:
+                getter = asyncio.ensure_future(queue.get())
+                try:
+                    done, _pending = await asyncio.wait({getter}, timeout=heartbeat_seconds)
+                except asyncio.CancelledError:
+                    getter.cancel()
+                    raise
+                if getter in done:
+                    event = getter.result()
+                    if is_run_log_event(event, run_id):
+                        yield {"event": event["type"], "data": json.dumps(event)}
+                    # Other runs' rows and queue deltas pass silently — this
+                    # stream carries one run's logs only.
+                else:
+                    getter.cancel()
+                    yield {"event": "heartbeat", "data": json.dumps(heartbeat_event())}
+        finally:
+            stream_broker.unsubscribe(queue)
+
+    return EventSourceResponse(generator())

@@ -28,6 +28,7 @@ from typing import Any
 from langgraph.types import RunnableConfig, interrupt
 
 from ..graph import DEFAULT_HITL, register_node
+from ..runlog import get_logger
 from ..state import RunState
 
 NODE = "contract_approval"
@@ -230,7 +231,10 @@ def contract_approval(state: RunState, config: RunnableConfig = None) -> dict[st
     """
     cfg = (config or {}).get("configurable") or {}
     clusters = state.get("clusters") or []
+    log = get_logger(cfg)
+    rid = str(cfg.get("thread_id") or "")
     if not clusters:
+        log.error(NODE, "no clusters to draft from", run_id=rid)
         return {
             "collection_contract": {},
             "visited": [NODE],
@@ -238,6 +242,17 @@ def contract_approval(state: RunState, config: RunnableConfig = None) -> dict[st
         }
 
     briefs_by_id = {b.get("id"): b for b in (state.get("briefs") or [])}
+
+    # An already-approved contract supplied by the run (read from the collection
+    # store, spec C3) is used as-is: it carries real placement templates and
+    # colorways, and re-drafting would replace them with placeholders. No gate —
+    # the contract was approved when the collection was.
+    supplied = state.get("collection_contract") or {}
+    if supplied:
+        log.info(NODE, f"using stored contract {supplied.get('collection_id')!r} as-is",
+                 run_id=rid)
+        return _with_cluster_brief(supplied, clusters[0], briefs_by_id)
+
     actor = cfg.get("actor_user_id") or "system"
     drafts = []
     for cluster in clusters:
@@ -252,6 +267,7 @@ def contract_approval(state: RunState, config: RunnableConfig = None) -> dict[st
         raise RuntimeError(f"{NODE}: drafted an invalid contract: {problems!r}")
 
     if cfg.get("hitl", {}).get(NODE, DEFAULT_HITL[NODE]):
+        log.info(NODE, f"{len(drafts)} drafts awaiting approval", run_id=rid)
         decision = interrupt({"node": NODE, "status": "awaiting_approval", "contracts": drafts})
         approved_id = decision.get("approved_cluster_id") if isinstance(decision, dict) else None
         chosen = next((d for d, c in zip(drafts, clusters) if c["cluster_id"] == approved_id), None)
@@ -259,6 +275,8 @@ def contract_approval(state: RunState, config: RunnableConfig = None) -> dict[st
             (c for c in clusters if c["cluster_id"] == approved_id), None
         )
         if chosen is None or chosen_cluster is None:
+            log.error(NODE, f"resume decision missing or unknown approved_cluster_id ({approved_id!r})",
+                      run_id=rid)
             return {
                 "collection_contract": {},
                 "visited": [NODE],
@@ -266,6 +284,7 @@ def contract_approval(state: RunState, config: RunnableConfig = None) -> dict[st
                     f"{NODE}: resume decision missing or unknown approved_cluster_id ({approved_id!r})"
                 ],
             }
+        log.info(NODE, f"approved cluster {approved_id!r}", run_id=rid)
     else:
         # HITL off (tests/parity): first cluster proceeds; candidate
         # selection UX is the collections lifecycle's job (PBI-020).
@@ -274,6 +293,8 @@ def contract_approval(state: RunState, config: RunnableConfig = None) -> dict[st
 
     brief = _select_cluster_brief(chosen_cluster, briefs_by_id)
     if brief is None:
+        log.error(NODE, f"selected cluster {chosen_cluster.get('cluster_id')!r} has no resolvable member brief",
+                  run_id=rid)
         return {
             "collection_contract": chosen,
             "visited": [NODE],
@@ -282,7 +303,30 @@ def contract_approval(state: RunState, config: RunnableConfig = None) -> dict[st
                 "resolvable member brief — cannot design from it"
             ],
         }
+    log.info(NODE, f"contract {chosen.get('collection_id')!r} selected", run_id=rid)
     return {"collection_contract": chosen, "brief": brief, "visited": [NODE]}
+
+
+def _with_cluster_brief(
+    contract: dict[str, Any],
+    cluster: dict[str, Any],
+    briefs_by_id: dict[Any, dict[str, Any]],
+) -> dict[str, Any]:
+    """Pass an approved contract through, still resolving the design brief.
+
+    Nodes 3-8 need ``brief``; the contract alone does not carry one.
+    """
+    brief = _select_cluster_brief(cluster, briefs_by_id)
+    if brief is None:
+        return {
+            "collection_contract": contract,
+            "visited": [NODE],
+            "errors": [
+                f"{NODE}: collection {contract.get('collection_id')!r} has no resolvable "
+                "brief for its cluster — cannot design from it"
+            ],
+        }
+    return {"collection_contract": contract, "brief": brief, "visited": [NODE]}
 
 
 register_node(NODE, contract_approval)

@@ -3,26 +3,69 @@
 import { useState } from "react";
 
 import {
+  flowStates,
+  formatDuration,
+  nodeDurations,
   nodeSetMismatch,
   prettyState,
-  trackerStates,
+  type FlowState,
+  type LogRow,
   type RunDetail,
 } from "@/lib/runs";
 
 export interface RunDetailViewProps {
   detail: RunDetail;
+  logs: LogRow[];
   canReplay: boolean;
   replaying: string | null;
   error: string | null;
   onReplay: (node: string) => void;
+  onRefreshLogs: () => void;
 }
 
-export function RunDetailView({ detail, canReplay, replaying, error, onReplay }: RunDetailViewProps) {
+const FLOW_CLASS: Record<FlowState, string> = {
+  complete: "border-primary/50 text-foreground",
+  current: "border-primary text-primary",
+  "awaiting-approval": "border-warning text-warning",
+  failed: "border-destructive text-destructive",
+  "not-reached": "border-border text-muted-foreground",
+};
+
+const LEVEL_CLASS: Record<string, string> = {
+  error: "text-destructive",
+  warn: "text-warning",
+  info: "text-foreground",
+  debug: "text-muted-foreground",
+};
+
+function formatConfig(node: string, detail: RunDetail): string | null {
+  const conf = detail.node_config?.[node];
+  if (!conf) return null;
+  const parts = [conf.model ?? "deterministic"];
+  const params = Object.entries(conf.params ?? {});
+  if (params.length > 0) parts.push(params.map(([k, v]) => `${k}=${v}`).join(","));
+  if (!conf.enabled) parts.push("disabled");
+  return parts.join(" · ");
+}
+
+export function RunDetailView({
+  detail,
+  logs,
+  canReplay,
+  replaying,
+  error,
+  onReplay,
+  onRefreshLogs,
+}: RunDetailViewProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<string | null>(null);
-  const tracker = trackerStates(detail);
+  const [tab, setTab] = useState<"state" | "logs">("state");
+  const flow = flowStates(detail);
   const mismatch = nodeSetMismatch(detail.nodes);
+  const durations = nodeDurations(logs);
   const panel = detail.nodes.find((n) => n.node === selected);
+  const panelLogs = panel ? logs.filter((l) => l.node === panel.node) : [];
+  const panelConfig = panel ? formatConfig(panel.node, detail) : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -34,7 +77,7 @@ export function RunDetailView({ detail, canReplay, replaying, error, onReplay }:
       {error ? <p className="font-mono text-xs text-destructive">{error}</p> : null}
 
       <ol className="flex flex-wrap gap-1">
-        {tracker.map(({ node, state }) => (
+        {flow.map(({ node, state }) => (
           <li key={node}>
             <button
               type="button"
@@ -45,18 +88,11 @@ export function RunDetailView({ detail, canReplay, replaying, error, onReplay }:
               aria-pressed={selected === node}
               title={`${node}: ${state}`}
               className={`border px-2 py-1 font-mono text-xs ${
-                selected === node
-                  ? "border-primary text-primary"
-                  : state === "complete"
-                    ? "border-primary/50 text-foreground"
-                    : state === "current"
-                      ? "border-primary text-primary"
-                      : state === "failed"
-                        ? "border-destructive text-destructive"
-                        : "border-border text-muted-foreground"
+                selected === node ? "border-primary text-primary" : FLOW_CLASS[state]
               }`}
             >
               {node} · {state}
+              {durations[node] ? ` · ${formatDuration(durations[node])}` : null}
             </button>
           </li>
         ))}
@@ -66,10 +102,58 @@ export function RunDetailView({ detail, canReplay, replaying, error, onReplay }:
         <div className="border border-border bg-card p-4">
           <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             {panel.node} {panel.reached ? `· reached${panel.at ? ` · ${panel.at}` : ""}` : "· not reached"}
+            {durations[panel.node] ? ` · ${formatDuration(durations[panel.node])}` : null}
           </p>
-          <pre className="mt-2 overflow-auto font-mono text-xs text-foreground">
-            {prettyState(panel.state)}
-          </pre>
+          {panelConfig ? (
+            <p className="mt-1 font-mono text-xs text-muted-foreground">
+              run config: {panelConfig}
+            </p>
+          ) : null}
+
+          <div className="mt-3 flex gap-1" role="tablist" aria-label={`${panel.node} inspector`}>
+            {(["state", "logs"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                role="tab"
+                aria-selected={tab === t}
+                onClick={() => setTab(t)}
+                className={`border px-2 py-0.5 font-mono text-xs ${
+                  tab === t ? "border-primary text-primary" : "border-border text-muted-foreground"
+                }`}
+              >
+                {t === "logs" ? `logs (${panelLogs.length})` : "state"}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={onRefreshLogs}
+              className="border border-border px-2 py-0.5 font-mono text-xs text-muted-foreground hover:text-foreground"
+            >
+              Refresh logs
+            </button>
+          </div>
+
+          {tab === "state" ? (
+            <pre className="mt-2 overflow-auto font-mono text-xs text-foreground">
+              {prettyState(panel.state)}
+            </pre>
+          ) : panelLogs.length === 0 ? (
+            <p className="mt-2 font-mono text-xs text-muted-foreground">
+              No log rows for {panel.node} yet — offline runs keep logs in memory only.
+            </p>
+          ) : (
+            <ul className="mt-2 flex flex-col gap-1">
+              {panelLogs.map((row, i) => (
+                <li key={i} className="border border-border px-2 py-1 font-mono text-xs">
+                  <span className={LEVEL_CLASS[row.level] ?? "text-foreground"}>[{row.level}]</span>{" "}
+                  <span className="text-muted-foreground">{row.ts}</span>{" "}
+                  <span className="text-foreground">{row.message}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
           {canReplay && panel.reached ? (
             confirm === panel.node ? (
               <span className="mt-3 flex items-center gap-2">

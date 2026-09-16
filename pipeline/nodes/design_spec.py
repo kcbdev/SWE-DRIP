@@ -17,7 +17,9 @@ from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
 from ..json_parse import parse_json_object
 from ..node_config import effective_for_config
+from ..prompts import build_spec_prompt, effective_prompt
 from ..routing import model_for
+from ..runlog import get_logger
 from ..state import RunState
 
 NODE = "design_spec"
@@ -34,9 +36,13 @@ def design_spec(state: RunState, config: RunnableConfig = None) -> dict[str, Any
 
     brief = state.get("brief")
     contract = state.get("collection_contract")
+    log = get_logger(cfg)
+    rid = str(cfg.get("thread_id") or "")
     if not brief:
+        log.error(NODE, "no design brief in state", run_id=rid)
         return {"design_spec": {}, "visited": [NODE], "errors": [f"{NODE}: no design brief in state"]}
     if not contract:
+        log.error(NODE, "no collection contract in state", run_id=rid)
         return {
             "design_spec": {},
             "visited": [NODE],
@@ -50,20 +56,16 @@ def design_spec(state: RunState, config: RunnableConfig = None) -> dict[str, Any
         )
     conf = effective_for_config(cfg, NODE)
     if not conf.enabled:
+        log.warn(NODE, "skipped — disabled by node config", run_id=rid)
         return {
             "design_spec": {"skipped": True, "reason": "disabled by node config"},
             "visited": [NODE],
         }
     model = conf.model or model_for(NODE)
     assert model is not None  # routed per §3; None would be a routing-table bug
-    prompt = (
-        "Using the RCAO framework (Reason, Creative direction, Audience, Output), "
-        "reason about this t-shirt design and propose a render prompt. Reply ONLY "
-        "with JSON: {\"rcao\": string, \"render_prompt\": string}.\n"
-        f"Brief subject: {brief.get('subject', '')}\nBrief text: {brief.get('text', '')}\n"
-        f"Collection theme: {contract.get('theme', '')}\n"
-        f"Locked style: {contract.get('style_archetype', '')}"
-    )
+    log.info(NODE, f"reasoning with {model}", run_id=rid,
+             detail={"model": model, "params": conf.params})
+    prompt = effective_prompt(NODE, build_spec_prompt(brief, contract), conf.prompt_override)
     result = client.chat(
         model=model, messages=[{"role": "user", "content": prompt}], **conf.params
     )
@@ -106,6 +108,9 @@ def design_spec(state: RunState, config: RunnableConfig = None) -> dict[str, Any
     output: dict[str, Any] = {"design_spec": spec, "visited": [NODE]}
     if errors:
         output["errors"] = errors
+        log.warn(NODE, f"cost row not recorded: {errors[0]}", run_id=rid)
+    else:
+        log.info(NODE, "render_prompt resolved (style/palette inherited from contract)", run_id=rid)
     return output
 
 

@@ -17,6 +17,7 @@ from typing import Any
 from langgraph.types import RunnableConfig, interrupt
 
 from ..graph import DEFAULT_HITL, register_node
+from ..runlog import get_logger
 from ..state import RunState
 
 NODE = "publish_gate"
@@ -31,6 +32,8 @@ def publish_gate(state: RunState, config: RunnableConfig = None) -> dict[str, An
     product = state.get("fw_product") or {}
     qc = state.get("aesthetic_qc") or {}
     tech = state.get("technical_qc") or {}
+    log = get_logger(cfg)
+    rid = str(cfg.get("thread_id") or "")
 
     decision: dict[str, Any] = {
         "approved": False,
@@ -38,6 +41,7 @@ def publish_gate(state: RunState, config: RunnableConfig = None) -> dict[str, An
         "product_id": product.get("id"),
     }
     if cfg.get("hitl", {}).get(NODE, DEFAULT_HITL[NODE]):
+        log.info(NODE, "awaiting approval (stays DRAFT either way)", run_id=rid)
         answer = interrupt(
             {
                 "node": NODE,
@@ -57,6 +61,10 @@ def publish_gate(state: RunState, config: RunnableConfig = None) -> dict[str, An
                 decision["note"] = answer["note"]
         # Approved or not, the product stays DRAFT until the Phase 5 cutover.
         decision["state"] = DRAFT_STATE
+        log.info(NODE, f"decision recorded: approved={decision['approved']} (still DRAFT)",
+                 run_id=rid)
+    else:
+        log.info(NODE, "gate off — defaulting to not approved (still DRAFT)", run_id=rid)
     return {"publish_decision": decision, "visited": [NODE]}
 
 

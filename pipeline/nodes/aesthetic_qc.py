@@ -25,7 +25,9 @@ from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
 from ..json_parse import parse_json_object
 from ..node_config import effective_for_config
+from ..prompts import build_qc_prompt, effective_prompt, prompt_key, prompt_version
 from ..routing import model_for
+from ..runlog import get_logger
 from ..state import RunState
 
 NODE = "aesthetic_qc"
@@ -56,6 +58,8 @@ def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
     # call) and the already-fired interrupt returns the resume value.
     render = state.get("render_result") or {}
     if not render or not render.get("file_url"):
+        get_logger(cfg).error(NODE, "no render artifact in state",
+                              run_id=str(cfg.get("thread_id") or ""))
         return {
             "aesthetic_qc": {"result": "fail", "reason": "no render", "attempts": 1},
             "visited": [NODE],
@@ -68,23 +72,33 @@ def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
             "(the production runner injects OpenRouterClient)"
         )
     conf = effective_for_config(cfg, NODE)
+    log = get_logger(cfg)
+    rid = str(cfg.get("thread_id") or "")
     if not conf.enabled:
+        log.warn(NODE, "skipped — disabled by node config", run_id=rid)
         return {
             "aesthetic_qc": {"skipped": True, "reason": "disabled by node config"},
             "visited": [NODE],
         }
     model = conf.model or model_for(NODE)
     assert model is not None  # routed per §3; None would be a routing-table bug
+    log.info(NODE, f"scoring with {model}", run_id=rid,
+             detail={"model": model, "params": conf.params,
+                     "prompt_version": prompt_version(NODE, conf.prompt_override)})
 
     previous = state.get("aesthetic_qc") or {}
     attempt = int(previous.get("attempts") or 0) + 1
     spec = state.get("design_spec") or {}
     brief = state.get("brief") or {}
-    prompt = rubric.build_qc_prompt(
-        design_subject=spec.get("brief_subject") or brief.get("subject") or "",
-        style=spec.get("style") or "",
-        attempt=attempt,
-        previous_feedback=previous.get("feedback") or "",
+    prompt = effective_prompt(
+        NODE,
+        build_qc_prompt(
+            design_subject=spec.get("brief_subject") or brief.get("subject") or "",
+            style=spec.get("style") or "",
+            attempt=attempt,
+            previous_feedback=previous.get("feedback") or "",
+        ),
+        conf.prompt_override,
     )
     result = client.vision(
         model=model, prompt=prompt, image_url=image_ref(render["file_url"]), **conf.params
@@ -119,18 +133,27 @@ def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
         "attempts": attempt,
         "model_used": model,
         "rubric_version": rubric.RUBRIC_VERSION,
+        # Calibration honesty (spec C4): the version of the *effective* prompt.
+        # An override changes this, so calibration compares like with like.
+        # Only the version/key travel — never the prompt text itself.
+        "prompt_key": prompt_key(NODE),
+        "prompt_version": prompt_version(NODE, conf.prompt_override),
     }
     output: dict[str, Any] = {"visited": [NODE]}
     if evaluation["result"] == "pass":
         output["aesthetic_qc"] = verdict
+        log.info(NODE, f"pass {evaluation['scores']}", run_id=rid)
     elif attempt <= rubric.MAX_REGEN_RETRIES:
         feedback = rubric.rejection_feedback(evaluation, attempt)
         verdict["feedback"] = feedback
         output["aesthetic_qc"] = verdict
         output["render_feedback"] = feedback
+        log.warn(NODE, f"fail (attempt {attempt}): {feedback}", run_id=rid)
     else:
         verdict["result"] = "fail-human-review"
         output["aesthetic_qc"] = verdict
+        log.error(NODE, f"retries exhausted after {attempt} attempts: {evaluation['failing']}",
+                  run_id=rid)
         if not cfg.get("hitl", {}).get(NODE, DEFAULT_HITL[NODE]):
             errors.append(
                 f"{NODE}: retries exhausted with HITL off - proceeding without human review"

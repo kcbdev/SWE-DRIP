@@ -3,6 +3,7 @@
   "description": "Mixed-style render: a ninja motif drawn half in terminal-brutalist mono-line and half in soft watercolor shading, two competing focal points, watermark cropped by the chest zone edge, thin gray linework on a charcoal tee.",
   "image_provenance": "Pinned representation — no binary fixture is stored in the repo. The live script (scripts/qc_calibration.py --live) scores the real render; this file pins the model response that run produced, plus the rubric version it was scored under.",
   "rubric_version": 1,
+  "prompt_version": "e01d513a5ce4",
   "pass_threshold": 70,
   "pinned_vision_response": {
     "style_cohesion": 35,

@@ -12,6 +12,9 @@ Event shapes (deltas only — never secrets or full state dumps):
 - ``queue.delta``: ``{"type": "queue.delta", "approval_id": ..., "run_id": ...,
   "node": ..., "status": ...}`` — one row changed in the approvals queue
   (decided, reopened, or newly pending).
+- ``run.log``: ``{"type": "run.log", "run_id": ..., "node": ..., "level": ...,
+  "message": ..., "ts": ...}`` — one per-node log row (PBI-042); the per-run
+  logs endpoint serves these filtered by run, the global stream ignores them.
 - ``heartbeat``: ``{"type": "heartbeat", "ts": ...}`` — keep-alive only.
 
 Delivery is best-effort per subscriber (bounded queues, slow consumers drop,
@@ -81,6 +84,29 @@ class StreamBroker:
                 "status": status,
             }
         )
+
+    def publish_run_log(
+        self, run_id: str, node: str, level: str, message: str, ts: str
+    ) -> int:
+        return self.publish(
+            {
+                "type": "run.log",
+                "run_id": run_id,
+                "node": node,
+                "level": level,
+                "message": message,
+                "ts": ts,
+            }
+        )
+
+
+def is_run_log_event(event: dict[str, Any], run_id: str) -> bool:
+    """True when ``event`` is a log row for ``run_id`` (per-run SSE filter)."""
+    return (
+        isinstance(event, dict)
+        and event.get("type") == "run.log"
+        and event.get("run_id") == run_id
+    )
 
 
 def heartbeat_event() -> dict[str, Any]:

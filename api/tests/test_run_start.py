@@ -59,9 +59,15 @@ class FakeStarter:
         collection_id: str,
         design_id: Optional[str] = None,
         briefs: Optional[list[dict[str, Any]]] = None,
+        design_type: Optional[str] = None,
     ) -> dict[str, Any]:
         self.calls.append(
-            {"collection_id": collection_id, "design_id": design_id, "briefs": briefs}
+            {
+                "collection_id": collection_id,
+                "design_id": design_id,
+                "briefs": briefs,
+                "design_type": design_type,
+            }
         )
         run_id = "run-abc"
         return {
@@ -134,6 +140,7 @@ def test_start_returns_202_with_run_identity() -> None:
             "collection_id": "vibe-coding-tees",
             "design_id": None,
             "briefs": BODY["briefs"],
+            "design_type": None,
         }
     ]
 

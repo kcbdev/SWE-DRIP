@@ -17,7 +17,9 @@ from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
 from ..json_parse import parse_json_object
 from ..node_config import effective_for_config
+from ..prompts import build_copy_prompt, effective_prompt
 from ..routing import model_for
+from ..runlog import get_logger
 from ..state import RunState
 
 NODE = "listing_copy"
@@ -67,6 +69,8 @@ def listing_copy(state: RunState, config: RunnableConfig = None) -> dict[str, An
 
     brief = state.get("brief")
     if not brief:
+        get_logger(cfg).error(NODE, "no design brief in state",
+                              run_id=str(cfg.get("thread_id") or ""))
         return {
             "listing_copy": {},
             "visited": [NODE],
@@ -79,21 +83,19 @@ def listing_copy(state: RunState, config: RunnableConfig = None) -> dict[str, An
             "(the production runner injects OpenRouterClient)"
         )
     conf = effective_for_config(cfg, NODE)
+    log = get_logger(cfg)
+    rid = str(cfg.get("thread_id") or "")
     if not conf.enabled:
+        log.warn(NODE, "skipped — disabled by node config", run_id=rid)
         return {
             "listing_copy": {"skipped": True, "reason": "disabled by node config"},
             "visited": [NODE],
         }
     model = conf.model or model_for(NODE)
     assert model is not None  # routed per §3; None would be a routing-table bug
-    prompt = (
-        "Write t-shirt listing copy in a dry developer-identity brand voice. "
-        "Reply ONLY with JSON: "
-        '{"slogan": "≤6 words, no hashtags", "title": "≤60 chars, no hashtags", '
-        '"description": "1-3 sentences, no hashtags", "tags": ["kebab-case tags, no #"]}.\n'
-        f"Subject: {brief.get('subject', '')}\nText: {brief.get('text', '')}\n"
-        f"Style: {brief.get('style', '')}"
-    )
+    log.info(NODE, f"writing copy with {model}", run_id=rid,
+             detail={"model": model, "params": conf.params})
+    prompt = effective_prompt(NODE, build_copy_prompt(brief), conf.prompt_override)
     result = client.chat(
         model=model, messages=[{"role": "user", "content": prompt}], **conf.params
     )
@@ -103,6 +105,7 @@ def listing_copy(state: RunState, config: RunnableConfig = None) -> dict[str, An
         raise ValueError(f"listing_copy: model did not return JSON: {exc}") from None
     violations = validate_copy(copy)
     if violations:  # brand-locked: never propagate silently
+        log.error(NODE, f"brand-lock violations: {violations!r}", run_id=rid)
         raise ValueError(f"listing_copy: brand-lock violations: {violations!r}")
 
     errors: list[str] = []
@@ -125,6 +128,9 @@ def listing_copy(state: RunState, config: RunnableConfig = None) -> dict[str, An
     output: dict[str, Any] = {"listing_copy": copy, "visited": [NODE]}
     if errors:
         output["errors"] = errors
+        log.warn(NODE, f"cost row not recorded: {errors[0]}", run_id=rid)
+    else:
+        log.info(NODE, f"copy accepted: {copy.get('slogan')!r}", run_id=rid)
     return output
 
 

@@ -6,7 +6,10 @@ import { AppShell } from "@/components/app-shell";
 import { RunDetailView } from "@/components/runs/run-detail-view";
 import { apiFetch } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
-import type { RunDetail } from "@/lib/runs";
+import type { LogRow, RunDetail } from "@/lib/runs";
+import { subscribeToRunLogs } from "@/lib/sse";
+
+const ACTIVE = new Set(["running", "awaiting_approval"]);
 
 export default function RunDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -15,6 +18,7 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
   const canReplay = role === "admin" || role === "operator";
 
   const [detail, setDetail] = useState<RunDetail | null>(null);
+  const [logs, setLogs] = useState<LogRow[]>([]);
   const [replaying, setReplaying] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,9 +31,43 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
     }
   }, [id]);
 
+  const loadLogs = useCallback(async () => {
+    try {
+      const body = await apiFetch<{ items: LogRow[] }>(`/api/runs/${id}/logs?limit=1000`);
+      setLogs(body.items);
+    } catch {
+      // Logs are diagnostic — a failed refresh never hides the run itself.
+    }
+  }, [id]);
+
   useEffect(() => {
     void load();
-  }, [load]);
+    void loadLogs();
+  }, [load, loadLogs]);
+
+  // Live logs while the run is active: SSE when available, polling fallback.
+  useEffect(() => {
+    if (!detail || !ACTIVE.has(detail.status)) return;
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const stop = subscribeToRunLogs(
+      id,
+      (event) =>
+        setLogs((prev) =>
+          prev.some((r) => r.ts === event.ts && r.node === event.node && r.message === event.message)
+            ? prev
+            : [...prev, { node: event.node, level: event.level, message: event.message, detail: {}, ts: event.ts }],
+        ),
+      (streamStatus) => {
+        if (streamStatus === "unavailable" && timer === undefined) {
+          timer = setInterval(() => void loadLogs(), 5000);
+        }
+      },
+    );
+    return () => {
+      stop();
+      if (timer !== undefined) clearInterval(timer);
+    };
+  }, [id, detail?.status, loadLogs]);
 
   const onReplay = useCallback(
     async (node: string) => {
@@ -57,10 +95,15 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
         {detail ? (
           <RunDetailView
             detail={detail}
+            logs={logs}
             canReplay={canReplay}
             replaying={replaying}
             error={error}
             onReplay={(node) => void onReplay(node)}
+            onRefreshLogs={() => {
+              void loadLogs();
+              void load();
+            }}
           />
         ) : (
           <p className="font-mono text-xs text-muted-foreground">{error ?? "Loading…"}</p>

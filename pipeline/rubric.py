@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .prompts import build_qc_prompt  # noqa: F401 — canonical home is prompts.py
+
 CRITERIA = ("style_cohesion", "focal_point", "placement_fit", "contrast")
 
 PASS_THRESHOLD = 70
@@ -26,27 +28,16 @@ MAX_REGEN_RETRIES = 2
 RUBRIC_VERSION = 1
 
 
-def build_qc_prompt(
-    design_subject: str,
-    style: str,
-    attempt: int,
-    previous_feedback: str = "",
-) -> str:
-    """Vision scoring prompt: rubric + strict JSON schema instruction."""
-    prompt = (
-        "Score this t-shirt render against the four-criterion aesthetic rubric, "
-        "0–100 per criterion. Reply ONLY with JSON: "
-        '{"style_cohesion": int, "focal_point": int, "placement_fit": int, '
-        '"contrast": int, "notes": string}.\n'
-        "Criteria: style_cohesion (matches the locked style, no mixed styles); "
-        "focal_point (exactly one clear focal point); placement_fit (design fits "
-        "its placement zone); contrast (readable on every valid colorway).\n"
-        f"Design subject: {design_subject}\nLocked style: {style}\n"
-        f"Scoring attempt: {attempt}"
-    )
-    if previous_feedback:
-        prompt += f"\nPrevious rejection feedback (verify it was addressed): {previous_feedback}"
-    return prompt
+__all__ = [
+    "CRITERIA",
+    "PASS_THRESHOLD",
+    "MAX_REGEN_RETRIES",
+    "RUBRIC_VERSION",
+    "build_qc_prompt",
+    "parse_scores",
+    "evaluate",
+    "rejection_feedback",
+]
 
 
 def parse_scores(payload: Any) -> dict[str, int]:

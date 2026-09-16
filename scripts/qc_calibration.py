@@ -28,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pipeline import rubric  # noqa: E402
 from pipeline.llm import OpenRouterClient  # noqa: E402
+from pipeline.prompts import prompt_version  # noqa: E402
 from pipeline.routing import model_for  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent.parent / "pipeline" / "tests" / "fixtures" / "qc"
@@ -39,10 +40,13 @@ def load_pin(name: str) -> dict[str, Any]:
 
 def score_offline(pin: dict[str, Any]) -> dict[str, Any]:
     evaluation = rubric.evaluate(rubric.parse_scores(pin["pinned_vision_response"]))
+    current = prompt_version("aesthetic_qc")
     return {
         "case": pin["name"],
         "mode": "offline-pinned",
         "rubric_version": rubric.RUBRIC_VERSION,
+        "prompt_version": current,
+        "prompt_matches_pin": pin.get("prompt_version", current) == current,
         "pass_threshold": rubric.PASS_THRESHOLD,
         "scores": evaluation["scores"],
         "result": evaluation["result"],
@@ -71,6 +75,7 @@ def score_live(client: OpenRouterClient, model: str, pin: dict[str, Any], image:
         "mode": "live",
         "model": model,
         "rubric_version": rubric.RUBRIC_VERSION,
+        "prompt_version": prompt_version("aesthetic_qc"),
         "pass_threshold": rubric.PASS_THRESHOLD,
         "scores": evaluation["scores"],
         "result": evaluation["result"],

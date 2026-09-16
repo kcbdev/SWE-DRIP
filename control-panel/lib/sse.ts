@@ -45,3 +45,50 @@ export function subscribeToRuns(
   source.onopen = () => onStatus("live");
   return () => source.close();
 }
+
+export interface RunLogEvent {
+  type: string;
+  run_id: string;
+  node: string;
+  level: string;
+  message: string;
+  ts: string;
+}
+
+/**
+ * Subscribe to `GET /api/runs/:id/logs/stream` for live per-node rows.
+ * Same unavailable discipline as the global stream — callers fall back to
+ * polling (never silent).
+ */
+export function subscribeToRunLogs(
+  runId: string,
+  onLog: (event: RunLogEvent) => void,
+  onStatus: (status: StreamStatus) => void,
+): () => void {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+  if (typeof EventSource === "undefined") {
+    onStatus("unavailable");
+    return () => {};
+  }
+  let source: EventSource;
+  try {
+    source = new EventSource(`${base}/api/runs/${encodeURIComponent(runId)}/logs/stream`, {
+      withCredentials: true,
+    });
+  } catch {
+    onStatus("unavailable");
+    return () => {};
+  }
+  const handle = (event: MessageEvent) => {
+    try {
+      onLog(JSON.parse(event.data) as RunLogEvent);
+    } catch {
+      // Malformed push: ignore, the next poll reconciles.
+    }
+  };
+  source.addEventListener("run.log", handle as EventListener);
+  source.addEventListener("heartbeat", () => onStatus("live"));
+  source.onerror = () => onStatus("unavailable");
+  source.onopen = () => onStatus("live");
+  return () => source.close();
+}

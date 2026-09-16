@@ -22,6 +22,7 @@ from typing import Any, Protocol
 from langgraph.types import RunnableConfig, interrupt
 
 from ..graph import DEFAULT_HITL, register_node
+from ..runlog import get_logger
 from ..state import RunState
 from .shelf import PRICE_INVARIANTS
 
@@ -45,7 +46,10 @@ def fw_create(state: RunState, config: RunnableConfig = None) -> dict[str, Any]:
     copy = state.get("listing_copy") or {}
     spec = state.get("design_spec") or {}
     render = state.get("render_result") or {}
+    log = get_logger(cfg)
+    rid = str(cfg.get("thread_id") or "")
     if not copy or not spec or not render:
+        log.error(NODE, "missing copy/spec/render — nothing to draft", run_id=rid)
         return {
             "fw_product": {},
             "visited": [NODE],
@@ -54,6 +58,7 @@ def fw_create(state: RunState, config: RunnableConfig = None) -> dict[str, Any]:
 
     product_type = cfg.get("product_type") or "tee"
     if product_type not in PRICE_INVARIANTS:
+        log.error(NODE, f"unknown product_type {product_type!r}", run_id=rid)
         return {
             "fw_product": {},
             "visited": [NODE],
@@ -72,12 +77,14 @@ def fw_create(state: RunState, config: RunnableConfig = None) -> dict[str, Any]:
 
     client = cfg.get("fw_client")
     if client is None:
+        log.error(NODE, "no fw_client in config['configurable']", run_id=rid)
         return {
             "fw_product": {},
             "visited": [NODE],
             "errors": [f"{NODE}: no fw_client in config['configurable']"],
         }
     if not cfg.get("fw_live"):
+        log.warn(NODE, "live FW disabled this phase — draft not sent", run_id=rid)
         return {
             "fw_product": {**payload, "sent": False},
             "visited": [NODE],
@@ -86,11 +93,13 @@ def fw_create(state: RunState, config: RunnableConfig = None) -> dict[str, Any]:
 
     response = client.create_draft(payload)
     if not isinstance(response, dict) or response.get("state", DRAFT_STATE) != DRAFT_STATE:
+        log.error(NODE, f"FW client returned a non-DRAFT product {response!r}", run_id=rid)
         raise ValueError(
             f"{NODE}: FW client returned a non-DRAFT product {response!r} — "
             "PUBLIC is unreachable in this phase"
         )
     product = {**payload, **response, "state": DRAFT_STATE, "sent": True}
+    log.info(NODE, f"draft {product.get('id')!r} recorded (DRAFT, not sent live)", run_id=rid)
     return {"fw_product": product, "visited": [NODE]}
 
 

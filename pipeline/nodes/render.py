@@ -27,6 +27,7 @@ from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
 from ..node_config import effective_for_config
 from ..routing import IMAGE_FALLBACKS, model_for
+from ..runlog import get_logger
 from ..state import RunState
 
 NODE = "art_render"
@@ -67,6 +68,8 @@ def art_render(state: RunState, config: RunnableConfig = None) -> dict[str, Any]
 
     spec = state.get("design_spec")
     if not spec or not spec.get("render_prompt"):
+        get_logger(cfg).error(NODE, "no design spec with render_prompt in state",
+                              run_id=str(cfg.get("thread_id") or ""))
         return {
             "render_result": {},
             "visited": [NODE],
@@ -79,7 +82,10 @@ def art_render(state: RunState, config: RunnableConfig = None) -> dict[str, Any]
             "(the production runner injects OpenRouterClient)"
         )
     conf = effective_for_config(cfg, NODE)
+    log = get_logger(cfg)
+    rid = str(cfg.get("thread_id") or "")
     if not conf.enabled:
+        log.warn(NODE, "skipped — disabled by node config", run_id=rid)
         return {
             "render_result": {"skipped": True, "reason": "disabled by node config"},
             "visited": [NODE],
@@ -89,6 +95,8 @@ def art_render(state: RunState, config: RunnableConfig = None) -> dict[str, Any]
     # Config-disabled image fallbacks stay in place; an explicit override of
     # `art_render.model` replaces only the primary candidate.
     models = [primary, *IMAGE_FALLBACKS]
+    log.info(NODE, f"rendering with {primary} (+{len(IMAGE_FALLBACKS)} fallbacks)",
+             run_id=rid, detail={"model": primary, "params": conf.params})
 
     # Regeneration feedback from aesthetic QC (PBI-013) augments the prompt.
     # Overwritten per cycle by node 7 — never accumulated.
@@ -107,7 +115,10 @@ def art_render(state: RunState, config: RunnableConfig = None) -> dict[str, Any]
             break
         except Exception as exc:  # try next model; all failing is loud below
             failures.append(f"{candidate}: {type(exc).__name__}: {exc}")
+            log.warn(NODE, f"candidate failed: {candidate}: {type(exc).__name__}: {exc}",
+                     run_id=rid)
     if result is None or used_model is None:
+        log.error(NODE, f"all image models failed: {failures!r}", run_id=rid)
         raise RuntimeError(f"art_render: all image models failed: {failures!r}")
 
     image_bytes = _payload_bytes(result.content)
@@ -161,6 +172,10 @@ def art_render(state: RunState, config: RunnableConfig = None) -> dict[str, Any]
         output["render_feedback"] = ""  # consumed; node 7 sets it fresh per cycle
     if errors:
         output["errors"] = errors
+        log.warn(NODE, f"cost row not recorded: {errors[0]}", run_id=rid)
+    else:
+        log.info(NODE, f"render {width}x{height} via {used_model}", run_id=rid,
+                 detail={"model": used_model, "width": width, "height": height})
     return output
 
 

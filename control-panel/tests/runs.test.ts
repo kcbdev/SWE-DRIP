@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   NODE_ORDER,
+  flowStates,
+  formatDuration,
+  nodeDurations,
   nodeSetMismatch,
   prettyState,
   trackerStates,
@@ -57,5 +60,45 @@ describe("runs helpers", () => {
   it("pretty-prints state with affordances", () => {
     expect(prettyState(null)).toBe("—");
     expect(prettyState({ a: 1 })).toContain('"a": 1');
+  });
+});
+
+describe("flow states (PBI-042)", () => {
+  it("covers complete / current / awaiting-approval / failed / not-reached", () => {
+    const awaiting = flowStates(detail("awaiting_approval", ["trend_research", "contract_approval"]));
+    expect(awaiting[0]).toEqual({ node: "trend_research", state: "complete" });
+    expect(awaiting[1]).toEqual({ node: "contract_approval", state: "awaiting-approval" });
+    expect(awaiting[2]).toEqual({ node: "listing_copy", state: "not-reached" });
+
+    const failed = flowStates(detail("failed", ["trend_research"]));
+    expect(failed[0]).toEqual({ node: "trend_research", state: "failed" });
+
+    const running = flowStates(detail("running", ["trend_research"]));
+    expect(running[0]).toEqual({ node: "trend_research", state: "current" });
+
+    const complete = flowStates(detail("complete", [...NODE_ORDER]));
+    expect(complete.slice(0, 10).every((s) => s.state === "complete")).toBe(true);
+    expect(complete[10]).toEqual({ node: "shelf", state: "current" });
+  });
+});
+
+describe("node durations", () => {
+  it("measures first-to-last per node, null when unobserved", () => {
+    const durations = nodeDurations([
+      { node: "trend_research", level: "info", message: "a", detail: {}, ts: "2026-09-16T00:00:00+00:00" },
+      { node: "trend_research", level: "info", message: "b", detail: {}, ts: "2026-09-16T00:00:30+00:00" },
+      { node: "shelf", level: "info", message: "once", detail: {}, ts: "2026-09-16T00:01:00+00:00" },
+      { node: "shelf", level: "info", message: "bad-ts", detail: {}, ts: "not-a-time" },
+    ]);
+    expect(durations["trend_research"]).toBe(30);
+    expect(durations["shelf"]).toBeNull();
+    expect(durations["placement"]).toBeUndefined();
+  });
+
+  it("formats durations readably", () => {
+    expect(formatDuration(null)).toBe("—");
+    expect(formatDuration(0.5)).toBe("0.5s");
+    expect(formatDuration(30)).toBe("30s");
+    expect(formatDuration(184)).toBe("3m 04s");
   });
 });

@@ -6,17 +6,34 @@ import { useState } from "react";
 import type { RunRow } from "@/lib/runs";
 
 export function RunsList({ items }: { items: RunRow[] }) {
+  const [search, setSearch] = useState("");
   const [collection, setCollection] = useState("");
   const [status, setStatus] = useState("");
+  const [date, setDate] = useState("");
+  const needle = search.trim().toLowerCase();
   const visible = items.filter(
     (i) =>
+      (!needle ||
+        (i.design_id ?? "").toLowerCase().includes(needle) ||
+        i.id.toLowerCase().includes(needle) ||
+        (i.collection_id ?? "").toLowerCase().includes(needle)) &&
       (!collection || i.collection_id === collection) &&
-      (!status || i.status === status),
+      (!status || i.status === status) &&
+      (!date || (i.started_at ?? "").slice(0, 10) === date),
   );
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3 border border-border bg-card p-4">
+        <label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          Search
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="run, design or collection…"
+            className="mt-1 block border border-border bg-background px-2 py-1 text-foreground outline-none focus:border-primary"
+          />
+        </label>
         <label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
           Collection
           <input
@@ -32,6 +49,15 @@ export function RunsList({ items }: { items: RunRow[] }) {
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             placeholder="running|awaiting_approval|failed|complete"
+            className="mt-1 block border border-border bg-background px-2 py-1 text-foreground outline-none focus:border-primary"
+          />
+        </label>
+        <label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          Date
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
             className="mt-1 block border border-border bg-background px-2 py-1 text-foreground outline-none focus:border-primary"
           />
         </label>

@@ -124,7 +124,8 @@ def list_calibration(
                 {
                     "design_id": None,
                     "run_id": run_id,
-                    "rubric": {"result": None, "scores": None, "rubric_version": None},
+                    "rubric": {"result": None, "scores": None, "rubric_version": None,
+                               "prompt_version": None},
                     "human_decisions": [],
                     "agreement": None,
                     "note": "run state unavailable (thread gone/retained) — scores unknown",
