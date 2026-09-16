@@ -104,8 +104,23 @@ def contract_draft(
     if problems:  # self-invalid draft is a code bug — loud, never silent
         log.error(NODE, f"assembled an invalid draft: {problems!r}", run_id=rid)
         raise RuntimeError(f"{NODE}: assembled an invalid draft: {problems!r}")
+    # Diversity check (spec C6): flags travel with the draft to the CEO gate
+    # instead of approving silently. Lineage arrives via state (built by the
+    # run trigger from active/retired contracts); absent lineage means the
+    # check cannot run, which is recorded rather than faked.
+    lineage = state.get("lineage")
+    diversity: list[str] = []
+    if isinstance(lineage, dict) and lineage:
+        from ..lineage import diversity_flags
+
+        diversity = diversity_flags(draft, lineage)
+        for flag in diversity:
+            log.warn(NODE, flag, run_id=rid)
+    output: dict[str, Any] = {"draft_contract": draft, "visited": [NODE]}
+    if diversity:
+        output["diversity_flags"] = diversity
     log.info(NODE, f"draft {slug!r} assembled (status draft)", run_id=rid)
-    return {"draft_contract": draft, "visited": [NODE]}
+    return output
 
 
 register_research_node(NODE, contract_draft)

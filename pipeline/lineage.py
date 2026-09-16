@@ -56,12 +56,23 @@ def format_avoid(lineage: dict[str, Any]) -> list[str]:
     return lines
 
 
+def build_research_inputs(contracts: list[dict[str, Any]]) -> dict[str, Any]:
+    """Seed dict for a research run's initial state (used by the run trigger).
+
+    Bundles the lineage record (for the draft gate's diversity check) with
+    the negative-context lines (for synthesis ``avoid``) so a trigger built
+    from the collections store wires both readers in one call.
+    """
+    lineage = build_lineage(contracts)
+    return {"lineage": lineage, "avoid": format_avoid(lineage)}
+
+
 def diversity_flags(candidate: dict[str, Any], lineage: dict[str, Any]) -> list[str]:
     """Reasons a draft candidate looks like a duplicate (empty = distinct).
 
     A shared archetype alone is a flag only with overlapping palette or
-    motifs — archetype reuse across seasons is legitimate when the
-    expression differs.
+    motifs: archetype reuse across seasons is legitimate when the expression
+    differs.
     """
     flags: list[str] = []
     if not isinstance(candidate, dict):

@@ -259,6 +259,40 @@ class TestDraft:
         assert any("no style_archetype" in e for e in out["errors"])
         assert "draft_contract" not in out
 
+    def test_absent_lineage_means_no_check(self, tmp_path: Path) -> None:
+        from pipeline.nodes.research_draft import contract_draft
+
+        out = contract_draft(
+            {"collection_slug": "v", "collection_theme": "Vibe",  # type: ignore[dict-item]
+             "style_archetype": "mono-log",
+             "inspiration": dict(INSPIRATION), "synthesis": dict(GOOD_DIRECTIVES)},
+            _config(tmp_path, client=_StubClient()),  # type: ignore[typeddict-item]
+        )
+        assert out["draft_contract"]["collection_id"] == "vibe"
+        assert "diversity_flags" not in out
+
+    def test_near_duplicate_flagged_not_silent(self, tmp_path: Path) -> None:
+        from pipeline.lineage import build_lineage
+        from pipeline.nodes.research_draft import contract_draft
+
+        lineage = build_lineage([{
+            "collection_id": "old", "style_archetype": "mono-log",
+            "illustration_rules": {"palette": ["#0D0D0D"]},
+            "style_descriptors": ["mono-line"],
+        }])
+        out = contract_draft(
+            {"collection_slug": "v", "collection_theme": "Vibe",  # type: ignore[dict-item]
+             "style_archetype": "mono-log",
+             "inspiration": dict(INSPIRATION),
+             "synthesis": {**GOOD_DIRECTIVES, "style_descriptors": ["mono-line"]},
+             "lineage": lineage},
+            _config(tmp_path, client=_StubClient()),  # type: ignore[typeddict-item]
+        )
+        # Empty draft palette + synthesis motif mono-line overlapping the
+        # lineage motif → flagged (motif overlap alone suffices with a
+        # shared archetype).
+        assert any("near-duplicate" in f for f in out.get("diversity_flags", []))
+
     def test_draft_shape_valid_with_empty_unknowables(self, tmp_path: Path) -> None:
         from pipeline.nodes.contract import validate_contract
         from pipeline.nodes.research_draft import contract_draft
@@ -311,6 +345,7 @@ class TestGate:
         assert interrupt.value["draft"]["collection_id"] == "vibe"
         assert interrupt.value["draft"]["status"] == "draft"
         assert interrupt.value["board"]["board_version"] == 1
+        assert interrupt.value["diversity_flags"] == []
 
     def test_resume_approve_reject_and_edit(self, tmp_path: Path) -> None:
         from langgraph.types import Command

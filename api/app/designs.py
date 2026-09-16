@@ -30,7 +30,9 @@ def design_detail_from_state(values: dict[str, Any], run_id: str) -> dict[str, A
             "pass_threshold": qc.get("pass_threshold", 70),
             "result": qc.get("result"),
             "failing": qc.get("failing") or [],
-            "style_status": qc.get("style_status"),
+            # One spelling for "no board": historical verdicts predate the
+            # field (None) and new no-board verdicts say "unscored".
+            "style_status": qc.get("style_status") or "unscored",
             "rubric_version": qc.get("rubric_version"),
             "prompt_key": qc.get("prompt_key"),
             "prompt_version": qc.get("prompt_version"),

@@ -1,7 +1,7 @@
 """Node 7 — aesthetic QC (spec C9, C2/C3/C4).
 
-Vision model scores the render against the four-criterion rubric (70 pass).
-Pass continues. Fail sets ``state["render_feedback"]`` (rejection notes) and
+Vision model scores the render against the five-criterion rubric (70 pass;
+the fifth, style_conformance, is board-scored and optional). Pass continues. Fail sets ``state["render_feedback"]`` (rejection notes) and
 the graph edge routes back to the render node — capped at
 ``MAX_REGEN_RETRIES`` regenerations. Exhausted retries fall to a
 human-review ``interrupt()``; on resume the run continues to technical QC
@@ -101,7 +101,9 @@ def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
         conf.prompt_override,
     )
     # Mood board travels from run config (inlined data URI by the API layer);
-    # absent means style_conformance goes unscored, never guessed.
+    # absent means style_conformance goes unscored, never guessed. Cost note
+    # (AGENTS.md budget discipline): a boarded call sends one extra image,
+    # i.e. extra input tokens per QC scoring call versus the render-only path.
     board_image = cfg.get("board_image")
     extra_images = [board_image] if board_image else []
     result = client.vision(
@@ -141,6 +143,10 @@ def aesthetic_qc(state: RunState, config: RunnableConfig = None) -> dict[str, An
         "scores": evaluation["scores"],
         "failing": evaluation["failing"],
         "style_status": evaluation["style_status"],
+        # The board revision scored against (from the run's contract) — a
+        # verdict is only comparable to the board it names (spec C4 rule
+        # applied to visual versions). None when no board traveled.
+        "board_version": (state.get("collection_contract") or {}).get("board_version"),
         "attempts": attempt,
         "model_used": model,
         "rubric_version": rubric.RUBRIC_VERSION,

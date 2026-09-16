@@ -476,3 +476,21 @@ def test_style_fail_names_criterion(tmp_path: Path) -> None:
     assert 'style_conformance' in out['aesthetic_qc']['failing']
     assert 'style_conformance' in out['render_feedback']
 
+
+def test_verdict_carries_contract_board_version(tmp_path: Path) -> None:
+    bodies: list[dict] = []
+    state = _render_state(tmp_path)
+    state['collection_contract'] = {**state['collection_contract'], 'board_version': 3}
+    out = aesthetic_qc(
+        state, _cfg(_board_vision_client([PASS_SCORES], bodies), board_image=_board_uri())
+    )
+    assert out['aesthetic_qc']['board_version'] == 3
+
+
+def test_verdict_board_version_none_without_contract(tmp_path: Path) -> None:
+    bodies: list[dict] = []
+    out = aesthetic_qc(
+        _render_state(tmp_path), _cfg(_board_vision_client([PASS_SCORES], bodies))
+    )
+    assert out['aesthetic_qc']['board_version'] is None
+

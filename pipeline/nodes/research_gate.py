@@ -45,6 +45,7 @@ def collection_gate(
                 "draft": draft,
                 "board": {"file_ref": board.get("file_ref"),
                           "board_version": board.get("board_version")},
+                "diversity_flags": state.get("diversity_flags") or [],
             }
         )
         if isinstance(answer, dict):

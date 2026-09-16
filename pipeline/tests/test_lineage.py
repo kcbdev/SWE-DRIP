@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from pipeline.lineage import build_lineage, diversity_flags, format_avoid
+from pipeline.lineage import (
+    build_lineage,
+    build_research_inputs,
+    diversity_flags,
+    format_avoid,
+)
 
 
 def _contract(slug: str, **overrides) -> dict:
@@ -72,3 +77,11 @@ class TestDiversityFlags:
 
     def test_malformed_candidate_loud(self) -> None:
         assert diversity_flags("nope", build_lineage([])) != []  # type: ignore[arg-type]
+
+
+class TestBuildResearchInputs:
+    def test_bundles_lineage_and_avoid(self) -> None:
+        inputs = build_research_inputs([_contract("a")])
+        assert inputs["lineage"]["archetypes"] == ["mono-log"]
+        assert inputs["avoid"] == format_avoid(inputs["lineage"])
+        assert any("mono-log" in line for line in inputs["avoid"])

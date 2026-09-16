@@ -104,7 +104,7 @@ def _stored_contract(collection_id: str) -> dict[str, Any]:
     return dict(contract) if isinstance(contract, dict) else {}
 
 
-def resolve_board_image(contract: dict[str, Any]) -> Optional[str]:
+def resolve_board_image(contract: Optional[dict[str, Any]]) -> Optional[str]:
     """Inline the collection's mood board as a data URI for aesthetic QC.
 
     The first ``mood_board`` ref resolving under the collection's asset dir
@@ -112,10 +112,14 @@ def resolve_board_image(contract: dict[str, Any]) -> Optional[str]:
     style ``unscored`` rather than failing). Never raises — a board problem
     must not take a run down.
     """
+    if not isinstance(contract, dict):
+        return None
+    refs = contract.get("mood_board")
+    if not isinstance(refs, list):
+        return None
     try:
         from .inspiration import resolve_collections_root
 
-        refs = contract.get("mood_board") or []
         slug = contract.get("collection_id") or ""
         assets_dir = resolve_collections_root() / f"{slug}.assets"
         import base64
