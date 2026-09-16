@@ -112,6 +112,54 @@ token (see `docs/adrs/ADR-005.md`).
 2. `https://swedrip-panel.kcb.ma` → login page
 3. Login with admin credentials (create first user via API or DB)
 
+## Operator MCP doorway (`/mcp`)
+
+Machine clients (agents, CLIs) authenticate with scoped Bearer tokens —
+Better Auth cookies are browsers-only. Full decision record:
+`docs/adrs/ADR-006.md`.
+
+### Issuance (admin session required)
+
+1. `POST https://swedrip-api.kcb.ma/api/operator-tokens`
+   `{"name": "opencode-runner", "scopes": ["operate"]}` → `201` with
+   `{"token": "sdr_…", "prefix": "sdr_…", …}`.
+2. **Copy the token now — it is shown once, never again.** Vault it
+   (password manager / server secret store), never chat logs or code.
+3. Scopes: `read` (observers: runs, logs, approvals, agents, catalog,
+   collections, audit, calibration, graph) vs `operate` (read + run start,
+   approval decisions, agent config, replay). Issue least privilege.
+
+### Rotation / revocation
+
+1. Issue the replacement token first, switch the client, then
+   `POST /api/operator-tokens/{id}/revoke` the old one.
+2. `GET /api/operator-tokens` lists metadata (prefix, scopes, activity) —
+   hashes never leave the store.
+3. Every issuance and revocation writes an audit row (`operator_token.*`,
+   prefix only).
+
+### Client config (Claude Code / Opencode, remote HTTP)
+
+```json
+{
+  "mcpServers": {
+    "swe-drip-operator": {
+      "type": "streamable-http",
+      "url": "https://swedrip-api.kcb.ma/mcp/",
+      "headers": { "Authorization": "Bearer sdr_…" }
+    }
+  }
+}
+```
+
+### Smoke (after deploy)
+
+1. No token: `POST /mcp/` → `401`.
+2. Read token: MCP handshake → `runs_list`, `graph_inspect` (11 nodes).
+3. Operate token dry probe: `agent_config` with a dead model ID →
+   `Unknown model … [422]` with suggestions (no state changed).
+4. Revoke the smoke token → next call `401`.
+
 ## Architecture
 
 ```
