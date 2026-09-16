@@ -29,7 +29,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | `specs/settings-agents/spec.md` | FR-17/18/19, NFR-2 | 6 (HITL toggles, brand lock, integrations status, agents roster, single config source, RBAC) | PBI-033…034 |
 | `specs/hitl-graduation/spec.md` | Vision §6.4, A19 | 5 (A19 record, evidence minimums, founder authority, reversibility, traceability) | PBI-035 |
 | `specs/operator-mcp/spec.md` | founder request 2026-09-16 (agent-operated doorway) | 6 (token auth, read parity, writes reuse enforcement, graph visibility w/o mutation, secrets, same deployable) + token management UI | PBI-043…047 |
-| `specs/collection-research/spec.md` | founder request 2026-09-16 (creative pillar) | 6 (named styles, visual contract v2, inspiration ingest, research graph, coherence within, diversity between) | PBI-048…052 |
+| `specs/collection-research/spec.md` | founder request 2026-09-16 (creative pillar) | 6 (named styles, visual contract v2, inspiration ingest, research graph, coherence within, diversity between) + durable artifacts | PBI-048…053 |
 
 ## Execution order
 
@@ -82,8 +82,8 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 45 | PBI-045 | operator-mcp | 044 | In Review | SWDRP-46 | MCP write tools (start/decide/config/replay, same enforcement) |
 | 46 | PBI-046 | operator-mcp | 045 | In Review | SWDRP-43 | ADR-006 + operator runbook + live MCP smoke (manual) |
 | 47 | PBI-047 | operator-mcp | 043 | In Review | SWDRP-47 | Operator token management UI (settings block + client config) |
-| 48 | PBI-048 | collection-research | 019 | In Review | SWDRP-48 | Style repository (manageable YAML repo) + contract schema v2 |
-| 49 | PBI-049 | collection-research | 048 | Todo | SWDRP-49 | Inspiration ingest (assets + refs per draft) |
+| 48 | PBI-048 | collection-research | 019 | Done | SWDRP-48 | Style repository (manageable YAML repo) + contract schema v2 |
+| 49 | PBI-049 | collection-research | 048 | Active | SWDRP-49 | Inspiration ingest (assets + refs per draft) |
 | 50 | PBI-050 | collection-research | 049, 010, 038 | Todo | SWDRP-50 | Research graph (synthesize → board → draft → gate) |
 | 51 | PBI-051 | collection-research | 050, 022 | Todo | SWDRP-51 | Style-conformance QC + diversity check + rotation queue |
 | 52 | PBI-052 | collection-research | 049, 050 | Todo | SWDRP-52 | Research UI (board, inspiration, gate, styles manager; manual: UX) |

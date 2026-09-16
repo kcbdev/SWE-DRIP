@@ -20,6 +20,7 @@ dependencies = [
   "sse-starlette>=2.1",
   "mcp>=1.0",
   "pyyaml>=6.0",
+  "python-multipart>=0.0.18",
 ]
 
 [project.optional-dependencies]
@@ -29,7 +30,7 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["api", "api.app", "api.app.routers", "api.app.fourthwall", "pipeline", "pipeline.nodes"]
+  packages = ["api", "api.app", "api.app.routers", "api.app.fourthwall", "api.app.mcp", "pipeline", "pipeline.nodes"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
