@@ -34,6 +34,7 @@ export function OperatorTokens({ role }: { role?: string }) {
   const [scopes, setScopes] = useState<TokenScope[]>(["read"]);
   const [issued, setIssued] = useState<IssuedToken | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedConfig, setCopiedConfig] = useState(false);
   const [revoking, setRevoking] = useState<number | null>(null);
 
   useEffect(() => {
@@ -288,6 +289,22 @@ export function OperatorTokens({ role }: { role?: string }) {
         <pre className="mt-2 overflow-auto border border-border bg-background p-3 font-mono text-xs text-foreground">
           {clientConfig}
         </pre>
+        <div className="mt-2">
+          <button
+            type="button"
+            onClick={() => void copyText(clientConfig).then((ok) => {
+              if (ok) {
+                setCopiedConfig(true);
+                setNotice("Client config copied — replace the placeholder with an issued token.");
+              } else {
+                setError("Clipboard unavailable — select and copy the snippet manually.");
+              }
+            })}
+            className="border border-border px-4 py-1 font-mono text-xs text-foreground hover:bg-secondary"
+          >
+            {copiedConfig ? "Copied" : "Copy client config"}
+          </button>
+        </div>
       </div>
     </section>
   );

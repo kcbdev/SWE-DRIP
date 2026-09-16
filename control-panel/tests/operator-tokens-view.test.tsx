@@ -75,6 +75,19 @@ describe("operator-tokens lib", () => {
   it("derives the MCP endpoint from the API base", () => {
     expect(mcpEndpointUrl()).toContain("/mcp/");
   });
+
+  it("honours NEXT_PUBLIC_API_BASE_URL with public fallback", () => {
+    const saved = process.env.NEXT_PUBLIC_API_BASE_URL;
+    try {
+      process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.test";
+      expect(mcpEndpointUrl()).toBe("https://api.example.test/mcp/");
+      delete process.env.NEXT_PUBLIC_API_BASE_URL;
+      expect(mcpEndpointUrl()).toBe("https://swedrip-api.kcb.ma/mcp/");
+    } finally {
+      if (saved === undefined) delete process.env.NEXT_PUBLIC_API_BASE_URL;
+      else process.env.NEXT_PUBLIC_API_BASE_URL = saved;
+    }
+  });
 });
 
 describe("OperatorTokens section", () => {
@@ -86,6 +99,7 @@ describe("OperatorTokens section", () => {
     });
     expect(screen.getByText(/sdr_test/)).toBeTruthy();
     expect(screen.queryByText(TOKEN_VALUE)).toBeNull();
+    expect("token" in (await fetchTokens())[0]).toBe(false);
   });
 
   it("issue shows the value once, dismiss clears it for good", async () => {
@@ -152,12 +166,15 @@ describe("OperatorTokens section", () => {
     });
   });
 
-  it("viewer renders no section", async () => {
-    mockApi({ revoked: false });
-    const { container } = render(<OperatorTokens role="viewer" />);
-    expect(container.textContent).toBe("");
-    expect(fetch).not.toHaveBeenCalled();
-  });
+  it.each([["viewer"], ["operator"], [undefined]])(
+    "non-admin (%s) renders no section and fetches nothing",
+    async (role) => {
+      mockApi({ revoked: false });
+      const { container } = render(<OperatorTokens role={role as string | undefined} />);
+      expect(container.textContent).toBe("");
+      expect(fetch).not.toHaveBeenCalled();
+    },
+  );
 
   it("shows the client config snippet", async () => {
     mockApi({ revoked: false });
@@ -167,5 +184,56 @@ describe("OperatorTokens section", () => {
     });
     const section = screen.getByTestId("operator-tokens");
     expect(within(section).getByText(/streamable-http/)).toBeTruthy();
+  });
+
+  it("copies the client config snippet", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(window.navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    mockApi({ revoked: false });
+    render(<OperatorTokens role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByText("ci")).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Copy client config" }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(expect.stringContaining("streamable-http"));
+      expect(screen.getByText("Copied")).toBeTruthy();
+    });
+  });
+
+  it("empty name blocks issuance without a request", async () => {
+    mockApi({ revoked: false });
+    render(<OperatorTokens role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByText("ci")).toBeTruthy();
+    });
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Issue token" }));
+    expect(await screen.findByText("Token name is required")).toBeTruthy();
+    expect(fetch).not.toHaveBeenCalledWith(
+      expect.stringContaining("/api/operator-tokens"),
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("server rejection surfaces as an error", async () => {
+    mockApi({ revoked: false });
+    render(<OperatorTokens role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByText("ci")).toBeTruthy();
+    });
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockImplementationOnce(() =>
+      Promise.resolve({ ok: false, status: 409, json: () => Promise.resolve({}) }),
+    );
+    fireEvent.change(screen.getByPlaceholderText("e.g. opencode-runner"), {
+      target: { value: "dup" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Issue token" }));
+    await waitFor(() => {
+      expect(screen.getByText(/API 409/)).toBeTruthy();
+    });
   });
 });
