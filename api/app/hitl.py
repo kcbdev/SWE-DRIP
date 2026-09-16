@@ -277,6 +277,7 @@ class SyncGraphRunner:
         """
         from langgraph.types import Command
         from pipeline.llm import OpenRouterClient
+        from pipeline.runlog import SqlRunLogger
 
         from .db import get_engine
         from .runs import runs_root
@@ -286,12 +287,18 @@ class SyncGraphRunner:
             state = dict(graph.get_state({"configurable": {"thread_id": thread_id}}).values or {})
             hitl = state.get("hitl") or _resolve_hitl()
             run_dir = runs_root() / str(state.get("design_id") or thread_id)
+            engine = get_engine()
             config = {
                 "configurable": {
                     "thread_id": thread_id,
                     "hitl": hitl,
                     "llm_client": OpenRouterClient(),
-                    "cost_engine": get_engine(),
+                    "cost_engine": engine,
+                    # Re-injected like cost_engine: without it every node after
+                    # the first resume logs to the NullLogger and per-node
+                    # logs go silent mid-run (found on the first MCP-driven
+                    # live run — only trend/contract rows existed).
+                    "run_logger": SqlRunLogger(engine, thread_id),
                     # Empty snapshot is fine: nodes fall back to code defaults.
                     "node_config": state.get("node_config") or {},
                     "run_dir": str(run_dir),

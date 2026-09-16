@@ -67,6 +67,13 @@ def test_resume_supplies_the_full_runtime_config() -> None:
     # Frozen per-run state is replayed, not re-resolved from today's settings.
     assert configurable["hitl"] == {"contract_approval": True}
     assert configurable["node_config"] == {"trend_research": {"model": "frozen/model"}}
+    # Per-node logs must survive the resume: without a run_logger every node
+    # after the first gate logs to the NullLogger and the run goes silent
+    # mid-flight (found on the first MCP-driven live run).
+    from pipeline.runlog import NullLogger
+
+    assert configurable["run_logger"] is not None
+    assert not isinstance(configurable["run_logger"], NullLogger)
     # Render artifacts land under the root the render endpoint serves from.
     assert configurable["run_dir"].endswith("runs\\d-7") or configurable["run_dir"].endswith(
         "runs/d-7"
