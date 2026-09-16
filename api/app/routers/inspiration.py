@@ -7,7 +7,7 @@ same-origin for board display; values never echo beyond the served bytes.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import Response
@@ -15,8 +15,8 @@ from pydantic import ValidationError
 
 from ..audit import AuditWriter, get_audit_writer
 from ..auth import ROLE_ADMIN, ROLE_VIEWER, Actor
-from ..collections_store import CollectionNotFound, get_collections_store
-from ..inspiration import InspirationStore, resolve_collections_root
+from ..collections_store import CollectionNotFound
+from ..inspiration import MAX_BYTES, InspirationStore, resolve_collections_root
 from ..rbac import require_role
 
 router = APIRouter(prefix="/api/collections", tags=["inspiration"])
@@ -57,11 +57,22 @@ async def add_inspiration(
     content_type = request.headers.get("content-type", "")
     try:
         if content_type.startswith("multipart/"):
+            # Declared-size gate first: never buffer an admittedly oversize
+            # body. The bounded read below caps actual memory at MAX+1.
+            try:
+                declared = int(request.headers.get("content-length") or 0)
+            except ValueError:
+                declared = 0
+            if declared > MAX_BYTES:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"image exceeds {MAX_BYTES} bytes",
+                )
             form = await request.form()
             upload = form.get("file")
             if upload is None or not hasattr(upload, "read"):
                 raise HTTPException(status_code=400, detail="multipart body needs a file part")
-            content = await upload.read()  # type: ignore[union-attr]
+            content = await upload.read(MAX_BYTES + 1)  # type: ignore[union-attr]
             record = store.add_asset(
                 slug,
                 content,

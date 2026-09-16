@@ -104,6 +104,10 @@ class TestUploadRoundTrip:
         listed = client.get("/api/collections/vibe/inspiration").json()
         assert len(listed["assets"]) == 1
         assert listed["assets"][0]["id"] == body["id"]
+        sidecar = store._root / "vibe.assets" / f"{body['id']}.json"
+        proven = json.loads(sidecar.read_text(encoding="utf-8"))
+        assert proven["source_url"] == "https://example.com/r"
+        assert proven["actor_user_id"] == "u-9" and proven["created_at"]
 
         served = client.get(f"/api/collections/vibe/inspiration/{body['id']}/file")
         assert served.status_code == 200
@@ -131,6 +135,32 @@ class TestUploadRoundTrip:
 
 
 class TestRejections:
+    def test_path_guards_reject_traversal_directly(self, tmp_path: Path) -> None:
+        from api.app.inspiration import _check_asset_id, _slug_dir
+
+        store = InspirationStore(tmp_path / "collections", _collections(tmp_path))
+        for bad_slug in ("../etc", "..\\etc", ".hidden", "a/b", ""):
+            with pytest.raises(ValueError):
+                store.list(bad_slug)
+            with pytest.raises(ValueError):
+                _slug_dir(tmp_path, bad_slug)
+        for bad_id in ("../../x", "..", "a/b", "x.png", ""):
+            with pytest.raises(ValueError):
+                _check_asset_id(bad_id)
+            with pytest.raises(ValueError):
+                store.read_bytes("vibe", bad_id)
+
+    def test_traversal_filename_stored_uuid_only(self, harness) -> None:
+        client, store = harness
+        resp = client.post(
+            "/api/collections/vibe/inspiration",
+            files={"file": ("../../evil.png", PNG, "image/png")},
+            data={"note": "traversal attempt"},
+        )
+        assert resp.status_code == 201
+        assert resp.json()["filename"] != "../../evil.png"
+        assert "/" not in resp.json()["filename"]
+
     def test_gif_bytes_rejected(self, harness) -> None:
         client, _ = harness
         resp = client.post(
@@ -182,14 +212,18 @@ class TestRejections:
         app.dependency_overrides[get_audit_writer] = lambda: FakeAudit()
         app.dependency_overrides[inspiration_router.get_inspiration_store] = lambda: store
         audited = TestClient(app, raise_server_exceptions=False)
-        audited.post("/api/collections/vibe/inspiration",
-                     files={"file": ("r.png", PNG, "image/png")})
+        upload = audited.post("/api/collections/vibe/inspiration",
+                              files={"file": ("r.png", PNG, "image/png")}).json()
         audited.post("/api/collections/vibe/inspiration",
                      json={"url": "https://example.com/b"})
+        audited.delete(f"/api/collections/vibe/inspiration/{upload['id']}")
         actions = [c["action"] for c in calls]
-        assert "inspiration.asset.add" in actions
-        assert "inspiration.link.add" in actions
+        assert actions == ["inspiration.asset.add", "inspiration.link.add",
+                           "inspiration.asset.delete"]
         assert all(c["entity_id"] == "vibe" for c in calls)
+        # Both files gone from disk (bytes + sidecar, not just unlisted).
+        leftovers = list((store._root / "vibe.assets").iterdir())
+        assert leftovers == []
 
 
 class TestRoles:

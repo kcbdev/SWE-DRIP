@@ -26,6 +26,7 @@ from .collections_store import (
     CollectionNotFound,
     CollectionsStore,
     DEFAULT_COLLECTIONS_DIR,
+    MtimeConflict,
 )
 
 MAX_BYTES = 5 * 1024 * 1024
@@ -111,6 +112,11 @@ class InspirationStore:
         self._require_collection(slug)
         if not actor_user_id:
             raise ValueError("actor_user_id is required")
+        if source_url:
+            lowered_source = source_url.strip().lower()
+            if not (lowered_source.startswith("http://")
+                    or lowered_source.startswith("https://")):
+                raise ValueError(f"source_url must be http(s) or empty, got {source_url!r}")
         ext = sniff_image(content, declared_type)
         asset_id = uuid.uuid4().hex
         directory = _slug_dir(self._root, slug)
@@ -142,7 +148,16 @@ class InspirationStore:
         refs = list(record["contract"].get("inspiration_refs") or [])
         entry = {"url": url.strip(), "note": note}
         refs.append(entry)
-        store.update(slug, {"inspiration_refs": refs})
+        # Lost-update guard: concurrent appends retry once on mtime conflict.
+        try:
+            store.update(slug, {"inspiration_refs": refs},
+                         expected_mtime=record["mtime"])
+        except MtimeConflict:
+            fresh = store.get(slug)
+            refs = list(fresh["contract"].get("inspiration_refs") or [])
+            refs.append(entry)
+            store.update(slug, {"inspiration_refs": refs},
+                         expected_mtime=fresh["mtime"])
         return entry
 
     def list(self, slug: str) -> dict[str, Any]:
@@ -178,9 +193,7 @@ class InspirationStore:
             if resolved.parent != directory.resolve() or not resolved.is_file():
                 continue
             return resolved.read_bytes(), "image/png" if ext == ".png" else "image/jpeg"
-        from .collections_store import CollectionNotFound as _NotFound
-
-        raise _NotFound(f"asset {asset_id!r} in {slug!r}")
+        raise CollectionNotFound(f"asset {asset_id!r} in {slug!r}")
 
     def delete(self, slug: str, asset_id: str) -> bool:
         """Remove bytes + sidecar; True when something was removed."""
