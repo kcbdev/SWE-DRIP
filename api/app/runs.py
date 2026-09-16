@@ -479,6 +479,10 @@ class CheckpointerRunStarter:
             "collection_id": collection_id,
             "briefs": briefs or [],
             "node_config": node_config,
+            # Carried for resume/replay: placement reads it from config, and
+            # rebuilt configs must not infer one (same bug class as the
+            # run_logger drop — found on the second MCP-driven live run).
+            "design_type": design_type,
             # Frozen so a later resume/replay replays the same gates (a resumed
             # node only returns its resume value while its gate is still ON).
             "hitl": hitl,
@@ -619,6 +623,7 @@ class CheckpointerRunPorts:
                     "run_logger": SqlRunLogger(engine, run_id),
                     "hitl": state.get("hitl") or {},
                     "node_config": state.get("node_config") or {},
+                    "design_type": state.get("design_type"),
                     "run_dir": str(runs_root() / str(state.get("design_id") or run_id)),
                 }
             }

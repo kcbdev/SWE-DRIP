@@ -55,6 +55,7 @@ def test_resume_supplies_the_full_runtime_config() -> None:
             "design_id": "d-7",
             "hitl": {"contract_approval": True},
             "node_config": {"trend_research": {"model": "frozen/model"}},
+            "design_type": "hero-icon",
         }
     )
     _patched(graph).resume("thread-1", {"approved_cluster_id": "cluster-1"})
@@ -74,7 +75,9 @@ def test_resume_supplies_the_full_runtime_config() -> None:
 
     assert configurable["run_logger"] is not None
     assert not isinstance(configurable["run_logger"], NullLogger)
-    # Render artifacts land under the root the render endpoint serves from.
+    # design_type rides in state so resumed/replayed runs keep it: placement
+    # refuses to infer one (found on the second MCP-driven live run).
+    assert configurable["design_type"] == "hero-icon"    # Render artifacts land under the root the render endpoint serves from.
     assert configurable["run_dir"].endswith("runs\\d-7") or configurable["run_dir"].endswith(
         "runs/d-7"
     )

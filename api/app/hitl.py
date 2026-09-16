@@ -299,6 +299,10 @@ class SyncGraphRunner:
                     # logs go silent mid-run (found on the first MCP-driven
                     # live run — only trend/contract rows existed).
                     "run_logger": SqlRunLogger(engine, thread_id),
+                    # Carried from state (starter records it): placement
+                    # refuses to infer one, so a dropped value errors every
+                    # resumed run (found on the second MCP-driven live run).
+                    "design_type": state.get("design_type"),
                     # Empty snapshot is fine: nodes fall back to code defaults.
                     "node_config": state.get("node_config") or {},
                     "run_dir": str(run_dir),
