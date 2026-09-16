@@ -95,7 +95,7 @@ project_structure:
     contains: "ADR-{NNN}.md per decision (ADR-001 = onboarding bootstrap)"
   specs/:
     responsibility: "Living specs — human-reviewed behavior contracts per feature (state). Overrides docs/ for that feature once created."
-    contains: "16 feature specs (app-foundation, auth-rbac, audit-log, dashboard, pipeline-core, pipeline-runs, hitl-approvals, hitl-graduation, collections, design-qc, fourthwall-integration, traceability, catalog-analytics, settings-agents, agent-control-plane, operator-mcp) — authored by asdlc-plan from the delivery spec phases; specs/{feature}/spec.md"
+    contains: "17 feature specs (app-foundation, auth-rbac, audit-log, dashboard, pipeline-core, pipeline-runs, hitl-approvals, hitl-graduation, collections, design-qc, fourthwall-integration, traceability, catalog-analytics, settings-agents, agent-control-plane, operator-mcp, collection-research) — authored by asdlc-plan from the delivery spec phases; specs/{feature}/spec.md"
   tasks/:
     responsibility: "PBIs (deltas) — atomic, dependency-declared task cards derived from specs."
     contains: "PBI-{NNN}.md — populated by asdlc-plan"
@@ -115,10 +115,10 @@ project_structure:
     responsibility: "FastAPI Control Panel API — RBAC, checkpointer read/write, audit writer, SSE stream, Fourthwall Open API client, operator tokens, MCP doorway (/mcp)."
     status: "live (PBI-002 scaffold + PBI-004…043 feature routes); operator-mcp lands PBI-043…046"
   pipeline/:
-    responsibility: "LangGraph StateGraph — 11-node pipeline, HITL interrupts, placement/colorway resolver, QC rubric."
+    responsibility: "LangGraph StateGraph — 11-node pipeline, HITL interrupts, placement/colorway resolver, QC rubric, prompt registry, style repository loader, per-node run logging."
     status: "live package placeholder (PBI-002); nodes land PBI-010+"
   collections/:
-    responsibility: "Collection contract YAML files (/collections/<slug>.yaml) — the single source of truth for style/palette/colorways/placement/KPI thresholds."
+    responsibility: "Collection contract YAML files (/collections/<slug>.yaml) — the single source of truth for style/palette/colorways/placement/KPI thresholds — plus the locked style repository (/collections/styles.yaml, 7 brand styles)."
     status: "live directory (PBI-003); YAML store lands PBI-019"
 
 documentation_index:

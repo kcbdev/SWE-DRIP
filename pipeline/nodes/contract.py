@@ -9,10 +9,13 @@ with the drafts as payload; resume carries the CEO's selection.
 
 ``validate_contract`` enforces §1.1 shape + locked enums + the brand-lock
 (``no_mixed_styles`` is always true). It deliberately does NOT enum-check
-``style_archetype``: the "7 locked brand styles" are named nowhere in the
-spec kit (spec gap, flagged in the PBI-011 resolution) — inventing the list
-would be fabrication. Value-completeness (filled palette, thresholds) is
-enforced at approval time by the collections store (PBI-019/020), not here.
+``style_archetype`` against the locked vocabulary: drafts carry free member
+styles from briefs, and locking happens at approval
+(``collections/styles.yaml`` via ``pipeline/styles.py``, enforced in the
+approve-time completeness gate) — inventing or forcing the list at draft
+time would be fabrication. Value-completeness (filled palette, thresholds,
+locked style) is enforced at approval time by the collections lifecycle
+(PBI-019/020), not here.
 
 Status stays ``draft`` with ``approved_at`` null through this node; the
 atomic activate-stamp is the collections lifecycle's job (PBI-020).
@@ -57,6 +60,13 @@ CONTRACT_KEYS = (
     "retired_at",
     # PBI-020: A9 survivor exception persisted by the collections lifecycle.
     "survivor_products",
+    # Collection-research v2 visual direction (empty placeholders at draft —
+    # same no-invention rule as palette/thresholds; filled by research + CEO).
+    "style_descriptors",
+    "mood_board",
+    "inspiration_refs",
+    "avoid",
+    "board_version",
 )
 
 
@@ -100,7 +110,24 @@ def draft_contract(
         "approved_at": None,
         "retired_at": None,
         "survivor_products": [],
+        "style_descriptors": [],
+        "mood_board": [],
+        "inspiration_refs": [],
+        "avoid": [],
+        "board_version": 1,
     }
+
+
+# V2 visual direction is optional at the pipeline layer (v1 dicts predate
+# it): absent keys are skipped, present keys are type-checked. The API
+# schema fills defaults; approval locks the vocabulary.
+_OPTIONAL_KEYS = frozenset({
+    "style_descriptors",
+    "mood_board",
+    "inspiration_refs",
+    "avoid",
+    "board_version",
+})
 
 
 def _is_number(value: Any) -> bool:
@@ -115,7 +142,7 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
     unknown = [k for k in contract if k not in CONTRACT_KEYS]
     if unknown:
         errors.append(f"unknown fields: {sorted(unknown)!r}")
-    missing = [k for k in CONTRACT_KEYS if k not in contract]
+    missing = [k for k in CONTRACT_KEYS if k not in contract and k not in _OPTIONAL_KEYS]
     if missing:
         errors.append(f"missing fields: {missing!r}")
         return errors
@@ -124,6 +151,26 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         errors.append(f"status must be one of {STATUS_VALUES!r}")
     if not contract.get("style_archetype") or not isinstance(contract["style_archetype"], str):
         errors.append("style_archetype must be a non-empty string")
+
+    # V2 visual direction: checked only when present (see _OPTIONAL_KEYS).
+    for key in ("style_descriptors", "mood_board", "avoid"):
+        if key in contract and (
+            not isinstance(contract[key], list)
+            or not all(isinstance(v, str) for v in contract[key])
+        ):
+            errors.append(f"{key} must be a list of strings when present")
+    if "inspiration_refs" in contract:
+        refs = contract["inspiration_refs"]
+        if not isinstance(refs, list) or any(
+            not isinstance(r, dict) or not r.get("url") for r in refs
+        ):
+            errors.append("inspiration_refs must be a list of {url, ...} when present")
+    if "board_version" in contract and (
+        isinstance(contract["board_version"], bool)
+        or not isinstance(contract["board_version"], int)
+        or contract["board_version"] < 1
+    ):
+        errors.append("board_version must be a positive integer when present")
 
     rules = contract.get("illustration_rules")
     if not isinstance(rules, dict):

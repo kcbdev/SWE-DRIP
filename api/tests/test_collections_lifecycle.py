@@ -234,3 +234,46 @@ def test_lifecycle_role_matrix() -> None:
     viewer = Harness(role=ROLE_VIEWER)
     viewer.store = admin.store
     assert viewer.client.post("/api/collections/vibe-coding/approve").status_code == 403
+
+
+# ---------------------------------------------------- locked styles (PBI-048)
+
+
+def test_approve_rejects_unknown_archetype() -> None:
+    h = Harness()
+    h.client.post("/api/collections", json=_complete())
+    h.client.patch("/api/collections/vibe-coding", json={"style_archetype": "watercolor-dreams"})
+    response = h.client.post("/api/collections/vibe-coding/approve")
+    assert response.status_code == 422
+    assert any("archetype" in str(err) for err in response.json()["detail"])
+    assert h.client.get("/api/collections/vibe-coding").json()["contract"]["status"] == "draft"
+
+
+def test_approve_accepts_locked_archetype_with_v2_fields() -> None:
+    h = Harness()
+    payload = _complete()
+    payload["style_descriptors"] = ["mono-line", "flat fills"]
+    payload["mood_board"] = ["board/sheet-1.png"]
+    payload["avoid"] = ["photorealism"]
+    payload["inspiration_refs"] = [{"url": "https://example.com/ref", "note": "line quality"}]
+    h.client.post("/api/collections", json=payload)
+    body = h.client.post("/api/collections/vibe-coding/approve").json()
+    assert body["contract"]["status"] == "active"
+    assert body["contract"]["style_descriptors"] == ["mono-line", "flat fills"]
+    assert body["contract"]["board_version"] == 1
+    assert body["contract"]["inspiration_refs"] == [
+        {"url": "https://example.com/ref", "note": "line quality"}]
+
+
+def test_approve_missing_style_repo_is_422_not_500(monkeypatch) -> None:
+    import pipeline.styles as styles_module
+
+    def _gone(_archetype: object) -> str:
+        raise FileNotFoundError("style repository not found: gone")
+
+    monkeypatch.setattr(styles_module, "assert_known_archetype", _gone)
+    h = Harness()
+    h.client.post("/api/collections", json=_complete())
+    response = h.client.post("/api/collections/vibe-coding/approve")
+    assert response.status_code == 422
+    assert any("archetype" in str(err) for err in response.json()["detail"])

@@ -1,0 +1,48 @@
+# SWE Drip brand styles (managed repository — PBI-048, spec C1).
+#
+# The 7 locked graphic languages. Agents read this file (never hardcoded
+# names); the founder manages it (UI in PBI-052, or this file + spec
+# amendment). `style_archetype` on a contract must match one `name`
+# exactly at approval time; drafts may carry free member styles.
+#
+# PROPOSED 2026-09-16 — founder ratification pending (taste gate).
+# `mono-log` and `terminal-brutalist` are kept for continuity (live runs
+# and fixtures already use them).
+version: 1
+styles:
+  - name: mono-log
+    graphic_definition: >-
+      Single-weight monochrome line art, no fills and no shading;
+      terminal-doodle precision. One continuous visual voice, dry and exact.
+    not: "halftones, gradients, multi-weight inking, photorealism"
+  - name: terminal-brutalist
+    graphic_definition: >-
+      Heavy raw terminal energy: blocky forms, harsh black/white contrast,
+      chunky pixels and dense glyph fields. Loud, confrontational, blunt.
+    not: "thin lines, pastels, delicate detail, soft gradients"
+  - name: halftone-zine
+    graphic_definition: >-
+      Photocopied halftone dots and xerox grit; punk-flyer texture with
+      misregistration and rough edges worn in on purpose.
+    not: "clean vectors, perfect registration, corporate polish"
+  - name: terminal-type
+    graphic_definition: >-
+      Typography-led compositions: monospace blocks, ASCII flourishes and
+      layout-driven pieces where letterforms carry the design; imagery, if
+      any, is subordinate to type.
+    not: "imagery-led layouts, serif or script typefaces, decorative fonts"
+  - name: blueprint-schematic
+    graphic_definition: >-
+      Engineering-drawing language: thin ruled lines, annotations, dimension
+      marks and schematic symbols, light-on-dark or blueprint-blue grounds.
+    not: "organic shapes, hand-drawn wobble, expressive brushwork"
+  - name: glitch-signal
+    graphic_definition: >-
+      Distorted scanlines, pixel-sorting and corrupted-signal artifacts over
+      an otherwise legible motif; controlled digital decay.
+    not: "clean renders, retro filter clichés without structure"
+  - name: sticker-bomb
+    graphic_definition: >-
+      Bold die-cut shapes with thick outlines and flat saturated fills;
+      skate-decal energy, built to read at a glance and survive small sizes.
+    not: "fine linework, muted palettes, intricate detail"

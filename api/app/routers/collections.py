@@ -149,6 +149,15 @@ def _completeness_errors(contract: dict[str, Any]) -> list[str]:
     for key in ("min_units", "min_conversion", "eval_window_days"):
         if thresholds.get(key) is None:
             errors.append(f"kpi_thresholds.{key} must be set before approval")
+    # Locked style vocabulary (collection-research C1): drafts may carry free
+    # member styles, but approval locks one of the 7 brand styles. A missing
+    # repo file is a completeness failure (422), never a 500.
+    try:
+        from pipeline.styles import assert_known_archetype
+
+        assert_known_archetype(contract.get("style_archetype"))
+    except (ValueError, KeyError, OSError) as exc:
+        errors.append(f"style_archetype must be a locked brand style before approval: {exc}")
     return errors
 
 

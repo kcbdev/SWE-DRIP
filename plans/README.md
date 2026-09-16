@@ -29,6 +29,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | `specs/settings-agents/spec.md` | FR-17/18/19, NFR-2 | 6 (HITL toggles, brand lock, integrations status, agents roster, single config source, RBAC) | PBI-033…034 |
 | `specs/hitl-graduation/spec.md` | Vision §6.4, A19 | 5 (A19 record, evidence minimums, founder authority, reversibility, traceability) | PBI-035 |
 | `specs/operator-mcp/spec.md` | founder request 2026-09-16 (agent-operated doorway) | 6 (token auth, read parity, writes reuse enforcement, graph visibility w/o mutation, secrets, same deployable) + token management UI | PBI-043…047 |
+| `specs/collection-research/spec.md` | founder request 2026-09-16 (creative pillar) | 6 (named styles, visual contract v2, inspiration ingest, research graph, coherence within, diversity between) | PBI-048…052 |
 
 ## Execution order
 
@@ -81,6 +82,12 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 45 | PBI-045 | operator-mcp | 044 | In Review | SWDRP-46 | MCP write tools (start/decide/config/replay, same enforcement) |
 | 46 | PBI-046 | operator-mcp | 045 | In Review | SWDRP-43 | ADR-006 + operator runbook + live MCP smoke (manual) |
 | 47 | PBI-047 | operator-mcp | 043 | In Review | SWDRP-47 | Operator token management UI (settings block + client config) |
+| 48 | PBI-048 | collection-research | 019 | Active | SWDRP-48 | Style repository (manageable YAML repo) + contract schema v2 |
+| 49 | PBI-049 | collection-research | 048 | Todo | SWDRP-49 | Inspiration ingest (assets + refs per draft) |
+| 50 | PBI-050 | collection-research | 049, 010, 038 | Todo | SWDRP-50 | Research graph (synthesize → board → draft → gate) |
+| 51 | PBI-051 | collection-research | 050, 022 | Todo | SWDRP-51 | Style-conformance QC + diversity check + rotation queue |
+| 52 | PBI-052 | collection-research | 049, 050 | Todo | SWDRP-52 | Research UI (board, inspiration, gate, styles manager; manual: UX) |
+| 53 | PBI-053 | collection-research | 049 | Todo | SWDRP-53 | Durable artifact storage (volumes + env roots + DEPLOY) |
 
 > **Epic: agent-control-plane** (specs/agent-control-plane/spec.md) reverses
 > pipeline-core C3: `pipeline/routing.py` is now the reviewed **defaults**, and an
@@ -151,9 +158,13 @@ graph TD
   PBI024 --> PBI035
   PBI010 --> PBI034
   PBI004 --> PBI043 --> PBI044 --> PBI045 --> PBI046
+  PBI019 --> PBI048 --> PBI049 --> PBI050 --> PBI051
+  PBI049 --> PBI052
+  PBI050 --> PBI052
+  PBI049 --> PBI053
 ```
 
-_Notes: PBI-004 and PBI-006 may run parallel to the auth chain; PBI-025 (reads) can start any time after PBI-002; pipeline node PBIs are strictly sequential (shared `pipeline/graph.py` assembly point); the operator-mcp chain (043→046) is strictly sequential (shared `api/app/mcp/server.py` assembly point)._
+_Notes: PBI-004 and PBI-006 may run parallel to the auth chain; PBI-025 (reads) can start any time after PBI-002; pipeline node PBIs are strictly sequential (shared `pipeline/graph.py` assembly point); the operator-mcp chain (043→046) is strictly sequential (shared `api/app/mcp/server.py` assembly point); the collection-research chain (048→051) is strictly sequential (shared contract schema + rubric), with PBI-052 after 049/050 and PBI-053 after 049._
 
 ## Gate plan
 
@@ -163,7 +174,7 @@ _Notes: PBI-004 and PBI-006 may run parallel to the auth chain; PBI-025 (reads) 
   ```
   Per-PBI stack gates: `control-panel`: `npm run build && npm run test` (vitest); Python: `python -m pytest api/tests pipeline/tests -q`. Integration tests skip cleanly without `DATABASE_URL`; live model/Fourthwall calls are never in gates.
 - **Review gates:** adversarial + constitutional per PBI — brand invariants (`#0D0D0D`, `#00FF41`, JetBrains Mono, no gradients/shadows/pills), price invariants ($32/$62/$20), budget discipline ($130 cap + cost-impact notes), Context Map honesty, no secrets, CC-1/CC-2/CC-3 checks per phase.
-- **Human gates (`manual` sort):** PBI-026 (FW spike, live credentials), PBI-027 (publish cutover + old-path check), PBI-032 (live webhook registration), PBI-035 (graduation decision), PBI-043 (token auth — security-sensitive), PBI-046 (live MCP smoke with production credentials); plus any PBI whose resolution touches live Fourthwall/OpenRouter credentials or founder-facing UX.
+- **Human gates (`manual` sort):** PBI-026 (FW spike, live credentials), PBI-027 (publish cutover + old-path check), PBI-032 (live webhook registration), PBI-035 (graduation decision), PBI-043 (token auth — security-sensitive), PBI-046 (live MCP smoke with production credentials), PBI-048 (the 7 style names — taste decision, blocks the chain), PBI-052 (research UX); plus any PBI whose resolution touches live Fourthwall/OpenRouter credentials or founder-facing UX.
 
 ## Tooling
 
