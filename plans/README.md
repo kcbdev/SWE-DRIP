@@ -28,6 +28,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | `specs/catalog-analytics/spec.md` | FR-15/16, A17 | 6 (catalog mirror, KPI series, A17 webhook, retirement recs, webhook integrity, read/write discipline) | PBI-030…032 |
 | `specs/settings-agents/spec.md` | FR-17/18/19, NFR-2 | 6 (HITL toggles, brand lock, integrations status, agents roster, single config source, RBAC) | PBI-033…034 |
 | `specs/hitl-graduation/spec.md` | Vision §6.4, A19 | 5 (A19 record, evidence minimums, founder authority, reversibility, traceability) | PBI-035 |
+| `specs/operator-mcp/spec.md` | founder request 2026-09-16 (agent-operated doorway) | 6 (token auth, read parity, writes reuse enforcement, graph visibility w/o mutation, secrets, same deployable) | PBI-043…046 |
 
 ## Execution order
 
@@ -75,6 +76,10 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 40 | PBI-040 | agent-control-plane | 038 | In Review | SWDRP-40 | Model catalog API + write-time validation (dead IDs become unsaveable) |
 | 41 | PBI-041 | agent-control-plane | 040, 038, 034 | In Review | SWDRP-41 | Agents UI — model picker, params, prompt editor |
 | 42 | PBI-042 | agent-control-plane | 038, 017, 028 | In Review | SWDRP-42 | Per-node run logs + run visualisation |
+| 43 | PBI-043 | operator-mcp | 004 | Active | SWDRP-45 | Operator token auth (scoped Bearer, issuance/revocation, audit) |
+| 44 | PBI-044 | operator-mcp | 043 | Todo | SWDRP-44 | MCP mount + read tools + read-only graph inspection |
+| 45 | PBI-045 | operator-mcp | 044 | Todo | SWDRP-46 | MCP write tools (start/decide/config/replay, same enforcement) |
+| 46 | PBI-046 | operator-mcp | 045 | Todo | SWDRP-43 | ADR-006 + operator runbook + live MCP smoke (manual) |
 
 > **Epic: agent-control-plane** (specs/agent-control-plane/spec.md) reverses
 > pipeline-core C3: `pipeline/routing.py` is now the reviewed **defaults**, and an
@@ -144,9 +149,10 @@ graph TD
   PBI027 --> PBI035
   PBI024 --> PBI035
   PBI010 --> PBI034
+  PBI004 --> PBI043 --> PBI044 --> PBI045 --> PBI046
 ```
 
-_Notes: PBI-004 and PBI-006 may run parallel to the auth chain; PBI-025 (reads) can start any time after PBI-002; pipeline node PBIs are strictly sequential (shared `pipeline/graph.py` assembly point)._
+_Notes: PBI-004 and PBI-006 may run parallel to the auth chain; PBI-025 (reads) can start any time after PBI-002; pipeline node PBIs are strictly sequential (shared `pipeline/graph.py` assembly point); the operator-mcp chain (043→046) is strictly sequential (shared `api/app/mcp/server.py` assembly point)._
 
 ## Gate plan
 
@@ -156,11 +162,12 @@ _Notes: PBI-004 and PBI-006 may run parallel to the auth chain; PBI-025 (reads) 
   ```
   Per-PBI stack gates: `control-panel`: `npm run build && npm run test` (vitest); Python: `python -m pytest api/tests pipeline/tests -q`. Integration tests skip cleanly without `DATABASE_URL`; live model/Fourthwall calls are never in gates.
 - **Review gates:** adversarial + constitutional per PBI — brand invariants (`#0D0D0D`, `#00FF41`, JetBrains Mono, no gradients/shadows/pills), price invariants ($32/$62/$20), budget discipline ($130 cap + cost-impact notes), Context Map honesty, no secrets, CC-1/CC-2/CC-3 checks per phase.
-- **Human gates (`manual` sort):** PBI-026 (FW spike, live credentials), PBI-027 (publish cutover + old-path check), PBI-032 (live webhook registration), PBI-035 (graduation decision); plus any PBI whose resolution touches live Fourthwall/OpenRouter credentials or founder-facing UX.
+- **Human gates (`manual` sort):** PBI-026 (FW spike, live credentials), PBI-027 (publish cutover + old-path check), PBI-032 (live webhook registration), PBI-035 (graduation decision), PBI-043 (token auth — security-sensitive), PBI-046 (live MCP smoke with production credentials); plus any PBI whose resolution touches live Fourthwall/OpenRouter credentials or founder-facing UX.
 
 ## Tooling
 
 - Skills adopted at planning: `fastapi/fastapi@fastapi` (official), `langchain-ai/langchain-skills@langgraph-python-quickstart` (official); already local: `shadcn`, `langgraph-human-in-the-loop`, `langgraph-persistence`, `vitest`, `playwright-cli`, `coolify-ops` (+ Coolify MCP), `ui-ux-pro-max`, `tdd`, `code-review`.
+- Skill candidates for operator-mcp (founder decision 2026-09-16): none — build directly on the official `modelcontextprotocol/python-sdk` (already declared in `pyproject.toml`; no new install, no wrapper skill).
 - Runtime deps are declared by the scaffold PBIs (PBI-002 `pyproject.toml`; PBI-001 `control-panel/package.json`) — no dependency is added outside a PBI.
 
 ## How to add a PBI (via asdlc-plan)
