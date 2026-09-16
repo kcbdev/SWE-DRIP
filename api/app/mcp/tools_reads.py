@@ -62,12 +62,6 @@ def _approval_index() -> Any:
     return get_approval_index()
 
 
-def _fw_client() -> Any:
-    from ..routers import catalog as catalog_router
-
-    return catalog_router.get_fourthwall_client()
-
-
 def _collections_store() -> Any:
     from ..routers import collections as collections_router
 
@@ -81,6 +75,13 @@ def _call(fn: Any, *args: Any, **kwargs: Any) -> Any:
     except HTTPException as exc:
         detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
         raise ToolError(detail, exc.status_code) from None
+
+
+def _clamp_limit(value: Any, lo: int, hi: int, name: str) -> int:
+    """Mirror the routers' Query(ge/le) caps — the MCP doorway must not widen them."""
+    if isinstance(value, bool) or not isinstance(value, int) or not lo <= value <= hi:
+        raise ToolError(f"{name} must be an integer {lo}..{hi}", 422)
+    return value
 
 
 async def runs_list(
@@ -130,7 +131,7 @@ async def run_logs(
         node=node,
         level=level,
         since=since,
-        limit=limit,
+        limit=_clamp_limit(limit, 1, 1000, "limit"),
     )
 
 
@@ -178,24 +179,41 @@ async def collection_get(slug: str) -> dict[str, Any]:
 
 
 async def audit_query(
-    actor: Optional[str] = None,
+    filter_actor: Optional[str] = None,
     action: Optional[str] = None,
     entity_type: Optional[str] = None,
     entity_id: Optional[str] = None,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
     limit: int = 500,
 ) -> list[dict[str, Any]]:
-    """Audit rows newest-first (same rows as GET /api/audit, JSON shape)."""
+    """Audit rows newest-first (same rows as GET /api/audit, JSON shape only).
+
+    ``start``/``end`` are ISO timestamps (422 when unparseable, like the
+    router's datetime coercion). CSV export has no MCP equivalent — JSON only.
+    """
     require_scope(SCOPE_READ)
+    from datetime import datetime
+
     from ..routers import audit as audit_router
 
+    bounds: dict[str, Any] = {}
+    for label, value in (("start", start), ("end", end)):
+        if value is None:
+            continue
+        try:
+            bounds[label] = datetime.fromisoformat(value)
+        except ValueError:
+            raise ToolError(f"{label} must be an ISO timestamp, got {value!r}", 422) from None
     filters = AuditFilters(
-        actor=actor, action=action, entity_type=entity_type,
-        entity_id=entity_id, limit=limit,
+        actor=filter_actor, action=action, entity_type=entity_type,
+        entity_id=entity_id, limit=_clamp_limit(limit, 1, 5000, "limit"),
+        **bounds,  # type: ignore[arg-type]
     )
     return _call(audit_router.list_audit, actor=tool_actor(), reader=_audit_reader(),
                  filter_actor=filters.actor, action=filters.action,
                  entity_type=filters.entity_type, entity_id=filters.entity_id,
-                 limit=filters.limit)
+                 start=filters.start, end=filters.end, limit=filters.limit)
 
 
 async def calibration_get(design_id: str) -> dict[str, Any]:

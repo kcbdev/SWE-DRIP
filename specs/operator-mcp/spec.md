@@ -53,7 +53,9 @@ calibration loops can run without container access or a browser session.
   trimmed shapes, never full state dumps with credentials.
 - **C6 — Same deployable, gated**: the MCP server mounts in the FastAPI app
   (`/mcp`, no new hosting, no new database). Offline gates gain an
-  MCP-conformance test over an in-memory transport (no network, no DB);
+  MCP-conformance test over loopback-local transport (ephemeral port — the
+  SDK's session lifespan cannot run in-process, proven by probe, same reason
+  `test_stream.py` uses live uvicorn; no external network, no DB);
   `npm run verify` is extended, never weakened.
 
 ## Anti-patterns

@@ -81,9 +81,14 @@ def require_scope(scope: str) -> AccessToken:
 def tool_actor() -> Actor:
     """Synthesize the downstream actor after scope checks passed.
 
-    Scope enforcement happens at the tool boundary (``require_scope``); the
-    role below only satisfies the router functions' own role checks, which
-    the scope check already subsumes: ``operate`` ≡ admin, ``read`` ≡ viewer.
+    Scope enforcement happens at the tool boundary (``require_scope``) — the
+    role below only satisfies the router functions' own role parameters, which
+    are bypassed by direct calls (FastAPI ``require_role`` never runs here).
+    The mapping is deliberately coarse and documented: ``operate`` ≡ admin,
+    ``read`` ≡ viewer. This is sound today because every read tool's REST twin
+    is Viewer+ and every write twin is Admin-only-or-operator — but it MUST be
+    reconciled before PBI-045 registers writes (an operate token exceeds the
+    REST ``operator`` role on admin-only writes), or an escalation opens.
     The user id names the token, never a human.
     """
     token = require_scope(SCOPE_READ)

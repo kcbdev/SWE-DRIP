@@ -107,6 +107,20 @@ class FakeIndex:
         return []
 
 
+class _FakeStore:
+    def get(self, slug: str) -> dict[str, Any]:
+        from api.app.collections_store import CollectionNotFound
+
+        if slug != "vibe":
+            raise CollectionNotFound(slug)
+        return {"contract": {"collection_id": "vibe", "theme": "Vibe"},
+                "status": "active"}
+
+
+def _fake_store() -> Any:
+    return _FakeStore()
+
+
 # ---------------------------------------------------------------------------
 # Live localhost server (uvicorn in a thread, ephemeral port)
 # ---------------------------------------------------------------------------
@@ -138,17 +152,30 @@ def _app() -> FastAPI:
     return app
 
 
-def _patch_verifier(monkeypatch, scopes: list[str] | None) -> None:
-    """Fake the store check: fixed scopes, or None for an unknown token."""
-    from mcp.server.auth.provider import AccessToken
+class _AuthState:
+    """Mutable verifier outcome: scopes list, or None once 'revoked'."""
 
-    async def fake_verify(self, token: str):
-        if scopes is None:
+    def __init__(self, scopes: list[str] | None) -> None:
+        self.scopes = scopes
+
+    async def verify(self, token: str):
+        from mcp.server.auth.provider import AccessToken
+
+        if self.scopes is None:
             return None
         return AccessToken(token="token:sdr_test", client_id="token:sdr_test",
-                           scopes=list(scopes), subject="u-9")
+                           scopes=list(self.scopes), subject="u-9")
+
+
+def _patch_verifier(monkeypatch, scopes: list[str] | None) -> _AuthState:
+    """Fake the store check; mutate the returned state to revoke mid-test."""
+    state = _AuthState(scopes)
+
+    async def fake_verify(self, token: str):
+        return await state.verify(token)
 
     monkeypatch.setattr(mcp_auth.OperatorTokenVerifier, "verify_token", fake_verify)
+    return state
 
 
 def _patch_seams(monkeypatch) -> None:
@@ -160,6 +187,7 @@ def _patch_seams(monkeypatch) -> None:
     monkeypatch.setattr(reads, "_audit_reader", FakeAuditReader)
     monkeypatch.setattr(reads, "_graph_runner", FakeRunner)
     monkeypatch.setattr(reads, "_approval_index", FakeIndex)
+    monkeypatch.setattr(reads, "_collections_store", _fake_store)
     from api.app import model_catalog
 
     model_catalog.reset_cache()
@@ -220,6 +248,26 @@ class TestMountAuth:
                     headers={"Authorization": "Bearer sdr_nope"}, timeout=10.0) as client:
                 resp = await client.post(url, json={"jsonrpc": "2.0", "id": 1,
                                                     "method": "tools/list", "params": {}})
+                assert resp.status_code == 401
+
+    async def test_revoked_token_401_on_next_request(self, monkeypatch) -> None:
+        state = _patch_verifier(monkeypatch, ["read"])
+        async with LiveMCP(_app()) as url:
+            async with httpx.AsyncClient(
+                    headers={"Authorization": "Bearer sdr_test"}, timeout=10.0) as client:
+                body = {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}
+                assert (await client.post(url, json=body)).status_code != 401
+                state.scopes = None  # revocation bites on the next request
+                assert (await client.post(url, json=body)).status_code == 401
+
+    async def test_cookie_without_bearer_401(self, monkeypatch) -> None:
+        _patch_verifier(monkeypatch, ["read"])
+        async with LiveMCP(_app()) as url:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.post(
+                    url, json={"jsonrpc": "2.0", "id": 1,
+                               "method": "tools/list", "params": {}},
+                    cookies={"better-auth.session_token": "valid-looking"})
                 assert resp.status_code == 401
 
     def test_mounted_in_main_app(self) -> None:
@@ -373,3 +421,87 @@ class TestReadTools:
                 assert body == expected
             finally:
                 await close()
+
+    async def test_all_tools_match_rest_shapes(self, monkeypatch) -> None:
+        """Every read tool byte-equals its REST twin on shared fakes."""
+        from api.app.auth import Actor
+        from api.app.routers import agents as agents_router
+        from api.app.routers import approvals as approvals_router
+        from api.app.routers import audit as audit_router
+        from api.app.routers import collections as collections_router
+        from api.app.routers import designs as designs_router
+        from api.app.routers import runs as runs_router
+
+        _patch_verifier(monkeypatch, ["read"])
+        _patch_seams(monkeypatch)
+        actor = Actor("token:sdr_test", "", "viewer")
+        service, reader = _service(), FakeLogReader()
+        cases = [
+            ("run_detail", {"run_id": "run-1"},
+             lambda: runs_router.get_run("run-1", actor=actor, service=service)),
+            ("run_logs", {"run_id": "run-1"},
+             lambda: runs_router.get_run_logs("run-1", actor=actor, service=service,
+                                              reader=reader, node=None, level=None,
+                                              since=None, limit=500)),
+            ("approvals_queue", {},
+             lambda: approvals_router.list_approvals(actor=actor, service=FakeHitl())),
+            ("agents_roster", {},
+             lambda: agents_router.list_agents(actor=actor)),
+            ("models_search", {"q": "gemini"},
+             lambda: agents_router.list_catalog_models(q="gemini", actor=actor)),
+            ("prompt_meta", {"node": "placement"},
+             lambda: agents_router.get_agent_prompt("placement", actor=actor)),
+            ("collection_get", {"slug": "vibe"},
+             lambda: collections_router.get_collection("vibe", actor=actor,
+                                                       store=_fake_store())),
+            ("audit_query", {"action": "run.start"},
+             lambda: audit_router.list_audit(actor=actor, reader=FakeAuditReader(),
+                                             filter_actor=None, action="run.start",
+                                             entity_type=None, entity_id=None,
+                                             limit=500)),
+            ("calibration_get", {"design_id": "run-1"},
+             lambda: designs_router.get_design_calibration(
+                 "run-1", actor=actor, runner=FakeRunner(), index=FakeIndex())),
+        ]
+        async with LiveMCP(_app()) as url:
+            session, close = await _session(url, "sdr_test")
+            try:
+                for name, args, expected_fn in cases:
+                    result = await session.call_tool(name, args)
+                    assert not result.is_error, name
+                    # Transport fans list results across contents; dicts stay whole.
+                    want = expected_fn()
+                    assert _items(result) == ([want] if isinstance(want, dict) else want), name
+            finally:
+                await close()
+
+    async def test_collection_unknown_is_error(self, monkeypatch) -> None:
+        _patch_verifier(monkeypatch, ["read"])
+        _patch_seams(monkeypatch)
+        async with LiveMCP(_app()) as url:
+            session, close = await _session(url, "sdr_test")
+            try:
+                result = await session.call_tool("collection_get", {"slug": "ghost"})
+                assert result.is_error
+                assert "unknown collection" in _text(result)
+            finally:
+                await close()
+
+    async def test_graph_reports_live_store_overrides(self, monkeypatch) -> None:
+        from api.app.settings_store import reset_cache, set_node_config_override
+
+        _patch_verifier(monkeypatch, ["read"])
+        _patch_seams(monkeypatch)
+        reset_cache()
+        try:
+            set_node_config_override("trend_research", {"model": "m"})
+            async with LiveMCP(_app()) as url:
+                session, close = await _session(url, "sdr_test")
+                try:
+                    graph = _items(await session.call_tool("graph_inspect", {}))[0]
+                    assert graph["nodes"]["trend_research"]["store_overridden"] == ["model"]
+                    assert graph["nodes"]["placement"]["store_overridden"] == []
+                finally:
+                    await close()
+        finally:
+            reset_cache()

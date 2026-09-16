@@ -34,12 +34,20 @@ def graph_edges() -> dict[str, Any]:
 
 
 def node_config_source(node: str) -> dict[str, Any]:
-    """Where one node's runtime config resolves from (pure)."""
+    """Where one node's runtime config resolves from (live override presence)."""
     from pipeline.prompts import PROMPT_KEYS
 
+    from ..settings_store import get_node_config_override
+
+    try:
+        raw = get_node_config_override(node)
+        overridden = sorted(k for k, v in raw.items() if v is not None)
+    except Exception:
+        overridden = []
     return {
         "model_default": MODEL_FOR_NODE.get(node),
         "model_source": "pipeline/routing.py defaults < settings store node_config override",
+        "store_overridden": overridden,
         "prompt_key": PROMPT_KEYS.get(node),
         "params_default": {},
         "enabled_default": True,

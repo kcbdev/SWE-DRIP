@@ -95,7 +95,7 @@ project_structure:
     contains: "ADR-{NNN}.md per decision (ADR-001 = onboarding bootstrap)"
   specs/:
     responsibility: "Living specs — human-reviewed behavior contracts per feature (state). Overrides docs/ for that feature once created."
-    contains: "15 feature specs (app-foundation, auth-rbac, audit-log, dashboard, pipeline-core, pipeline-runs, hitl-approvals, hitl-graduation, collections, design-qc, fourthwall-integration, traceability, catalog-analytics, settings-agents, agent-control-plane) — authored by asdlc-plan from the delivery spec phases; specs/{feature}/spec.md"
+    contains: "16 feature specs (app-foundation, auth-rbac, audit-log, dashboard, pipeline-core, pipeline-runs, hitl-approvals, hitl-graduation, collections, design-qc, fourthwall-integration, traceability, catalog-analytics, settings-agents, agent-control-plane, operator-mcp) — authored by asdlc-plan from the delivery spec phases; specs/{feature}/spec.md"
   tasks/:
     responsibility: "PBIs (deltas) — atomic, dependency-declared task cards derived from specs."
     contains: "PBI-{NNN}.md — populated by asdlc-plan"
@@ -112,8 +112,8 @@ project_structure:
     responsibility: "Next.js 15 (App Router) + shadcn/ui Control Panel — HITL approvals, run inspection, collections, audit, settings."
     status: "live scaffold (PBI-001); feature screens land per PBI"
   api/:
-    responsibility: "FastAPI Control Panel API — RBAC, checkpointer read/write, audit writer, SSE stream, Fourthwall MCP client."
-    status: "live scaffold (PBI-002); health route only"
+    responsibility: "FastAPI Control Panel API — RBAC, checkpointer read/write, audit writer, SSE stream, Fourthwall Open API client, operator tokens, MCP doorway (/mcp)."
+    status: "live (PBI-002 scaffold + PBI-004…043 feature routes); operator-mcp lands PBI-043…046"
   pipeline/:
     responsibility: "LangGraph StateGraph — 11-node pipeline, HITL interrupts, placement/colorway resolver, QC rubric."
     status: "live package placeholder (PBI-002); nodes land PBI-010+"
