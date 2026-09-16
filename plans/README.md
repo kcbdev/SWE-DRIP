@@ -82,7 +82,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 45 | PBI-045 | operator-mcp | 044 | In Review | SWDRP-46 | MCP write tools (start/decide/config/replay, same enforcement) |
 | 46 | PBI-046 | operator-mcp | 045 | In Review | SWDRP-43 | ADR-006 + operator runbook + live MCP smoke (manual) |
 | 47 | PBI-047 | operator-mcp | 043 | In Review | SWDRP-47 | Operator token management UI (settings block + client config) |
-| 48 | PBI-048 | collection-research | 019 | Active | SWDRP-48 | Style repository (manageable YAML repo) + contract schema v2 |
+| 48 | PBI-048 | collection-research | 019 | In Review | SWDRP-48 | Style repository (manageable YAML repo) + contract schema v2 |
 | 49 | PBI-049 | collection-research | 048 | Todo | SWDRP-49 | Inspiration ingest (assets + refs per draft) |
 | 50 | PBI-050 | collection-research | 049, 010, 038 | Todo | SWDRP-50 | Research graph (synthesize → board → draft → gate) |
 | 51 | PBI-051 | collection-research | 050, 022 | Todo | SWDRP-51 | Style-conformance QC + diversity check + rotation queue |
