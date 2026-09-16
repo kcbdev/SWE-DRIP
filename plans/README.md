@@ -80,7 +80,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 44 | PBI-044 | operator-mcp | 043 | In Review | SWDRP-44 | MCP mount + read tools + read-only graph inspection |
 | 45 | PBI-045 | operator-mcp | 044 | In Review | SWDRP-46 | MCP write tools (start/decide/config/replay, same enforcement) |
 | 46 | PBI-046 | operator-mcp | 045 | In Review | SWDRP-43 | ADR-006 + operator runbook + live MCP smoke (manual) |
-| 47 | PBI-047 | operator-mcp | 043 | Active | SWDRP-47 | Operator token management UI (settings block + client config) |
+| 47 | PBI-047 | operator-mcp | 043 | In Review | SWDRP-47 | Operator token management UI (settings block + client config) |
 
 > **Epic: agent-control-plane** (specs/agent-control-plane/spec.md) reverses
 > pipeline-core C3: `pipeline/routing.py` is now the reviewed **defaults**, and an
