@@ -53,7 +53,7 @@ def _body(cls: Any, **kwargs: Any) -> Any:
 
 async def run_start(
     collection_id: str,
-    briefs: list[dict[str, Any]],
+    briefs: Optional[list[dict[str, Any]]] = None,
     design_id: Optional[str] = None,
     design_type: Optional[str] = None,
 ) -> dict[str, Any]:
@@ -81,15 +81,22 @@ async def approval_decide(
     item_id: int,
     action: str,
     note: Optional[str] = None,
+    selection: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
-    """Decide a queued approval (same exactly-once path as POST .../decision)."""
+    """Decide a queued approval (same exactly-once path as POST .../decision).
+
+    ``selection`` passes through verbatim for multi-candidate gates
+    (e.g. {"approved_cluster_id": "cluster-2"}); without it ambiguous gates
+    stay 422 with no MCP remedy, exactly like REST.
+    """
     require_scope(SCOPE_OPERATE)
     from ..routers import approvals as approvals_router
 
     return _call(
         approvals_router.decide_approval,
         item_id,
-        _body(approvals_router.DecisionBody, action=action, note=note),
+        _body(approvals_router.DecisionBody, action=action, note=note,
+              selection=selection),
         actor=tool_actor(),
         service=_hitl_service(),
     )

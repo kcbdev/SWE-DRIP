@@ -26,14 +26,16 @@ from api.tests.test_mcp_reads import (  # same harness, same fakes philosophy
 )
 
 
-def _patch_writes(monkeypatch, starter, spend, audit) -> None:
+def _patch_writes(monkeypatch, starter, spend, audit) -> Any:
     import api.app.mcp.tools_writes as writes
 
+    hitl = FakeHitlService()
     monkeypatch.setattr(writes, "_run_starter", lambda: starter)
     monkeypatch.setattr(writes, "_spend_reader", lambda: spend)
     monkeypatch.setattr(writes, "_audit_writer", lambda: audit)
-    monkeypatch.setattr(writes, "_hitl_service", lambda: FakeHitlService())
+    monkeypatch.setattr(writes, "_hitl_service", lambda: hitl)
     monkeypatch.setattr(writes, "_run_service", _service)
+    return hitl
 
 
 class FakeStarter:
@@ -81,9 +83,14 @@ class FakeHitlService:
 
     def decide(self, item_id: int, *, action: str, note: Optional[str],
                selection: Optional[dict[str, Any]], actor_user_id: str) -> dict[str, Any]:
+        from api.app.hitl import HitlStale
+
+        if item_id == 13:
+            raise HitlStale("gate 'contract_approval' on run 'run-1' is no longer open")
         if item_id != 7:
             raise KeyError(f"unknown approval {item_id}")
-        self.calls.append({"item_id": item_id, "action": action, "actor": actor_user_id})
+        self.calls.append({"item_id": item_id, "action": action, "note": note,
+                           "selection": selection, "actor": actor_user_id})
         return {"id": item_id, "status": action + "d", "resumed": True}
 
 
@@ -91,15 +98,19 @@ BRIEFS = [{"id": "b1", "subject": "Vibe", "text": "tee", "style": "mono-log",
            "engagement": 35, "novelty": 20, "specificity": 15}]
 
 
+def _boom_fetch() -> list:
+    raise RuntimeError("catalog down")
+
+
 def _setup(monkeypatch, scopes=("operate",), spend: float = 0.0):
     _patch_verifier(monkeypatch, list(scopes))
     _patch_seams(monkeypatch)
     starter, audit = FakeStarter(), FakeAudit()
-    _patch_writes(monkeypatch, starter, FakeSpend(spend), audit)
+    hitl = _patch_writes(monkeypatch, starter, FakeSpend(spend), audit)
     from api.app.settings_store import reset_cache
 
     reset_cache()
-    return starter, audit
+    return starter, audit, hitl
 
 
 class TestWriteScope:
@@ -123,7 +134,7 @@ class TestWriteScope:
 
 class TestRunStart:
     async def test_start_returns_run_and_audits(self, monkeypatch) -> None:
-        starter, audit = _setup(monkeypatch)
+        starter, audit, _ = _setup(monkeypatch)
         async with LiveMCP(_app()) as url:
             session, close = await _session(url, "sdr_test")
             try:
@@ -164,10 +175,24 @@ class TestRunStart:
             finally:
                 await close()
 
+    async def test_start_spend_unavailable_503(self, monkeypatch) -> None:
+        import api.app.mcp.tools_writes as writes
+
+        _setup(monkeypatch)
+        monkeypatch.setattr(writes, "_spend_reader", lambda: BrokenSpend())
+        async with LiveMCP(_app()) as url:
+            session, close = await _session(url, "sdr_test")
+            try:
+                result = await session.call_tool(
+                    "run_start", {"collection_id": "vibe", "briefs": BRIEFS})
+                assert result.is_error and "cannot verify" in _text(result)
+            finally:
+                await close()
+
 
 class TestApprovalDecide:
     async def test_decide_and_unknown(self, monkeypatch) -> None:
-        starter, audit = _setup(monkeypatch)
+        starter, audit, hitl = _setup(monkeypatch)
         async with LiveMCP(_app()) as url:
             session, close = await _session(url, "sdr_test")
             try:
@@ -175,19 +200,29 @@ class TestApprovalDecide:
                     "approval_decide", {"item_id": 7, "action": "approve",
                                         "note": "lgtm"}))[0]
                 assert body["resumed"] is True
+                assert hitl.calls[0]["actor"] == "token:sdr_test"
+                assert hitl.calls[0]["selection"] is None
+                decided = _items(await session.call_tool(
+                    "approval_decide", {"item_id": 7, "action": "approve",
+                                        "selection": {"approved_cluster_id": "c2"}}))[0]
+                assert decided["resumed"] is True
+                assert hitl.calls[1]["selection"] == {"approved_cluster_id": "c2"}
                 missing = await session.call_tool(
                     "approval_decide", {"item_id": 99, "action": "approve"})
                 assert missing.is_error and "unknown approval" in _text(missing)
+                stale = await session.call_tool(
+                    "approval_decide", {"item_id": 13, "action": "approve"})
+                assert stale.is_error and "no longer open" in _text(stale)
                 bad_action = await session.call_tool(
                     "approval_decide", {"item_id": 7, "action": "explode"})
-                assert bad_action.is_error
+                assert bad_action.is_error and "invalid request" in _text(bad_action)
             finally:
                 await close()
 
 
 class TestAgentConfig:
     async def test_cap_and_model_accepted_and_audited(self, monkeypatch) -> None:
-        starter, audit = _setup(monkeypatch)
+        starter, audit, _ = _setup(monkeypatch)
         async with LiveMCP(_app()) as url:
             session, close = await _session(url, "sdr_test")
             try:
@@ -216,6 +251,23 @@ class TestAgentConfig:
                 assert "Unknown model" in text and "gemini-3.5-flash-lite" in text
             finally:
                 await close()
+
+    async def test_unverifiable_catalog_503(self, monkeypatch) -> None:
+        from api.app import model_catalog
+
+        _setup(monkeypatch)
+        model_catalog.reset_cache()
+        monkeypatch.setattr(model_catalog, "_fetch_live", _boom_fetch)
+        async with LiveMCP(_app()) as url:
+            session, close = await _session(url, "sdr_test")
+            try:
+                result = await session.call_tool("agent_config", {
+                    "node": "trend_research", "cost_impact_note": "x",
+                    "model": "google/gemini-3.5-flash-lite"})
+                assert result.is_error and "cannot be verified" in _text(result)
+            finally:
+                await close()
+                model_catalog.reset_cache()
 
     async def test_note_prompt_scope_and_clear(self, monkeypatch) -> None:
         _setup(monkeypatch)
@@ -251,8 +303,12 @@ class TestRunReplay:
 
         service = RunService(scanner=None, history=None, executor=None,  # type: ignore[arg-type]
                              writer=FakeAudit())
+        seen_actors: list[str] = []
 
         def fake_replay(run_id: str, node: str, *, actor_user_id: str):
+            # The real method audits with this actor; the fake proves the
+            # token identity reaches the service call.
+            seen_actors.append(actor_user_id)
             if node not in ("trend_research",):
                 from api.app.runs import UnknownNode
 
@@ -267,6 +323,7 @@ class TestRunReplay:
                 body = _items(await session.call_tool(
                     "run_replay", {"run_id": "run-1", "node": "trend_research"}))[0]
                 assert body["status"] == "in_flight"
+                assert seen_actors == ["token:sdr_test"]
                 bad = await session.call_tool(
                     "run_replay", {"run_id": "run-1", "node": "nope"})
                 assert bad.is_error and "unknown node" in _text(bad)

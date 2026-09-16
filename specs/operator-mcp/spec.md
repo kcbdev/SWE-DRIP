@@ -42,7 +42,10 @@ calibration loops can run without container access or a browser session.
   catalog validation (422 + suggestions / 503 unverifiable), cost-impact
   notes (required), the $130 cost guard (409), run-start-explicitness, and
   audit rows behave identically. A tool call that the REST layer would
-  reject is rejected the same way.
+  reject is rejected the same way. Role checks are subsumed by scope checks:
+  `operate` scope is issued only by admins, so it authorizes every write the
+  tools offer (including admin-only agent config); audit rows carry the token
+  identity, never a human.
 - **C4 — Graph visibility without mutation**: an inspection tool reports the
   locked node order, the register_node edges, each node's state key, and
   where its config resolves from (defaults vs store). No tool adds,
