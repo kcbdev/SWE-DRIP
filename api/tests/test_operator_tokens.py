@@ -75,6 +75,9 @@ class FakeTokenDB:
             return FakeResult([], rowcount=0)
         if sql.startswith("SELECT id, prefix, name"):
             return FakeResult([dict(r, revoked=r["revoked_at"] is not None) for r in self.rows.values()])
+        if sql.startswith("SELECT prefix FROM operator_tokens"):
+            row = self.rows.get(params.get("id"))
+            return FakeResult([{"prefix": row["prefix"]}] if row else [])
         raise AssertionError(f"unexpected SQL in fake: {sql[:80]}")
 
 
@@ -154,8 +157,12 @@ class TestIssueVerify:
 
     def test_plaintext_never_stored(self) -> None:
         engine, db = _engine()
-        plaintext, _ = issue_token(engine, name="m", scopes=["read"], actor_user_id="u-9")
-        assert plaintext not in str(db.rows)
+        plaintext, meta = issue_token(engine, name="m", scopes=["read"], actor_user_id="u-9")
+        stored = [v for row in db.rows.values() for v in row.values() if isinstance(v, str)]
+        assert plaintext not in stored  # no field equals the token…
+        assert meta["prefix"] in stored  # …except the identification prefix, by design
+        (row,) = db.rows.values()
+        assert row["token_hash"] != plaintext and len(row["token_hash"]) == 64
 
     def test_unknown_token_is_none(self) -> None:
         engine, _ = _engine()
@@ -170,6 +177,22 @@ class TestIssueVerify:
         assert revoke_token(engine, meta["id"]) is True
         assert revoke_token(engine, meta["id"]) is False  # already revoked
         assert verify_token(engine, plaintext) is None
+
+    def test_prefix_collision_authenticates_only_the_hash_match(self) -> None:
+        import hashlib
+
+        engine, db = _engine()
+        good, _ = issue_token(engine, name="good", scopes=["read"], actor_user_id="u-9")
+        prefix = good[:12]
+        # A second row sharing the prefix but a different hash must not match.
+        db.rows[999] = {"id": 999, "token_hash": hashlib.sha256(b"other").hexdigest(),
+                        "salt": "pepper", "prefix": prefix, "name": "evil",
+                        "scopes": "operate", "created_by": "mallory",
+                        "revoked_at": None, "last_used_at": None,
+                        "created_at": "2026-09-16T00:00:00+00:00"}
+        actor = verify_token(engine, good)
+        assert actor is not None and actor.name == "good"
+        assert verify_token(engine, prefix + "wrong-body-payload") is None
 
     def test_hash_is_salted(self) -> None:
         engine, db = _engine()
@@ -233,6 +256,32 @@ class TestRequireToken:
             "/gated", headers={"Authorization": f"Bearer {plaintext}"})
         assert resp.status_code == 200
         assert resp.json()["actor"] == "o"
+
+    def test_operate_token_covers_read_scope(self, monkeypatch) -> None:
+        engine, _ = _engine()
+        plaintext, _ = issue_token(engine, name="o", scopes=["operate"], actor_user_id="u-9")
+        monkeypatch.setattr("api.app.db.get_engine", lambda: engine)
+        resp = TestClient(_token_app("read")).get(
+            "/gated", headers={"Authorization": f"Bearer {plaintext}"})
+        assert resp.status_code == 200
+
+    def test_revoked_bearer_is_401_end_to_end(self, monkeypatch) -> None:
+        engine, _ = _engine()
+        plaintext, meta = issue_token(engine, name="r", scopes=["read"], actor_user_id="u-9")
+        monkeypatch.setattr("api.app.db.get_engine", lambda: engine)
+        client = TestClient(_token_app("read"))
+        headers = {"Authorization": f"Bearer {plaintext}"}
+        assert client.get("/gated", headers=headers).status_code == 200
+        assert revoke_token(engine, meta["id"]) is True
+        assert client.get("/gated", headers=headers).status_code == 401
+
+    def test_bearer_edge_cases_are_401(self, monkeypatch) -> None:
+        engine, _ = _engine()
+        monkeypatch.setattr("api.app.db.get_engine", lambda: engine)
+        client = TestClient(_token_app("read"))
+        assert client.get("/gated", headers={"Authorization": "bearer"}).status_code == 401
+        assert client.get("/gated", headers={"Authorization": "Bearer "}).status_code == 401
+        assert client.get("/gated", headers={"Authorization": "Basic abc"}).status_code == 401
 
     def test_cookies_never_consulted(self, monkeypatch) -> None:
         engine, _ = _engine()
@@ -314,3 +363,21 @@ class TestRouter:
         assert client.post("/api/operator-tokens",
                            json={"name": "x", "scopes": ["read"]}).status_code == 403
         assert client.get("/api/operator-tokens").status_code == 403
+
+    def test_operator_role_and_anonymous_cannot_manage(self, monkeypatch) -> None:
+        from api.app.auth import ROLE_OPERATOR
+
+        engine, _ = _engine()
+        operator = _router_client(ROLE_OPERATOR, engine, monkeypatch)
+        assert operator.post("/api/operator-tokens",
+                             json={"name": "x", "scopes": ["read"]}).status_code == 403
+        assert operator.get("/api/operator-tokens").status_code == 403
+        import api.app.routers.operator_tokens as router_module
+
+        app = FastAPI()
+        app.include_router(tokens_router.router)
+        monkeypatch.setattr(router_module, "get_engine", lambda: engine)
+        anonymous = TestClient(app)
+        assert anonymous.get("/api/operator-tokens").status_code == 401
+        assert anonymous.post("/api/operator-tokens",
+                              json={"name": "x", "scopes": ["read"]}).status_code == 401

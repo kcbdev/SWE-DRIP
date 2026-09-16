@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from ..audit import AuditWriter, get_audit_writer
 from ..auth import ROLE_ADMIN, Actor
 from ..db import get_engine
-from ..operator_tokens import SCOPE_OPERATE, SCOPE_READ, SCOPES, issue_token, list_tokens, revoke_token
+from ..operator_tokens import SCOPE_READ, SCOPES, issue_token, list_tokens, revoke_token, token_prefix_for_id
 from ..rbac import require_role
 
 router = APIRouter(prefix="/api/operator-tokens", tags=["operator-tokens"])
@@ -73,18 +73,17 @@ def revoke_operator_token(
     audit: AuditWriter = Depends(get_audit_writer),
 ) -> dict[str, Any]:
     """Flag a token revoked (Admin-only, audited). Unknown ids 404."""
-    # Resolve the prefix for the audit row without disclosing the hash.
-    known = {row["id"]: row["prefix"] for row in list_tokens(get_engine())}
-    if token_id not in known:
+    prefix = token_prefix_for_id(get_engine(), token_id)
+    if prefix is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="unknown token")
     if not revoke_token(get_engine(), token_id):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="token already revoked")
     audit.record(
         action="operator_token.revoke",
         entity_type="operator_token",
-        entity_id=known[token_id],
+        entity_id=prefix,
         before={"revoked": False},
         after={"revoked": True},
         actor_user_id=actor.user_id,
     )
-    return {"id": token_id, "prefix": known[token_id], "revoked": True}
+    return {"id": token_id, "prefix": prefix, "revoked": True}

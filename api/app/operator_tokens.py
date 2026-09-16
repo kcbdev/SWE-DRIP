@@ -194,6 +194,22 @@ def revoke_token(engine: Any, token_id: int) -> bool:
     return (result.rowcount or 0) > 0
 
 
+def token_prefix_for_id(engine: Any, token_id: int) -> Optional[str]:
+    """The identification prefix for one token id (None when unknown)."""
+    from sqlalchemy import text
+
+    with engine.connect() as conn:
+        row = (
+            conn.execute(
+                text("SELECT prefix FROM operator_tokens WHERE id = :id"),
+                {"id": token_id},
+            )
+            .mappings()
+            .first()
+        )
+    return str(row["prefix"]) if row else None
+
+
 def list_tokens(engine: Any) -> list[dict[str, Any]]:
     """Token metadata for admins — hashes never leave the store."""
     from sqlalchemy import text
