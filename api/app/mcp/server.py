@@ -24,14 +24,16 @@ from mcp.server.mcpserver import MCPServer
 from .auth import OperatorTokenVerifier
 from .tools_graph import graph_inspect
 from .tools_reads import READ_TOOLS
+from .tools_writes import WRITE_TOOLS
 
 SERVER_NAME = "swe-drip-operator"
 
 SERVER_INSTRUCTIONS = (
-    "SWE Drip operator doorway (read-only in this phase): runs, run logs, "
-    "approvals queue, agents roster, model catalog, prompt metadata, "
-    "collections, audit log, calibration, and locked graph structure. "
-    "Write tools land in PBI-045. Structural graph changes are never offered."
+    "SWE Drip operator doorway: runs, run logs, approvals queue, agents "
+    "roster, model catalog, prompt metadata, collections, audit log, "
+    "calibration, and locked graph structure (reads); run start, approval "
+    "decisions, agent config, and replay (operate scope, audited). "
+    "Structural graph changes are never offered."
 )
 
 
@@ -57,7 +59,7 @@ def build_server() -> MCPServer:
         token_verifier=OperatorTokenVerifier(),
         auth=_auth_settings(),
     )
-    for tool_fn in (*READ_TOOLS, graph_inspect):
+    for tool_fn in (*READ_TOOLS, graph_inspect, *WRITE_TOOLS):
         server.tool()(tool_fn)
     return server
 

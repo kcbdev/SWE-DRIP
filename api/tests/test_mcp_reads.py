@@ -285,6 +285,7 @@ EXPECTED_TOOLS = {
     "runs_list", "run_detail", "run_logs", "approvals_queue", "agents_roster",
     "models_search", "prompt_meta", "collection_get", "audit_query",
     "calibration_get", "graph_inspect",
+    "run_start", "approval_decide", "agent_config", "run_replay",
 }
 
 
