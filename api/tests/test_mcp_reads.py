@@ -276,6 +276,18 @@ class TestMountAuth:
         paths = [getattr(r, "path", "") for r in main_app.routes]
         assert "/mcp" in paths
 
+    def test_hitl_seam_wires_real_ports(self) -> None:
+        """Regression: the seam must build ports, never pass Depends sentinels."""
+        import api.app.mcp.tools_reads as reads
+        from api.app.hitl import HitlService
+
+        service = reads._hitl_service()
+        assert isinstance(service, HitlService)
+        assert hasattr(service._gates, "list_interrupts")
+        assert hasattr(service._index, "ensure_pending")
+        assert hasattr(service._runner, "get_state_values")
+        assert hasattr(service._writer, "record")
+
 
 # ---------------------------------------------------------------------------
 # Tool listing + read calls through a real client

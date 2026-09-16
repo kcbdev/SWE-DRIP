@@ -39,9 +39,18 @@ def _log_reader() -> LogReader:
 
 
 def _hitl_service() -> Any:
-    from ..hitl import get_hitl_service
+    from ..audit import get_audit_writer
+    from ..hitl import HitlService, get_approval_index, get_gate_source, get_graph_runner
 
-    return get_hitl_service()
+    # Built from the same factories the router Depends chain uses — never the
+    # Depends sentinels themselves (calling get_hitl_service() bare would
+    # inject Depends objects as ports and crash on first use).
+    return HitlService(
+        gates=get_gate_source(),
+        index=get_approval_index(),
+        runner=get_graph_runner(),
+        writer=get_audit_writer(),
+    )
 
 
 def _audit_reader() -> Any:
