@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .routers import agents, approvals, analytics, audit, catalog, collections, dashboard, designs, me, runs, settings as settings_router, stream, users, webhooks
+from .routers import agents, approvals, analytics, audit, catalog, collections, dashboard, designs, me, runs, settings as settings_router, stream, users, webhooks, operator_tokens
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
@@ -47,3 +47,4 @@ app.include_router(stream.router)
 app.include_router(webhooks.router)
 app.include_router(agents.router)
 app.include_router(settings_router.router)
+app.include_router(operator_tokens.router)
