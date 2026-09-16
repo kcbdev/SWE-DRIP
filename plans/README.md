@@ -28,7 +28,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | `specs/catalog-analytics/spec.md` | FR-15/16, A17 | 6 (catalog mirror, KPI series, A17 webhook, retirement recs, webhook integrity, read/write discipline) | PBI-030…032 |
 | `specs/settings-agents/spec.md` | FR-17/18/19, NFR-2 | 6 (HITL toggles, brand lock, integrations status, agents roster, single config source, RBAC) | PBI-033…034 |
 | `specs/hitl-graduation/spec.md` | Vision §6.4, A19 | 5 (A19 record, evidence minimums, founder authority, reversibility, traceability) | PBI-035 |
-| `specs/operator-mcp/spec.md` | founder request 2026-09-16 (agent-operated doorway) | 6 (token auth, read parity, writes reuse enforcement, graph visibility w/o mutation, secrets, same deployable) | PBI-043…046 |
+| `specs/operator-mcp/spec.md` | founder request 2026-09-16 (agent-operated doorway) | 6 (token auth, read parity, writes reuse enforcement, graph visibility w/o mutation, secrets, same deployable) + token management UI | PBI-043…047 |
 
 ## Execution order
 
@@ -80,6 +80,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 44 | PBI-044 | operator-mcp | 043 | In Review | SWDRP-44 | MCP mount + read tools + read-only graph inspection |
 | 45 | PBI-045 | operator-mcp | 044 | In Review | SWDRP-46 | MCP write tools (start/decide/config/replay, same enforcement) |
 | 46 | PBI-046 | operator-mcp | 045 | In Review | SWDRP-43 | ADR-006 + operator runbook + live MCP smoke (manual) |
+| 47 | PBI-047 | operator-mcp | 043 | Active | SWDRP-47 | Operator token management UI (settings block + client config) |
 
 > **Epic: agent-control-plane** (specs/agent-control-plane/spec.md) reverses
 > pipeline-core C3: `pipeline/routing.py` is now the reviewed **defaults**, and an

@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { HitlToggles } from "@/components/settings/hitl-toggles";
 import { BrandConstantsView } from "@/components/settings/brand-constants";
 import { IntegrationsStatus } from "@/components/settings/integrations-status";
+import { OperatorTokens } from "@/components/settings/operator-tokens";
 
 export default function SettingsPage() {
   const { data: session } = authClient.useSession();
@@ -18,6 +19,7 @@ export default function SettingsPage() {
         <HitlToggles role={role} />
         <BrandConstantsView role={role} />
         <IntegrationsStatus role={role} />
+        <OperatorTokens role={role} />
       </div>
     </AppShell>
   );
