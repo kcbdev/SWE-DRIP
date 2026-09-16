@@ -37,6 +37,14 @@ SERVER_INSTRUCTIONS = (
 )
 
 
+def _issuer_host() -> str:
+    """Public API hostname (drives metadata URLs and the Host allowlist)."""
+    from urllib.parse import urlparse
+
+    base = os.environ.get("MCP_ISSUER_URL", "https://swedrip-api.kcb.ma").rstrip("/")
+    return urlparse(base).hostname or "swedrip-api.kcb.ma"
+
+
 def _auth_settings() -> AuthSettings:
     # Metadata only (issuer shown on the SDK's auth discovery document; no
     # OAuth round-trip exists — tokens are issued by POST /api/operator-tokens).
@@ -48,6 +56,24 @@ def _auth_settings() -> AuthSettings:
         # Our tokens are single-purpose with no audience field; the verifier
         # authenticates the store hash, not a resource indicator.
         validate_token_resource=False,
+    )
+
+
+def _transport_security() -> Any:
+    """DNS-rebinding guard that admits the public host (live-proven need).
+
+    The SDK defaults the allowlist to localhost only, which 421s every
+    request behind the production reverse proxy (verified live: valid token
+    got "Invalid Host header"). The issuer hostname plus loopback entries
+    keeps the rebinding protection meaningful in every environment.
+    """
+    from mcp.server.transport_security import TransportSecuritySettings
+
+    host = _issuer_host()
+    return TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=[host, f"{host}:*", "127.0.0.1:*", "localhost:*", "[::1]:*"],
+        allowed_origins=[f"https://{host}", "http://127.0.0.1:*", "http://localhost:*"],
     )
 
 
@@ -82,6 +108,7 @@ def mount_operator_mcp(app: Any) -> MCPServer:
             streamable_http_path="/",
             stateless_http=True,
             json_response=True,
+            transport_security=_transport_security(),
         ),
     )
     manager = server.session_manager

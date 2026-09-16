@@ -270,6 +270,31 @@ class TestMountAuth:
                     cookies={"better-auth.session_token": "valid-looking"})
                 assert resp.status_code == 401
 
+    async def test_disallowed_host_421_even_with_token(self, monkeypatch) -> None:
+        """DNS-rebinding guard: a foreign Host is refused before dispatch."""
+        _patch_verifier(monkeypatch, ["read"])
+        async with LiveMCP(_app()) as url:
+            async with httpx.AsyncClient(
+                    headers={"Authorization": "Bearer sdr_test",
+                             "Host": "evil.test"},
+                    timeout=10.0) as client:
+                resp = await client.post(url, json={"jsonrpc": "2.0", "id": 1,
+                                                    "method": "tools/list", "params": {}})
+                assert resp.status_code == 421
+
+    async def test_issuer_host_allowed(self, monkeypatch) -> None:
+        """The public host behind the reverse proxy must pass the guard."""
+        _patch_verifier(monkeypatch, ["read"])
+        _patch_seams(monkeypatch)
+        async with LiveMCP(_app()) as url:
+            async with httpx.AsyncClient(
+                    headers={"Authorization": "Bearer sdr_test",
+                             "Host": "swedrip-api.kcb.ma"},
+                    timeout=10.0) as client:
+                resp = await client.post(url, json={"jsonrpc": "2.0", "id": 1,
+                                                    "method": "tools/list", "params": {}})
+                assert resp.status_code == 200
+
     def test_mounted_in_main_app(self) -> None:
         from api.app.main import app as main_app
 
