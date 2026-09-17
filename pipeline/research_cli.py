@@ -50,7 +50,9 @@ def _utcnow() -> str:
 
 
 def seed_demo(store) -> dict[str, Any]:
-    """Create the ``live-review`` draft; loud when it already exists."""
+    """Create the ``live-review`` draft (runnable demo shape: thresholds
+    filled plus one ``hero-icon`` placement template, since placement
+    refuses to infer either). Refuses when it already exists."""
     record = store.create({
         "collection_id": DEMO_SLUG,
         "theme": "Live Review",
@@ -59,7 +61,8 @@ def seed_demo(store) -> dict[str, Any]:
         "illustration_rules": {"line_weight": "thin", "palette": ["#0D0D0D"],
                                "no_mixed_styles": True},
         "garment_colorways": [],
-        "placement_templates": [],
+        "placement_templates": [{"design_type": "hero-icon", "front": "chest",
+                                 "back": "none", "sleeve": "small-mark"}],
         "product_count_target": 6,
         "lifecycle_days": 90,
         "kpi_thresholds": {"min_units": 5, "min_conversion": 0.02,
