@@ -323,6 +323,9 @@ EXPECTED_TOOLS = {
     "models_search", "prompt_meta", "collection_get", "audit_query",
     "calibration_get", "graph_inspect",
     "run_start", "approval_decide", "agent_config", "run_replay",
+    "research_runs_list", "research_run_detail", "research_run_logs",
+    "research_approvals_queue", "styles_list", "board_file",
+    "research_start", "research_approval_decide", "style_create", "style_update",
 }
 
 

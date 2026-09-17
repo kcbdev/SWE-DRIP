@@ -24,6 +24,7 @@ from mcp.server.mcpserver import MCPServer
 from .auth import OperatorTokenVerifier
 from .tools_graph import graph_inspect
 from .tools_reads import READ_TOOLS
+from .tools_research import RESEARCH_READ_TOOLS, RESEARCH_WRITE_TOOLS
 from .tools_writes import WRITE_TOOLS
 
 SERVER_NAME = "swe-drip-operator"
@@ -33,6 +34,8 @@ SERVER_INSTRUCTIONS = (
     "roster, model catalog, prompt metadata, collections, audit log, "
     "calibration, and locked graph structure (reads); run start, approval "
     "decisions, agent config, and replay (operate scope, audited). "
+    "Collection research: research runs (list/detail/logs/queue/start/decide), "
+    "mood-board files, and the locked style repository (list/create/update). "
     "Structural graph changes are never offered."
 )
 
@@ -85,7 +88,8 @@ def build_server() -> MCPServer:
         token_verifier=OperatorTokenVerifier(),
         auth=_auth_settings(),
     )
-    for tool_fn in (*READ_TOOLS, graph_inspect, *WRITE_TOOLS):
+    for tool_fn in (*READ_TOOLS, graph_inspect, *WRITE_TOOLS,
+                     *RESEARCH_READ_TOOLS, *RESEARCH_WRITE_TOOLS):
         server.tool()(tool_fn)
     return server
 

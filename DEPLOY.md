@@ -157,8 +157,10 @@ Better Auth cookies are browsers-only. Full decision record:
 2. **Copy the token now — it is shown once, never again.** Vault it
    (password manager / server secret store), never chat logs or code.
 3. Scopes: `read` (observers: runs, logs, approvals, agents, catalog,
-   collections, audit, calibration, graph) vs `operate` (read + run start,
-   approval decisions, agent config, replay). Issue least privilege.
+   collections, audit, calibration, graph, research runs, styles,
+   boards) vs `operate` (read + run start, approval decisions, agent
+   config, replay, research start/decisions, style create/update). Issue
+   least privilege.
 
 ### Rotation / revocation
 
@@ -186,7 +188,8 @@ Better Auth cookies are browsers-only. Full decision record:
 ### Smoke (after deploy)
 
 1. No token: `POST /mcp/` → `401`.
-2. Read token: MCP handshake → `runs_list`, `graph_inspect` (11 nodes).
+2. Read token: MCP handshake → `runs_list`, `graph_inspect` (11 nodes),
+   `research_runs_list`, `styles_list` (25 tools total).
 3. Operate token dry probe: `agent_config` with a dead model ID →
    `Unknown model … [422]` with suggestions (no state changed).
 4. Revoke the smoke token → next call `401`.
