@@ -34,13 +34,28 @@ def repo_path(root: Path | str | None = None) -> Path:
 
 def load_styles(root: Path | str | None = None) -> dict[str, Any]:
     """Load and validate the styles repo; loud on any problem."""
-    path = repo_path(root)
-    if not path.is_file():
-        raise FileNotFoundError(f"style repository not found: {path}")
+    return load_file(repo_path(root))
+
+
+def load_file(path: Path | str) -> dict[str, Any]:
+    """Load and validate a styles repo file by explicit path (PBI-056).
+
+    Same validation as ``load_styles`` — the API store addresses the
+    collections dir directly (a mounted volume has no ``<root>/collections``
+    layout), so path resolution and validation stay separate.
+    """
+    file_path = Path(path)
+    if not file_path.is_file():
+        raise FileNotFoundError(f"style repository not found: {file_path}")
     try:
-        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+        raw = yaml.safe_load(file_path.read_text(encoding="utf-8"))
     except yaml.YAMLError as exc:
         raise ValueError(f"style repository is not valid YAML: {exc}") from None
+    return _validate_doc(raw)
+
+
+def _validate_doc(raw: Any) -> dict[str, Any]:
+    """Validate a parsed repo document (shared by load_styles/load_file)."""
     if not isinstance(raw, dict) or not isinstance(raw.get("styles"), list):
         raise ValueError("style repository must map to a 'styles' list")
     if "version" not in raw:
