@@ -56,7 +56,12 @@ function useSessionWithBypass(
 ): SessionResult {
   const real = baseClient.useSession(...args);
   const [dev, setDev] = useState<DevIdentity | null>(null);
+  // Probe only when there is no real session: logged-in users never hit
+  // /api/dev/session (which 401s in production and spams the console),
+  // while logged-out dev sessions still upgrade to the bypass identity.
+  const needsProbe = !real.isPending && !real.data;
   useEffect(() => {
+    if (!needsProbe) return;
     let live = true;
     fetch("/api/dev/session", { credentials: "same-origin" })
       .then(async (response) => {
@@ -70,7 +75,7 @@ function useSessionWithBypass(
     return () => {
       live = false;
     };
-  }, []);
+  }, [needsProbe]);
   return mergeDevSession(real, dev);
 }
 
