@@ -129,6 +129,14 @@ def start_research_run(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="unknown collection")
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    except RuntimeError as exc:
+        # No LLM client (e.g. OPENROUTER_API_KEY unset): loud and actionable,
+        # never an empty 500 (whose missing CORS headers mislead to a CORS
+        # diagnosis in the browser).
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"research run cannot start: {exc}",
+        )
     writer.record(
         actor_user_id=actor.user_id,
         action="research.start",

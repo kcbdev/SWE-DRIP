@@ -394,6 +394,13 @@ class TestTrigger:
         client, _ = _research_client(spend_broken=True)
         assert client.post("/api/research/runs", json={"collection_slug": "vibe"}).status_code == 503
 
+    def test_llm_unavailable_503_not_empty_500(self) -> None:
+        client, _ = _research_client(
+            starter=_FakeStarter(error=RuntimeError("OPENROUTER_API_KEY is not set")))
+        resp = client.post("/api/research/runs", json={"collection_slug": "vibe"})
+        assert resp.status_code == 503
+        assert "OPENROUTER_API_KEY" in resp.json()["detail"]
+
     def test_viewer_cannot_start(self) -> None:
         client, _ = _research_client(role=ROLE_VIEWER)
         assert client.post("/api/research/runs", json={"collection_slug": "vibe"}).status_code == 403
