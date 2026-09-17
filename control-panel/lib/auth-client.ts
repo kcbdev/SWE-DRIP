@@ -61,6 +61,11 @@ function useSessionWithBypass(
   // while logged-out dev sessions still upgrade to the bypass identity.
   const needsProbe = !real.isPending && !real.data;
   useEffect(() => {
+    // A real session always wins over a stale bypass identity.
+    if (real.data) {
+      setDev(null);
+      return;
+    }
     if (!needsProbe) return;
     let live = true;
     fetch("/api/dev/session", { credentials: "same-origin" })
@@ -75,7 +80,7 @@ function useSessionWithBypass(
     return () => {
       live = false;
     };
-  }, [needsProbe]);
+  }, [needsProbe, real.data]);
   return mergeDevSession(real, dev);
 }
 
