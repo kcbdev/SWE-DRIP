@@ -8,7 +8,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
+from .dev_bypass import enforce_dev_bypass_at_startup
 from .routers import agents, approvals, analytics, audit, catalog, collections, dashboard, designs, me, runs, settings as settings_router, stream, users, webhooks, operator_tokens, inspiration, research, styles as styles_router
+
+# Fail fast on auth misconfiguration (PBI-057): a dev bypass left enabled
+# under APP_ENV=production refuses to boot instead of serving open admin.
+enforce_dev_bypass_at_startup(settings)
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 

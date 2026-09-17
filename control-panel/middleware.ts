@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { DEV_BYPASS_ENV, devBypassEmail, isProductionEnv, shouldRedirectToLogin } from "./lib/auth-bypass";
+
 /**
  * Route gate: every PAGE requires a session cookie; everything else is public.
  *
@@ -30,8 +32,20 @@ export function middleware(request: NextRequest) {
   if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
+  // Dev bypass (PBI-057): a valid email lets pages render without a session
+  // cookie. Garbage values fail closed (warn + behave as off); production
+  // ignores the flag entirely (the API hard-refuses to boot with it set).
+  let bypass: string | null = null;
+  try {
+    bypass = isProductionEnv(process.env.APP_ENV)
+      ? null
+      : devBypassEmail(process.env.SWE_DRIP_DEV_AUTH_BYPASS);
+  } catch (err) {
+    console.warn(`[auth-bypass] ignoring invalid ${DEV_BYPASS_ENV}:`, err);
+    bypass = null;
+  }
   const hasSession = SESSION_COOKIES.some((name) => request.cookies.has(name));
-  if (!hasSession) {
+  if (shouldRedirectToLogin(pathname, hasSession, false, bypass)) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
   return NextResponse.next();

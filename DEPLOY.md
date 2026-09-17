@@ -115,7 +115,6 @@ token (see `docs/adrs/ADR-005.md`).
 3. Login with admin credentials (create first user via API or DB)
 
 ## Persistent storage (volumes) — PBI-053
-
 Renders (`runs/`) and collection contracts + assets (`collections/`) are
 plain container files. Without mounts every redeploy wipes them. Mount two
 persistent volumes on **`swe-drip-api`** (Coolify → Application → Storages):
@@ -142,6 +141,26 @@ Notes:
   (the approval gate fails loudly until they exist). Seed once after
   attaching: copy the repo's `collections/` (contracts + `styles.yaml`)
   into the `swe_drip_collections` volume before the first approval.
+
+## Local UI verification (dev auth bypass — PBI-057)
+
+Skip real credentials while developing the interface:
+
+1. `docker compose up -d db` (audit writes + sessions need Postgres),
+   then run migrations + API + panel locally with the bypass on:
+   ```
+   $env:SWE_DRIP_DEV_AUTH_BYPASS = "dev@local"   # PowerShell
+   python -m api.app.migrations
+   uvicorn api.app.main:app --port 8000 &
+   cd control-panel; npm run dev                  # :3000
+   ```
+2. Open `http://localhost:3000` — every page renders as admin, every API
+   call carries the `dev-bypass` audit identity (never a real user id).
+3. Unset the variable (or set `FALSE`) to return to normal auth.
+
+NEVER set `SWE_DRIP_DEV_AUTH_BYPASS` in Coolify (or any production env):
+the API refuses to boot with `APP_ENV=production` while it is set, and
+the panel ignores the flag there.
 
 ## Operator MCP doorway (`/mcp`)
 

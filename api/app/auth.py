@@ -104,6 +104,13 @@ def resolve_session_token(token: str) -> Optional[Actor]:
 
 def get_current_actor(request: Request) -> Actor:
     """FastAPI dependency: resolve the caller or raise 401."""
+    from .dev_bypass import DEV_BYPASS_USER_ID, resolve_dev_bypass
+
+    bypass_email = resolve_dev_bypass(settings.dev_auth_bypass, settings.app_env)
+    if bypass_email is not None:
+        # Dev bypass (PBI-057): auto-authed admin, no session required.
+        # Audits carry the dev-bypass identity — traceable, never a real user.
+        return Actor(user_id=DEV_BYPASS_USER_ID, email=bypass_email, role=ROLE_ADMIN)
     raw_cookie = request.cookies.get(SECURE_SESSION_COOKIE)
     if raw_cookie is None:
         raw_cookie = request.cookies.get(SESSION_COOKIE)
