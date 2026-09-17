@@ -182,6 +182,34 @@ describe("ResearchView", () => {
     expect(screen.queryByText("Upload")).toBeNull();
     expect(screen.queryByText("Start research run")).toBeNull();
   });
+
+  it("completed run on a draft offers activate-to-active with confirm", () => {
+    const onApproveDraft = vi.fn();
+    render(
+      <ResearchView
+        {...baseProps({
+          selectedRun: selectedRun({ status: "complete", current_stage: "complete" }),
+          onApproveDraft,
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByText("Approve to active"));
+    expect(onApproveDraft).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("Confirm activate"));
+    expect(onApproveDraft).toHaveBeenCalledTimes(1);
+  });
+
+  it("no activate offer once the draft is active", () => {
+    render(
+      <ResearchView
+        {...baseProps({
+          contract: contract({ status: "active" }),
+          selectedRun: selectedRun({ status: "complete", current_stage: "complete" }),
+        })}
+      />,
+    );
+    expect(screen.queryByText("Approve to active")).toBeNull();
+  });
 });
 
 describe("StylesManager", () => {
