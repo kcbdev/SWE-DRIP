@@ -298,8 +298,15 @@ class RunService:
     def list_runs(self, *, collection: Optional[str] = None,
                  status: Optional[str] = None, date: Optional[str] = None) -> list[dict[str, Any]]:
         # Newest snapshot per thread carries current values; oldest ts starts it.
+        # Research threads (rsch_*) share the checkpointer but belong to the
+        # research surface (PBI-055) — listing them here would show rows with
+        # no item nodes, so they are skipped, not guessed.
+        from pipeline.collection_graph import RESEARCH_RUN_PREFIX
+
         by_run: dict[str, list[Snapshot]] = {}
         for snap in self._scanner.list_snapshots():
+            if snap.run_id.startswith(RESEARCH_RUN_PREFIX):
+                continue
             by_run.setdefault(snap.run_id, []).append(snap)
         rows = []
         for run_id, snaps in by_run.items():
@@ -316,6 +323,10 @@ class RunService:
         return sorted(rows, key=lambda r: r["updated_at"] or "", reverse=True)
 
     def run_detail(self, run_id: str) -> dict[str, Any]:
+        from pipeline.collection_graph import RESEARCH_RUN_PREFIX
+
+        if run_id.startswith(RESEARCH_RUN_PREFIX):
+            raise KeyError(f"unknown run {run_id}")  # research surface owns it
         history = self._history.history(run_id)
         if not history:
             raise KeyError(f"unknown run {run_id}")

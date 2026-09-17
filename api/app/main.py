@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .routers import agents, approvals, analytics, audit, catalog, collections, dashboard, designs, me, runs, settings as settings_router, stream, users, webhooks, operator_tokens, inspiration
+from .routers import agents, approvals, analytics, audit, catalog, collections, dashboard, designs, me, runs, settings as settings_router, stream, users, webhooks, operator_tokens, inspiration, research
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
@@ -49,6 +49,7 @@ app.include_router(agents.router)
 app.include_router(settings_router.router)
 app.include_router(operator_tokens.router)
 app.include_router(inspiration.router)
+app.include_router(research.router)
 
 # Operator MCP doorway (specs/operator-mcp): same deployable, Bearer tokens.
 from .mcp.server import mount_operator_mcp

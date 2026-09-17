@@ -94,6 +94,36 @@ def get_collection(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="unknown collection")
 
 
+@router.get("/{slug}/board/{ref:path}")
+def get_board_file(
+    slug: str,
+    ref: str,
+    actor: Actor = ReadAllowed,
+    store: CollectionsStore = Depends(get_collections_store),
+) -> Any:
+    """Serve one mood-board image same-origin (Viewer+, PBI-055).
+
+    Boards render into the collection's asset dir before any contract names
+    them, so serving is scoped to the dir (relative-ref validation +
+    traversal guard + image-suffix gate), not to the contract's ref list.
+    """
+    from fastapi.responses import Response
+
+    from ..research_runs import serve_board_file
+
+    try:
+        store.get(slug)
+    except CollectionNotFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="unknown collection")
+    try:
+        content, media_type = serve_board_file(slug, ref)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except CollectionNotFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="unknown board ref")
+    return Response(content=content, media_type=media_type)
+
+
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_collection(
     payload: dict[str, Any],

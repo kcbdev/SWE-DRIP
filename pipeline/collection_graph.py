@@ -29,6 +29,11 @@ RESEARCH_ORDER: list[str] = [
     "collection_gate",  # CEO approve / edit-and-approve / reject (HITL on)
 ]
 
+# Research thread namespace: research run_ids carry this prefix so the item
+# runs surface (/api/runs) and the research surface (/api/research/runs)
+# stay disjoint while sharing one checkpointer (NFR-1).
+RESEARCH_RUN_PREFIX = "rsch_"
+
 # Research gates default ON — a creative decision without review is the
 # failure mode this graph exists to prevent (unlike item nodes, where most
 # gates default off for throughput).

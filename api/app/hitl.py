@@ -120,6 +120,10 @@ def entity_ref(node: str, payload: dict[str, Any]) -> dict[str, Any]:
     if node == "aesthetic_qc":
         failing = payload.get("failing") or []
         return {"type": "design_qc", "id": None, "label": f"failing: {', '.join(failing) or '?'}", "attempts": payload.get("attempts")}
+    if node == "collection_gate":
+        draft = payload.get("draft") or {}
+        return {"type": "research_gate", "id": draft.get("collection_id"),
+                "label": draft.get("theme") or draft.get("collection_id") or node}
     return {"type": node, "id": None, "label": node}
 
 
@@ -154,6 +158,31 @@ def build_resume_payload(
         if note:
             payload["note"] = note
         return payload
+    if node == "collection_gate":
+        # Research CEO gate (PBI-055): the node resumes on {approved, note?,
+        # contract?}. approve → True; reject/regenerate → False (a rejected
+        # draft stays a draft, same rule as publish_gate). An edit-approve
+        # rides in selection.contract and forces approved True; the node
+        # re-validates the merged contract and refuses a bad merge (the
+        # claim rolls back on resume failure, so a retry stays possible).
+        contract = (selection or {}).get("contract")
+        if action == "approve":
+            payload = {"approved": True}
+            if note:
+                payload["note"] = note
+            if contract is not None:
+                if not isinstance(contract, dict) or not contract:
+                    raise HitlAmbiguous("selection.contract must be a non-empty mapping for edit-and-approve")
+                payload["contract"] = contract
+            return payload
+        if action in ("reject", "regenerate"):
+            if contract is not None:
+                raise HitlAmbiguous("selection.contract is only valid with action approve (edit-and-approve)")
+            payload = {"approved": False}
+            if note:
+                payload["note"] = note
+            return payload
+        raise HitlAmbiguous(f"action must be one of {ACTIONS!r}")
     raise HitlUnknownNode(f"no resume mapping for node {node!r}")
 
 
@@ -200,9 +229,14 @@ class CheckpointerGateSource:
     checkpoint-listener instead of a scan (recorded, not built).
     """
 
-    def __init__(self, saver_factory=None, graph_factory=None) -> None:
+    def __init__(self, saver_factory=None, graph_factory=None, thread_filter=None) -> None:
         self._saver_factory = saver_factory or _default_saver_factory
         self._graph_factory = graph_factory
+        # Optional thread-namespace discipline: research threads (rsch_*) share
+        # the checkpointer with item runs, so each surface filters to its own
+        # namespace — otherwise a research gate decided from the item queue
+        # would resume with the wrong graph. None (default) includes all.
+        self._thread_filter = thread_filter
 
     def list_interrupts(self) -> list[InterruptInfo]:
         from pipeline.graph import build_graph
@@ -221,6 +255,8 @@ class CheckpointerGateSource:
             for tup in saver.list(None):
                 thread_id = ((tup.config or {}).get("configurable") or {}).get("thread_id")
                 if not thread_id or thread_id in seen:
+                    continue
+                if self._thread_filter is not None and not self._thread_filter(thread_id):
                     continue
                 seen.add(thread_id)
                 checkpoint = tup.checkpoint or {}
@@ -566,7 +602,10 @@ def _publish_decision_events(item_id: int, *, run_id: str, node: str, status: st
 
 
 def get_gate_source() -> CheckpointGateSource:
-    return CheckpointerGateSource()
+    from pipeline.collection_graph import RESEARCH_RUN_PREFIX
+
+    return CheckpointerGateSource(
+        thread_filter=lambda thread_id: not thread_id.startswith(RESEARCH_RUN_PREFIX))
 
 
 def get_approval_index() -> ApprovalIndex:
