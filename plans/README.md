@@ -89,8 +89,8 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 52 | PBI-052 | collection-research | 049, 050, 055, 056 | Blocked | SWDRP-52 | Research UI (board, inspiration, gate, styles manager; manual: UX) — waits on 055/056 APIs (pre-flight flag 2026-09-17) |
 | 53 | PBI-053 | collection-research | 049 | In Review | SWDRP-53 | Durable artifact storage (volumes + env roots + DEPLOY) |
 | 54 | PBI-054 | catalog-analytics | 030 | Done | (unsynced, local-only) | Deterministic analytics endpoint tests (live-clock time-bomb fix, test-only) |
-| 55 | PBI-055 | collection-research | 050, 053 | In Review | SWDRP-54 | Research-run API (trigger/status/logs/gate/board-serve) |
-| 56 | PBI-056 | collection-research | 048, 053 | In Review | SWDRP-55 | Styles management API (list/create/edit, audited) |
+| 55 | PBI-055 | collection-research | 050, 053 | Done | SWDRP-54 | Research-run API (trigger/status/logs/gate/board-serve) |
+| 56 | PBI-056 | collection-research | 048, 053 | Done | SWDRP-55 | Styles management API (list/create/edit, audited) |
 
 > **Epic: agent-control-plane** (specs/agent-control-plane/spec.md) reverses
 > pipeline-core C3: `pipeline/routing.py` is now the reviewed **defaults**, and an
