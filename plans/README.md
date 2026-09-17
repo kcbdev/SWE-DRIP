@@ -85,9 +85,10 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 48 | PBI-048 | collection-research | 019 | Done | SWDRP-48 | Style repository (manageable YAML repo) + contract schema v2 |
 | 49 | PBI-049 | collection-research | 048 | In Review | SWDRP-49 | Inspiration ingest (assets + refs per draft) |
 | 50 | PBI-050 | collection-research | 049, 010, 038 | In Review | SWDRP-50 | Research graph (synthesize → board → draft → gate) |
-| 51 | PBI-051 | collection-research | 050, 022 | Active | SWDRP-51 | Style-conformance QC + diversity check + rotation queue |
+| 51 | PBI-051 | collection-research | 050, 022 | In Review | SWDRP-51 | Style-conformance QC + diversity check + rotation queue |
 | 52 | PBI-052 | collection-research | 049, 050 | Todo | SWDRP-52 | Research UI (board, inspiration, gate, styles manager; manual: UX) |
 | 53 | PBI-053 | collection-research | 049 | Todo | SWDRP-53 | Durable artifact storage (volumes + env roots + DEPLOY) |
+| 54 | PBI-054 | catalog-analytics | 030 | Done | (unsynced) | Deterministic analytics endpoint tests (live-clock time-bomb fix, test-only) |
 
 > **Epic: agent-control-plane** (specs/agent-control-plane/spec.md) reverses
 > pipeline-core C3: `pipeline/routing.py` is now the reviewed **defaults**, and an
