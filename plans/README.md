@@ -92,7 +92,7 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 55 | PBI-055 | collection-research | 050, 053 | Done | SWDRP-54 | Research-run API (trigger/status/logs/gate/board-serve) |
 | 56 | PBI-056 | collection-research | 048, 053 | Done | SWDRP-55 | Styles management API (list/create/edit, audited) |
 | 57 | PBI-057 | dev-bypass | none | Done | SWDRP-56 | Dev auth bypass for UI verification (never production) |
-| 58 | PBI-058 | collection-research | 050, 053, 055 | Active | SWDRP-57 | One-shot research runner CLI (ops live run) |
+| 58 | PBI-058 | collection-research | 050, 053, 055 | Done | SWDRP-57 | One-shot research runner CLI (ops live run) |
 
 > **Epic: agent-control-plane** (specs/agent-control-plane/spec.md) reverses
 > pipeline-core C3: `pipeline/routing.py` is now the reviewed **defaults**, and an
