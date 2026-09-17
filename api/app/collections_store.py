@@ -1,6 +1,6 @@
-"""YAML collection store — the ONLY filesystem writer for ``/collections``.
+"""YAML collection store — the ONLY filesystem writer for the collections root.
 
-Contracts live only as ``/collections/<slug>.yaml`` (spec C1): schema-validated
+Contracts live only as ``<slug>.yaml`` under that root (spec C1): schema-validated
 on every read and write, atomic writes (tmp + ``os.replace``), mtime tracked
 per contract so manual file edits are detectable — an update against a stale
 mtime is rejected as a conflict, never silently authoritative. Postgres
@@ -159,4 +159,7 @@ class CollectionsStore:
 
 
 def get_collections_store() -> CollectionsStore:
-    return CollectionsStore()
+    """Prod store: env-driven root (PBI-053) with repo-relative default."""
+    from pipeline.paths import collections_root
+
+    return CollectionsStore(collections_root())

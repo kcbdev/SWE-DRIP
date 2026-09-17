@@ -15,7 +15,6 @@ guessed).
 from __future__ import annotations
 
 import json
-import os
 import re
 import uuid
 from datetime import datetime, timezone
@@ -25,7 +24,6 @@ from typing import Any, Optional
 from .collections_store import (
     CollectionNotFound,
     CollectionsStore,
-    DEFAULT_COLLECTIONS_DIR,
     MtimeConflict,
 )
 
@@ -42,8 +40,9 @@ _ASSET_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 def resolve_collections_root() -> Path:
     """Collections root: env-driven with a repo-relative default (PBI-053
     mounts the volume; this helper is the single place the path resolves)."""
-    override = os.environ.get("SWE_DRIP_COLLECTIONS_DIR")
-    return Path(override) if override else DEFAULT_COLLECTIONS_DIR
+    from pipeline.paths import collections_root
+
+    return collections_root()
 
 
 def _slug_dir(root: Path, slug: str) -> Path:

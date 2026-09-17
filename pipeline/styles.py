@@ -1,10 +1,11 @@
 """Brand style repository loader (spec C1, PBI-048).
 
-The 7 locked graphic languages live in ``collections/styles.yaml`` — agents
-read through this module, never hardcoded names. A missing or malformed
-repo file is loud (no silent fallback vocabulary: inventing styles would
-be fabrication). Management (create/edit) is founder-gated: this file or
-the PBI-052 UI, both audited; the loader only reads.
+The 7 locked graphic languages live in the styles repo (``styles.yaml``
+under the collections root) — agents read through this module, never
+hardcoded names. A missing or malformed repo file is loud (no silent
+fallback vocabulary: inventing styles would be fabrication). Management
+(create/edit) is founder-gated: the PBI-056 API or this file, both
+audited; the loader only reads.
 """
 
 from __future__ import annotations
@@ -18,9 +19,17 @@ REPO_FILENAME = "styles.yaml"
 
 
 def repo_path(root: Path | str | None = None) -> Path:
-    """Resolve the styles repo file (repo-relative default, overridable)."""
-    base = Path(root) if root is not None else Path(__file__).resolve().parent.parent
-    return base / "collections" / REPO_FILENAME
+    """Resolve the styles repo file.
+
+    Explicit ``root`` keeps the legacy layout (the collections dir under
+    ``<root>``); otherwise the env-driven collections root (PBI-053) so a volume-mounted
+    repo is found in production and the repo-relative default locally.
+    """
+    if root is not None:
+        return Path(root) / "collections" / REPO_FILENAME
+    from .paths import collections_root
+
+    return collections_root() / REPO_FILENAME
 
 
 def load_styles(root: Path | str | None = None) -> dict[str, Any]:

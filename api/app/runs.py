@@ -191,9 +191,13 @@ def runs_root() -> Path:
     """Render-artifact root, shared with ``routers/designs.py:get_runs_root``.
 
     Both must resolve to the same directory or a run's render cannot be served.
+    Env-driven via ``pipeline.paths`` (PBI-053): `SWE_DRIP_RUNS_DIR` override
+    with a repo-relative default, so offline gates are unaffected.
     A test asserts the two agree.
     """
-    return Path(__file__).resolve().parent.parent.parent / "runs"
+    from pipeline.paths import runs_root as _paths_root
+
+    return _paths_root()
 
 
 class SqlSpendReader:

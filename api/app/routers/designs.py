@@ -30,9 +30,10 @@ ReadAllowed = Depends(require_role(ROLE_ADMIN, ROLE_OPERATOR, ROLE_VIEWER))
 
 
 def get_runs_root() -> "Path":
-    from pathlib import Path as _Path
+    """Render-serving root: delegates to ``runs.runs_root`` (single source)."""
+    from ..runs import runs_root
 
-    return _Path(__file__).resolve().parent.parent.parent.parent / "runs"
+    return runs_root()
 
 
 @router.get("/designs/{design_id}/render")
@@ -45,8 +46,9 @@ def get_design_render(
     """Serve the design's render PNG (Viewer+).
 
     Asset-serving fix per PBI-024: the UI renders this same-origin URL —
-    never a hotlinked external model URL. Only PNGs under ``runs/`` resolve;
-    anything else (missing file, traversal, non-PNG) is an explicit 404.
+    never a hotlinked external model URL. Only PNGs under the runs root
+    resolve; anything else (missing file, traversal, non-PNG) is an
+    explicit 404.
     """
     from pathlib import Path as _Path
 

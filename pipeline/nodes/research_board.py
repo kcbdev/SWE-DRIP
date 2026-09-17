@@ -18,6 +18,7 @@ from langgraph.types import RunnableConfig, interrupt
 
 from ..collection_graph import RESEARCH_DEFAULT_HITL, register_research_node
 from ..costs import build_cost_record, record_cost
+from ..paths import collections_root
 from ..routing import GEMINI_FLASH_IMAGE, IMAGE_FALLBACKS
 from ..runlog import get_logger
 from .render import _payload_bytes, parse_png_dimensions
@@ -88,7 +89,7 @@ def mood_board(
         raise ValueError(f"{NODE}: board payload unusable: {exc}") from None
 
     slug = state.get("collection_slug") or "adhoc"
-    assets_dir = Path(cfg.get("research_assets_dir") or f"collections/{slug}.assets")
+    assets_dir = Path(cfg.get("research_assets_dir") or (collections_root() / f"{slug}.assets"))
     assets_dir.mkdir(parents=True, exist_ok=True)
     artifact = assets_dir / "board.png"
     suffix = 2

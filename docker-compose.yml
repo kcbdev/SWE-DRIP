@@ -29,3 +29,10 @@ services:
 
 volumes:
   swe_drip_pgdata:
+  # PBI-053: production artifact persistence lives on Coolify volume mounts
+  # (see DEPLOY.md "Persistent storage": swe_drip_runs → /app/runs,
+  # swe_drip_collections → /app/collections on swe-drip-api). The names are
+  # reserved here; locally the repo-relative defaults apply, so no mounts
+  # are declared and the gate never needs Docker.
+  swe_drip_runs:
+  swe_drip_collections:

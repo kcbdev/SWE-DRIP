@@ -6,7 +6,8 @@ bytes required, dimensions parsed from IHDR (stdlib ``struct`` — no imaging
 dependency). A non-PNG payload is loud; total model failure is loud (the run
 fails instead of propagating an empty render into QC/publish).
 
-The artifact bytes land in the run workspace (gitignored ``runs/``); only the
+The artifact bytes land in the run workspace (gitignored, under the runs
+root); only the
 reference enters state. Format/dimension JUDGMENT belongs to technical QC
 (PBI-013) — this node records actuals. Per the PBI-012 refinement rule, real
 model format surprises (e.g. missing alpha) are recorded as findings, never
@@ -26,6 +27,7 @@ from langgraph.types import RunnableConfig, interrupt
 from ..costs import build_cost_record, record_cost
 from ..graph import DEFAULT_HITL, register_node
 from ..node_config import effective_for_config
+from ..paths import runs_root
 from ..routing import IMAGE_FALLBACKS, model_for
 from ..runlog import get_logger
 from ..state import RunState
@@ -125,7 +127,7 @@ def art_render(state: RunState, config: RunnableConfig = None) -> dict[str, Any]
     width, height = parse_png_dimensions(image_bytes)  # validated before state write
 
     design_id = state.get("design_id") or "adhoc"
-    run_dir = Path(cfg.get("run_dir") or f"runs/{design_id}")
+    run_dir = Path(cfg.get("run_dir") or (runs_root() / str(design_id)))
     run_dir.mkdir(parents=True, exist_ok=True)
     artifact = run_dir / "render.png"
     suffix = 2

@@ -58,6 +58,8 @@ FOURTHWALL_API_USERNAME=<shop Open API user, e.g. fw_api_...@fourthwall.com>
 FOURTHWALL_API_PASSWORD=<shop Open API password>
 FOURTHWALL_WEBHOOK_SECRET=<generate-random>
 APP_ENV=production
+SWE_DRIP_RUNS_DIR=/app/runs
+SWE_DRIP_COLLECTIONS_DIR=/app/collections
 ```
 
 ### Step 4: Create Panel Application
@@ -111,6 +113,35 @@ token (see `docs/adrs/ADR-005.md`).
 1. `https://swedrip-api.kcb.ma/api/health` → `{"status": "ok"}`
 2. `https://swedrip-panel.kcb.ma` → login page
 3. Login with admin credentials (create first user via API or DB)
+
+## Persistent storage (volumes) — PBI-053
+
+Renders (`runs/`) and collection contracts + assets (`collections/`) are
+plain container files. Without mounts every redeploy wipes them. Mount two
+persistent volumes on **`swe-drip-api`** (Coolify → Application → Storages):
+
+| Volume handle | Container mount path | Env var (already set above) | Holds |
+|---|---|---|---|
+| `swe_drip_runs` | `/app/runs` | `SWE_DRIP_RUNS_DIR=/app/runs` | item renders (`render.png`, regens) |
+| `swe_drip_collections` | `/app/collections` | `SWE_DRIP_COLLECTIONS_DIR=/app/collections` | contracts (`*.yaml`), `styles.yaml`, asset dirs (`*.assets/`, boards, uploads) |
+
+Notes:
+
+- The code resolves both roots through `pipeline/paths.py`: the env vars
+  win when set, otherwise the repo-relative defaults apply. Local dev and
+  every offline gate (`npm run verify`) need no env and no volumes.
+- Backups: Coolify volume snapshots (Storage → Snapshots). No backup
+  automation lives in this repo — snapshots are the documented mechanism.
+- Local-dev equivalence: run bare (`python -m pytest …`, `next dev`);
+  defaults just work against `./runs` / `./collections`.
+- No backfill: artifacts written before the volumes attach are
+  container-ephemeral and already gone after the next redeploy. Renders
+  can be regenerated (run replay); boards/uploads must be re-curated.
+- First attach seeds empty: `Dockerfile.api` ships only `api/` +
+  `pipeline/`, so a fresh volume has no `styles.yaml` and no contracts
+  (the approval gate fails loudly until they exist). Seed once after
+  attaching: copy the repo's `collections/` (contracts + `styles.yaml`)
+  into the `swe_drip_collections` volume before the first approval.
 
 ## Operator MCP doorway (`/mcp`)
 
