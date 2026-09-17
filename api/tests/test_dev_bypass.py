@@ -9,9 +9,11 @@ from fastapi.testclient import TestClient
 from api.app.auth import ROLE_ADMIN, get_current_actor
 from api.app.config import settings
 from api.app.dev_bypass import (
+    BYPASS_ENV_VAR,
     DEV_BYPASS_USER_ID,
     enforce_dev_bypass_at_startup,
     resolve_dev_bypass,
+    resolve_from_env,
 )
 
 
@@ -44,15 +46,22 @@ class TestResolve:
 
 class TestEnforce:
     def test_misconfig_fails_fast(self, monkeypatch) -> None:
-        monkeypatch.setattr(settings, "dev_auth_bypass", "dev@local")
+        monkeypatch.setenv(BYPASS_ENV_VAR, "dev@local")
         monkeypatch.setattr(settings, "app_env", "production")
         with pytest.raises(RuntimeError, match="refusing to boot"):
             enforce_dev_bypass_at_startup(settings)
 
     def test_clean_config_passes(self, monkeypatch) -> None:
-        monkeypatch.setattr(settings, "dev_auth_bypass", "")
+        monkeypatch.delenv(BYPASS_ENV_VAR, raising=False)
         monkeypatch.setattr(settings, "app_env", "")
         assert enforce_dev_bypass_at_startup(settings) is None
+
+    def test_from_env_reads_process_env(self, monkeypatch) -> None:
+        monkeypatch.setenv(BYPASS_ENV_VAR, "dev@local")
+        monkeypatch.setattr(settings, "app_env", "")
+        assert resolve_from_env(settings) == "dev@local"
+        monkeypatch.delenv(BYPASS_ENV_VAR)
+        assert resolve_from_env(settings) is None
 
 
 def _app() -> FastAPI:
@@ -69,18 +78,18 @@ def _app() -> FastAPI:
 
 class TestActor:
     def test_bypass_returns_marked_admin_without_cookie(self, monkeypatch) -> None:
-        monkeypatch.setattr(settings, "dev_auth_bypass", "dev@local")
+        monkeypatch.setenv(BYPASS_ENV_VAR, "dev@local")
         monkeypatch.setattr(settings, "app_env", "")
         body = TestClient(_app()).get("/whoami").json()
         assert body == {"user_id": DEV_BYPASS_USER_ID, "email": "dev@local", "role": ROLE_ADMIN}
 
     def test_off_still_401s_without_session(self, monkeypatch) -> None:
-        monkeypatch.setattr(settings, "dev_auth_bypass", "")
+        monkeypatch.delenv(BYPASS_ENV_VAR, raising=False)
         monkeypatch.setattr(settings, "app_env", "")
         assert TestClient(_app()).get("/whoami").status_code == 401
 
     def test_prod_bypass_raises_loud(self, monkeypatch) -> None:
-        monkeypatch.setattr(settings, "dev_auth_bypass", "dev@local")
+        monkeypatch.setenv(BYPASS_ENV_VAR, "dev@local")
         monkeypatch.setattr(settings, "app_env", "production")
         with pytest.raises(RuntimeError, match="refusing to boot"):
             TestClient(_app()).get("/whoami")

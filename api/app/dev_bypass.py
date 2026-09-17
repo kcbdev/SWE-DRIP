@@ -15,7 +15,13 @@ and can never be mistaken for a real user.
 
 from __future__ import annotations
 
+import os
 from typing import Optional
+
+#: The bypass is read straight from the environment (house pattern for
+#: SWE_DRIP_* vars — pydantic Settings uppercases field names and would
+#: look for DEV_AUTH_BYPASS instead). APP_ENV still comes from Settings.
+BYPASS_ENV_VAR = "SWE_DRIP_DEV_AUTH_BYPASS"
 
 DEV_BYPASS_USER_ID = "dev-bypass"
 
@@ -47,4 +53,9 @@ def resolve_dev_bypass(raw: object, app_env: object) -> Optional[str]:
 def enforce_dev_bypass_at_startup(settings) -> None:
     """Fail fast on misconfiguration (called once from main; per-request
     resolution in auth.py stays authoritative at runtime)."""
-    resolve_dev_bypass(settings.dev_auth_bypass, settings.app_env)
+    resolve_from_env(settings)
+
+
+def resolve_from_env(settings) -> Optional[str]:
+    """Resolve the bypass from the environment (what auth.py calls)."""
+    return resolve_dev_bypass(os.environ.get(BYPASS_ENV_VAR), settings.app_env)

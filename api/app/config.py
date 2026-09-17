@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = False
     #: Deployment environment (DEPLOY.md sets APP_ENV=production in Coolify).
-    #: The dev auth bypass (below) refuses to boot under "production".
+    #: The PBI-057 dev bypass refuses to boot under "production".
     app_env: str = ""
 
     # Datastores
@@ -34,11 +34,6 @@ class Settings(BaseSettings):
     # Auth (Better Auth runtime; validated server-side by the API)
     better_auth_secret: str = ""
     better_auth_url: str = ""
-
-    #: Dev auth bypass email (PBI-057) — local UI verification ONLY.
-    #: Empty (default) disables it. NEVER set in production: the API refuses
-    #: to boot with APP_ENV=production while this is set.
-    dev_auth_bypass: str = ""
 
     # Models
     openrouter_api_key: str = ""

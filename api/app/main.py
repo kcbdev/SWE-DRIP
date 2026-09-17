@@ -18,10 +18,12 @@ enforce_dev_bypass_at_startup(settings)
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
 # CORS — allow the Control Panel origin for cookie-based auth (credentials: include).
-# In production the panel is served from swedrip-panel.kcb.ma; in dev from localhost:3000.
+# In production the panel is served from swedrip-panel.kcb.ma; in dev from localhost:3000
+# (and :3001 when :3000 is taken by another app — loopback only, same trust).
 _origins = [
     "https://swedrip-panel.kcb.ma",
     "http://localhost:3000",
+    "http://localhost:3001",
 ]
 app.add_middleware(
     CORSMiddleware,
