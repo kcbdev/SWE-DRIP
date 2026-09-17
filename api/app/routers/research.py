@@ -20,7 +20,7 @@ from sse_starlette.sse import EventSourceResponse
 from ..agents import GLOBAL_MONTHLY_CAP
 from ..audit import AuditWriter, get_audit_writer
 from ..auth import ROLE_ADMIN, ROLE_OPERATOR, ROLE_VIEWER, Actor
-from ..collections_store import CollectionNotFound
+from ..collections_store import CollectionNotFound, get_collections_store
 from ..hitl import HitlService, get_approval_index
 from ..rbac import require_role
 from ..research_runs import (
@@ -242,13 +242,29 @@ def decide_research_approval(
     body: DecisionBody,
     actor: Actor = DecideAllowed,
     service: HitlService = Depends(get_research_service),
+    ports: ResearchRunPorts = Depends(get_research_ports),
+    store=Depends(get_collections_store),
+    writer: AuditWriter = Depends(get_audit_writer),
 ) -> dict[str, Any]:
     """Decide a research gate: approve / reject / regenerate, or approve with
-    ``selection.contract`` for edit-and-approve (Admin/Operator, audited)."""
-    from ..hitl import HitlAmbiguous, HitlStale, HitlUnknownNode
+    ``selection.contract`` for edit-and-approve (Admin/Operator, audited).
 
+    An approved decision additionally hands the draft to the collections
+    lifecycle (PBI-059): the approved (or CEO-edited) contract upserts the
+    candidate — status and lifecycle stamps stay untouched, so activation
+    still goes through the existing approve endpoint. Reject/regenerate
+    persist nothing.
+    """
+    from ..hitl import HitlAmbiguous, HitlStale, HitlUnknownNode
+    from ..research_runs import build_handoff_contract, persist_handoff
+    from pydantic import ValidationError
+
+    queue = service.list_queue()
+    row = next((i for i in queue if i.get("id") == item_id), None)
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="unknown approval")
     try:
-        return service.decide(
+        result = service.decide(
             item_id,
             action=body.action,
             note=body.note,
@@ -261,3 +277,35 @@ def decide_research_approval(
         raise HTTPException(status_code=422, detail=str(exc))
     except HitlStale as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    if body.action != "approve" or not result.get("resumed"):
+        return result
+    try:
+        history = ports.history(row["run_id"])
+        if not history:
+            raise KeyError(row["run_id"])
+        handoff = build_handoff_contract(history[0].values)
+        if handoff is None:
+            raise ValueError("gate approved but no draft in run state")
+        persisted = persist_handoff(store, handoff)
+    except KeyError as exc:
+        raise HTTPException(status_code=500, detail=f"handoff failed: unknown run {exc}")
+    except (ValueError, ValidationError, OSError) as exc:
+        # Resume already happened — this 500 is loud on purpose: the draft
+        # stays recoverable in checkpointer state, never silently dropped.
+        raise HTTPException(status_code=500, detail=f"handoff failed: {exc}")
+    record = persisted["record"]["contract"]
+    writer.record(
+        actor_user_id=actor.user_id,
+        action="research.handoff",
+        entity_type="collection",
+        entity_id=record["collection_id"],
+        before=persisted["before"],
+        after={"mood_board": record.get("mood_board"),
+               "board_version": record.get("board_version"),
+               "created": persisted["created"]},
+    )
+    return {**result, "handoff": {
+        "collection_id": record["collection_id"],
+        "created": persisted["created"],
+        "mood_board": record.get("mood_board") or [],
+    }}

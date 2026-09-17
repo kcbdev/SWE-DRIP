@@ -31,6 +31,14 @@ def _research_values(**extra: Any) -> dict[str, Any]:
         "visited": ["inspiration_review", "style_synthesis", "mood_board"],
         "board": {"file_ref": "vibe.assets/board.png", "board_version": 1},
         "diversity_flags": [],
+        "draft_contract": {
+            "collection_id": "vibe", "theme": "Vibe", "status": "draft",
+            "style_archetype": "mono-log",
+            "illustration_rules": {"line_weight": None, "palette": ["#0D0D0D"],
+                                   "no_mixed_styles": True},
+            "mood_board": ["board.png"], "board_version": 1,
+        },
+        "gate_decision": {"approved": True},
     }
     base.update(extra)
     return base
@@ -134,10 +142,21 @@ class _FakeCollections:
 
         if slug != "vibe":
             raise CollectionNotFound(slug)
-        return {"contract": {"collection_id": "vibe"}, "mtime": 1.0}
+        return {"contract": {"collection_id": "vibe", "status": "draft",
+                             "style_archetype": "mono-log"},
+                "mtime": 1.0}
 
     def list(self, **kwargs: Any) -> list[dict[str, Any]]:
         return [{"contract": {"collection_id": "vibe", "style_archetype": "mono-log"}}]
+
+    def update(self, slug: str, patch: dict[str, Any]) -> dict[str, Any]:
+        merged = {"collection_id": slug, "status": "draft",
+                  "style_archetype": "mono-log"}
+        merged.update(patch)
+        return {"contract": merged, "mtime": 2.0}
+
+    def create(self, contract: dict[str, Any]) -> dict[str, Any]:
+        return {"contract": dict(contract), "mtime": 1.0}
 
 
 class _FakeStyles:

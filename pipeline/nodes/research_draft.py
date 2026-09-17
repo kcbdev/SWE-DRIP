@@ -22,6 +22,19 @@ from .contract import CONTRACT_KEYS, slugify, validate_contract
 NODE = "contract_draft"
 
 
+def board_display_ref(file_ref: Any) -> str | None:
+    """Servable relative ref for a board ``file_ref`` (pure).
+
+    Board files land as ``<slug>.assets/board[-rN].png`` while ``file_ref``
+    carries the full path (repo-relative or absolute, per environment) —
+    the contract and the board-serve endpoint only speak the basename.
+    """
+    if not isinstance(file_ref, str) or not file_ref.strip():
+        return None
+    name = file_ref.replace("\\", "/").rsplit("/", 1)[-1].strip()
+    return name or None
+
+
 def assemble_draft(
     slug: str,
     theme: str,
@@ -29,6 +42,7 @@ def assemble_draft(
     synthesis: dict[str, Any],
     inspiration: dict[str, Any],
     board_version: int = 1,
+    board_ref: str | None = None,
 ) -> dict[str, Any]:
     """Build the v2 draft from research outputs (pure, deterministic)."""
     refs = [
@@ -36,6 +50,7 @@ def assemble_draft(
         for r in (inspiration.get("refs") or [])
         if isinstance(r, dict) and r.get("url")
     ]
+    board_refs = [board_ref] if board_ref else []
     return {
         "collection_id": slug,
         "theme": theme,
@@ -53,7 +68,7 @@ def assemble_draft(
         "retired_at": None,
         "survivor_products": [],
         "style_descriptors": list(synthesis.get("style_descriptors") or []),
-        "mood_board": [],
+        "mood_board": board_refs,
         "inspiration_refs": refs,
         "avoid": list(synthesis.get("avoid") or []),
         "board_version": board_version,
@@ -99,6 +114,7 @@ def contract_draft(
         synthesis=synthesis,
         inspiration=inspiration,
         board_version=int((state.get("board") or {}).get("board_version") or 1),
+        board_ref=board_display_ref((state.get("board") or {}).get("file_ref")),
     )
     problems = validate_contract(draft)
     if problems:  # self-invalid draft is a code bug — loud, never silent

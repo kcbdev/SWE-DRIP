@@ -154,6 +154,16 @@ export function inspirationFileUrl(slug: string, assetId: string): string {
   return `/api/collections/${slug}/inspiration/${assetId}/file`;
 }
 
+/**
+ * Servable board ref from a run board's file_ref (mirrors the pipeline
+ * board_display_ref: basename across separators, null when absent).
+ */
+export function boardDisplayRef(fileRef: unknown): string | null {
+  if (typeof fileRef !== "string" || !fileRef.trim()) return null;
+  const name = fileRef.replace(/\\/g, "/").split("/").pop()?.trim();
+  return name || null;
+}
+
 // ------------------------------------------------------------------ API
 
 export async function getInspiration(slug: string): Promise<InspirationListing> {

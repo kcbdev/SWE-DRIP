@@ -245,6 +245,9 @@ async def research_approval_decide(
               selection=selection),
         actor=tool_actor(),
         service=_research_service(),
+        ports=_research_ports(),
+        store=_collections_store(),
+        writer=_audit_writer(),
     )
 
 

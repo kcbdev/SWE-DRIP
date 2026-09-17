@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import type { CollectionContract } from "@/lib/collections";
 import {
+  boardDisplayRef,
   boardImageUrl,
   canCurate,
   canDecideResearch,
@@ -74,6 +75,10 @@ export function ResearchView(props: ResearchViewProps) {
   const descriptors = contract.style_descriptors ?? [];
   const avoid = contract.avoid ?? [];
   const flags = props.selectedRun?.diversity_flags ?? props.gate?.payload.diversity_flags ?? [];
+  // In-flight board: the selected run rendered a sheet the contract does not
+  // name yet (pre-approval). Shown distinctly until the handoff lands it.
+  const runBoardRef = boardDisplayRef(props.selectedRun?.board?.file_ref);
+  const showRunBoard = runBoardRef !== null && !boardRefs.includes(runBoardRef);
 
   const editEmpty =
     !editTheme.trim() && parseLines(editDescriptors).length === 0 && parseLines(editAvoid).length === 0;
@@ -105,7 +110,7 @@ export function ResearchView(props: ResearchViewProps) {
       ) : null}
 
       <Section title="Mood board">
-        {boardRefs.length === 0 ? (
+        {boardRefs.length === 0 && !showRunBoard ? (
           <p className="font-mono text-xs text-muted-foreground">
             No board yet — curate inspiration below, then start a research run.
           </p>
@@ -124,6 +129,20 @@ export function ResearchView(props: ResearchViewProps) {
                 </p>
               </li>
             ))}
+            {showRunBoard && runBoardRef ? (
+              <li key={`run-${runBoardRef}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={boardImageUrl(slug, runBoardRef)}
+                  alt={`In-flight board ${runBoardRef}`}
+                  className="max-h-96 border border-border"
+                />
+                <p className="mt-1 font-mono text-xs text-muted-foreground">
+                  {runBoardRef} · in-flight (run {props.selectedRun?.id.slice(0, 12)}…) — lands
+                  on gate approval
+                </p>
+              </li>
+            ) : null}
           </ul>
         )}
       </Section>

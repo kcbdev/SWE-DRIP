@@ -248,6 +248,41 @@ class TestBoard:
 
 
 class TestDraft:
+    def test_board_ref_display_matrix(self) -> None:
+        from pipeline.nodes.research_draft import board_display_ref
+
+        assert board_display_ref("board.png") == "board.png"
+        assert board_display_ref("collections/vibe.assets/board-r2.png") == "board-r2.png"
+        assert board_display_ref("/app/collections/vibe.assets/board.png") == "board.png"
+        assert board_display_ref("C:\\data\\c.assets\\board.png") == "board.png"
+        assert board_display_ref("") is None
+        assert board_display_ref(None) is None
+        assert board_display_ref("   ") is None
+
+    def test_board_ref_flows_into_draft(self, tmp_path: Path) -> None:
+        from pipeline.nodes.research_draft import contract_draft
+
+        out = contract_draft(
+            {"collection_slug": "v", "collection_theme": "Vibe",  # type: ignore[dict-item]
+             "style_archetype": "mono-log",
+             "inspiration": dict(INSPIRATION), "synthesis": dict(GOOD_DIRECTIVES),
+             "board": {"file_ref": "collections/v.assets/board.png", "board_version": 3}},
+            _config(tmp_path, client=_StubClient()),  # type: ignore[typeddict-item]
+        )
+        assert out["draft_contract"]["mood_board"] == ["board.png"]
+        assert out["draft_contract"]["board_version"] == 3
+
+    def test_missing_board_leaves_refs_empty(self, tmp_path: Path) -> None:
+        from pipeline.nodes.research_draft import contract_draft
+
+        out = contract_draft(
+            {"collection_slug": "v", "collection_theme": "Vibe",  # type: ignore[dict-item]
+             "style_archetype": "mono-log",
+             "inspiration": dict(INSPIRATION), "synthesis": dict(GOOD_DIRECTIVES)},
+            _config(tmp_path, client=_StubClient()),  # type: ignore[typeddict-item]
+        )
+        assert out["draft_contract"]["mood_board"] == []
+
     def test_missing_style_is_recorded_not_defaulted(self, tmp_path: Path) -> None:
         from pipeline.nodes.research_draft import contract_draft
 

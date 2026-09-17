@@ -653,3 +653,274 @@ class TestQueueNamespaces:
         assert item_source.list_interrupts() == []
         found = research_source.list_interrupts()
         assert [(i.run_id, i.node) for i in found] == [(result["run_id"], "collection_gate")]
+
+
+def _handoff_draft(**overrides: Any) -> dict[str, Any]:
+    base: dict[str, Any] = {
+        "collection_id": "vibe",
+        "theme": "Vibe",
+        "status": "draft",
+        "style_archetype": "mono-log",
+        "illustration_rules": {"line_weight": None, "palette": ["#0D0D0D"],
+                               "no_mixed_styles": True},
+        "garment_colorways": [],
+        "placement_templates": [],
+        "product_count_target": None,
+        "lifecycle_days": None,
+        "kpi_thresholds": {"min_units": None, "min_conversion": None,
+                           "eval_window_days": None},
+        "created_by": "research-graph",
+        "created_at": "2026-09-17T00:00:00+00:00",
+        "approved_at": None,
+        "retired_at": None,
+        "survivor_products": [],
+        "style_descriptors": ["mono-line"],
+        "mood_board": ["board.png"],
+        "inspiration_refs": [],
+        "avoid": [],
+        "board_version": 1,
+    }
+    base.update(overrides)
+    return base
+
+
+def _handoff_store(tmp_path: Path):
+    from api.app.collections_store import CollectionsStore
+
+    return CollectionsStore(tmp_path / "collections")
+
+
+class TestBuildHandoff:
+    def test_approved_draft_passes_with_status_forced(self) -> None:
+        from api.app.research_runs import build_handoff_contract
+
+        out = build_handoff_contract({
+            "draft_contract": _handoff_draft(),
+            "board": {"file_ref": "x/board.png", "board_version": 1},
+            "gate_decision": {"approved": True},
+        })
+        assert out is not None and out["collection_id"] == "vibe"
+        assert out["status"] == "draft"
+        assert out["mood_board"] == ["board.png"]
+
+    def test_edited_contract_wins(self) -> None:
+        from api.app.research_runs import build_handoff_contract
+
+        out = build_handoff_contract({
+            "draft_contract": _handoff_draft(),
+            "board": {},
+            "gate_decision": {"approved": True,
+                              "edited_contract": _handoff_draft(theme="CEO")},
+        })
+        assert out is not None and out["theme"] == "CEO"
+
+    def test_backfills_missing_board_ref(self) -> None:
+        from api.app.research_runs import build_handoff_contract
+
+        out = build_handoff_contract({
+            "draft_contract": _handoff_draft(mood_board=[]),
+            "board": {"file_ref": "/app/collections/vibe.assets/board-r2.png"},
+            "gate_decision": {"approved": True},
+        })
+        assert out is not None and out["mood_board"] == ["board-r2.png"]
+
+    def test_keeps_existing_refs(self) -> None:
+        from api.app.research_runs import build_handoff_contract
+
+        out = build_handoff_contract({
+            "draft_contract": _handoff_draft(),
+            "board": {"file_ref": "other.png"},
+            "gate_decision": {"approved": True},
+        })
+        assert out is not None and out["mood_board"] == ["board.png"]
+
+    def test_rejected_or_empty_is_none(self) -> None:
+        from api.app.research_runs import build_handoff_contract
+
+        assert build_handoff_contract({"gate_decision": {"approved": False}}) is None
+        assert build_handoff_contract({"gate_decision": {"approved": True}}) is None
+        assert build_handoff_contract({}) is None
+
+
+class TestPersistHandoff:
+    def test_create_path(self, tmp_path: Path) -> None:
+        from api.app.research_runs import persist_handoff
+
+        store = _handoff_store(tmp_path)
+        result = persist_handoff(store, _handoff_draft())
+        assert result["created"] is True and result["before"] is None
+        assert store.get("vibe")["contract"]["mood_board"] == ["board.png"]
+
+    def test_update_preserves_lifecycle(self, tmp_path: Path) -> None:
+        from api.app.research_runs import persist_handoff
+
+        store = _handoff_store(tmp_path)
+        store.create(_handoff_draft(theme="Old", style_descriptors=[]))
+        result = persist_handoff(
+            store, _handoff_draft(theme="New", style_descriptors=["mono-line"]))
+        assert result["created"] is False
+        contract = store.get("vibe")["contract"]
+        assert contract["theme"] == "New"
+        assert contract["style_descriptors"] == ["mono-line"]
+
+    def test_active_candidate_stays_active(self, tmp_path: Path) -> None:
+        from api.app.research_runs import persist_handoff
+
+        store = _handoff_store(tmp_path)
+        store.create(_handoff_draft())
+        store.transition("vibe", to_status="active", stamp={"approved_at": "2026-09-01T00:00:00Z"})
+        persist_handoff(store, _handoff_draft(theme="Rerun"))
+        contract = store.get("vibe")["contract"]
+        assert contract["status"] == "active"
+        assert contract["approved_at"] == "2026-09-01T00:00:00Z"
+        assert contract["theme"] == "Rerun"
+
+
+class _GateGates:
+    def __init__(self, infos) -> None:
+        self.infos = infos
+
+    def list_interrupts(self):
+        return list(self.infos)
+
+
+class _GateIndex:
+    def __init__(self) -> None:
+        self.rows: dict[int, dict[str, Any]] = {
+            3: {"id": 3, "run_id": "rsch_h", "node": "collection_gate",
+                "status": "pending", "reviewer_user_id": None, "note": None,
+                "decided_at": None}}
+
+    def list_open(self):
+        return [r for r in self.rows.values() if r["status"] == "pending"]
+
+    def get(self, item_id: int):
+        return self.rows.get(item_id)
+
+    def ensure_pending(self, run_id: str, node: str):
+        return {"id": 3, "run_id": run_id, "node": node, "status": "pending",
+                "reviewer_user_id": None, "note": None, "decided_at": None}
+
+    def claim(self, item_id: int, *, status: str, reviewer_user_id: str, note):
+        row = self.rows.get(item_id)
+        if row is None or row["status"] != "pending":
+            return None
+        row.update({"status": status, "reviewer_user_id": reviewer_user_id,
+                    "note": note, "decided_at": "2026-09-17T00:00:00+00:00"})
+        return row
+
+    def reopen(self, item_id: int) -> None:
+        pass
+
+
+class _GateRunner:
+    def __init__(self) -> None:
+        self.resumes: list[tuple[str, dict]] = []
+
+    def get_state_values(self, thread_id: str):
+        return {"clusters": []}
+
+    def resume(self, thread_id: str, payload: dict[str, Any]):
+        self.resumes.append((thread_id, payload))
+        return {"thread_id": thread_id, "resumed": True}
+
+
+def _gate_info() -> Any:
+    from api.app.hitl import InterruptInfo
+
+    return InterruptInfo(
+        run_id="rsch_h", node="collection_gate",
+        payload={"node": "collection_gate", "status": "awaiting_approval",
+                 "draft": {"collection_id": "vibe"},
+                 "board": {"board_version": 1}, "diversity_flags": []},
+        interrupt_id="i-h", waiting_since="2026-09-17T00:00:00+00:00")
+
+
+def _decide_client(tmp_path: Path, monkeypatch, values: dict[str, Any],
+                   role: str = ROLE_ADMIN):
+    from api.app.hitl import HitlService
+    from api.app.routers import research as research_router
+
+    audit = _NoopAudit()
+    store = _handoff_store(tmp_path)
+    snaps = [_snap("rsch_h", values, interrupted=True)]
+
+    class Ports:
+        def list_research_snapshots(self):
+            return list(snaps)
+
+        def history(self, run_id: str):
+            return [s for s in snaps if s.run_id == run_id]
+
+    app = FastAPI()
+    app.include_router(research_router.router)
+    app.dependency_overrides[get_current_actor] = lambda: Actor("u-9", "a@b.c", role)
+    app.dependency_overrides[get_audit_writer] = lambda: audit
+    app.dependency_overrides[research_router.get_research_ports] = Ports
+    app.dependency_overrides[research_router.get_research_starter] = lambda: _FakeStarter()
+    app.dependency_overrides[research_router.get_spend_reader] = lambda: _FakeSpend()
+    app.dependency_overrides[research_router.get_log_reader] = lambda: _FakeReader()
+    service = HitlService(gates=_GateGates([_gate_info()]), index=_GateIndex(),
+                          runner=_GateRunner(), writer=audit)
+    # service is built inside get_research_service; override it whole:
+    app.dependency_overrides[research_router.get_research_service] = lambda: service
+    store = _handoff_store(tmp_path)
+    return TestClient(app, raise_server_exceptions=False), audit, store
+
+
+class TestDecideHandoff:
+    def _approved_values(self, **over: Any) -> dict[str, Any]:
+        values: dict[str, Any] = {
+            "collection_slug": "vibe",
+            "visited": list(RESEARCH_ORDER),
+            "board": {"file_ref": "vibe.assets/board.png", "board_version": 1},
+            "draft_contract": _handoff_draft(),
+            "diversity_flags": [],
+            "gate_decision": {"approved": True},
+        }
+        values.update(over)
+        return values
+
+    def test_approve_persists_and_audits(self, tmp_path: Path, monkeypatch) -> None:
+        import pipeline.paths as paths
+
+        monkeypatch.setenv(paths.COLLECTIONS_DIR_ENV, str(tmp_path / "collections"))
+        client, audit, store = _decide_client(
+            tmp_path, monkeypatch, self._approved_values())
+        body = client.post("/api/research/approvals/3/decision",
+                           json={"action": "approve"}).json()
+        assert body["resumed"] is True
+        assert body["handoff"]["collection_id"] == "vibe"
+        assert body["handoff"]["mood_board"] == ["board.png"]
+        assert store.get("vibe")["contract"]["style_descriptors"] == ["mono-line"]
+        assert any(r["action"] == "research.handoff" for r in audit.rows)
+
+    def test_reject_persists_nothing(self, tmp_path: Path, monkeypatch) -> None:
+        import pipeline.paths as paths
+
+        monkeypatch.setenv(paths.COLLECTIONS_DIR_ENV, str(tmp_path / "collections"))
+        client, audit, store = _decide_client(
+            tmp_path, monkeypatch, self._approved_values())
+        body = client.post("/api/research/approvals/3/decision",
+                           json={"action": "reject"}).json()
+        assert body["resumed"] is True
+        assert "handoff" not in body
+        assert not any(r["action"] == "research.handoff" for r in audit.rows)
+
+    def test_unknown_approval_404(self, tmp_path: Path, monkeypatch) -> None:
+        client, _, _ = _decide_client(tmp_path, monkeypatch, self._approved_values())
+        assert client.post("/api/research/approvals/99/decision",
+                           json={"action": "approve"}).status_code == 404
+
+    def test_handoff_failure_is_loud(self, tmp_path: Path, monkeypatch) -> None:
+        import pipeline.paths as paths
+
+        import api.app.research_runs as research_runs
+
+        monkeypatch.setenv(paths.COLLECTIONS_DIR_ENV, str(tmp_path / "collections"))
+        monkeypatch.setattr(research_runs, "persist_handoff",
+                            lambda store, contract: (_ for _ in ()).throw(OSError("disk gone")))
+        client, _, _ = _decide_client(tmp_path, monkeypatch, self._approved_values())
+        resp = client.post("/api/research/approvals/3/decision", json={"action": "approve"})
+        assert resp.status_code == 500
+        assert "handoff failed" in resp.json()["detail"]

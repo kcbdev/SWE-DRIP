@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { ResearchView } from "../components/collections/research-view";
 import { StylesManager } from "../components/collections/styles-manager";
 import type { CollectionContract } from "../lib/collections";
+import { boardDisplayRef } from "../lib/research";
 import type {
   InspirationListing,
   ResearchDetail,
@@ -121,6 +122,17 @@ function baseProps(overrides: Record<string, unknown> = {}) {
   };
 }
 
+describe("boardDisplayRef", () => {
+  it("derives servable refs across path shapes", () => {
+    expect(boardDisplayRef("board.png")).toBe("board.png");
+    expect(boardDisplayRef("collections/vibe.assets/board-r2.png")).toBe("board-r2.png");
+    expect(boardDisplayRef("/app/collections/vibe.assets/board.png")).toBe("board.png");
+    expect(boardDisplayRef("")).toBeNull();
+    expect(boardDisplayRef(null)).toBeNull();
+    expect(boardDisplayRef(undefined)).toBeNull();
+  });
+});
+
 describe("ResearchView", () => {
   it("renders board image rows from the contract refs", () => {
     render(<ResearchView {...baseProps()} />);
@@ -170,6 +182,35 @@ describe("ResearchView", () => {
     expect(screen.queryByText("Start research run")).toBeNull();
     expect(screen.queryByText("Approve")).toBeNull();
     expect(screen.queryByText("Reject")).toBeNull();
+  });
+
+  it("shows the in-flight run board while the contract names none", () => {
+    render(
+      <ResearchView
+        {...baseProps({
+          contract: contract({ mood_board: [] }),
+          selectedRun: selectedRun({
+            board: { file_ref: "/app/collections/vibe.assets/board.png", board_version: 1 },
+          }),
+        })}
+      />,
+    );
+    expect(screen.getByAltText("In-flight board board.png")).toBeTruthy();
+    expect(screen.getByText(/lands on gate approval/)).toBeTruthy();
+  });
+
+  it("hides the in-flight row once the contract lists the ref", () => {
+    render(
+      <ResearchView
+        {...baseProps({
+          selectedRun: selectedRun({
+            board: { file_ref: "collections/vibe.assets/board.png", board_version: 1 },
+          }),
+        })}
+      />,
+    );
+    expect(screen.queryByAltText(/In-flight board/)).toBeNull();
+    expect(screen.getByAltText("Mood board board.png")).toBeTruthy();
   });
 
   it("operator sees gate buttons but no curation forms", () => {

@@ -51,6 +51,61 @@ def is_research_run(run_id: str) -> bool:
     return isinstance(run_id, str) and run_id.startswith(RESEARCH_RUN_PREFIX)
 
 
+# Contract keys owned by the collections lifecycle (PBI-020), never by the
+# research handoff: the store PATCH path rejects status transitions, and
+# created/stamp history belongs to the candidate, not the run.
+LIFECYCLE_OWNED = ("status", "approved_at", "retired_at", "survivor_products",
+                   "created_by", "created_at")
+
+
+def build_handoff_contract(values: dict[str, Any]) -> Optional[dict[str, Any]]:
+    """Draft to persist after an approved research gate (pure).
+
+    Prefers the CEO-edited contract, else the assembled draft. Forces draft
+    status + identity (the handoff never activates), and backfills the board
+    ref when the draft predates board linkage (pre-PBI-059 runs). Returns
+    None unless the gate approved with a usable draft.
+    """
+    from pipeline.nodes.research_draft import board_display_ref
+
+    decision = values.get("gate_decision") or {}
+    if not decision.get("approved"):
+        return None
+    draft = dict(decision.get("edited_contract") or values.get("draft_contract") or {})
+    if not draft.get("collection_id"):
+        return None
+    draft["collection_id"] = str(draft["collection_id"])
+    draft["status"] = "draft"
+    if not draft.get("mood_board"):
+        ref = board_display_ref((values.get("board") or {}).get("file_ref"))
+        if ref:
+            draft["mood_board"] = [ref]
+    return draft
+
+
+def persist_handoff(store, contract: dict[str, Any]) -> dict[str, Any]:
+    """Create-or-update the candidate from an approved draft (PBI-059).
+
+    Update path excludes lifecycle-owned keys (the store rejects status
+    transitions); create path writes the full draft (always status draft).
+    Returns ``{"record", "before", "created"}`` for the audit row.
+    """
+    from .collections_store import CollectionNotFound
+
+    slug = contract["collection_id"]
+    try:
+        before = store.get(slug)["contract"]
+    except CollectionNotFound:
+        before = None
+    if before is None:
+        record = store.create(contract)
+        return {"record": record, "before": None, "created": True}
+    patch = {k: v for k, v in contract.items()
+             if k not in ("collection_id", *LIFECYCLE_OWNED)}
+    record = store.update(slug, patch)
+    return {"record": record, "before": before, "created": False}
+
+
 def derive_research_status(values: dict[str, Any], interrupted: bool) -> str:
     """Status from recorded research state (pure)."""
     if interrupted:
