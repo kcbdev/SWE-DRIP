@@ -28,6 +28,18 @@ def _order(order_id: str, price: float, created: str = "2026-09-10T10:00:00Z") -
     return {"id": order_id, "status": "paid", "total": price, "created_at": created}
 
 
+def _recent(days_ago: int = 1) -> str:
+    """ISO timestamp relative to real now.
+
+    The analytics endpoints evaluate against the live clock
+    (routers/analytics.py), so endpoint tests pin dates as offsets from now
+    instead of fixed calendar dates — otherwise the eval window silently
+    elapses and the test flips red with the wall clock (seen 2026-09-17).
+    Pure-function tests below keep using the fixed NOW on purpose.
+    """
+    return (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days_ago)).isoformat().replace("+00:00", "Z")
+
+
 def _contract(slug: str, **overrides: Any) -> CollectionContract:
     base: dict[str, Any] = {
         "collection_id": slug,
@@ -151,7 +163,7 @@ def test_overview_revenue() -> None:
 
 def test_collection_kpi_endpoint() -> None:
     contract = _contract("vibe-coding")
-    h = Harness(client=FakeClient(orders=[_order("o-1", 32)]), contract=contract)
+    h = Harness(client=FakeClient(orders=[_order("o-1", 32, _recent(1))]), contract=contract)
     body = h.client_app.get("/api/analytics/collections/vibe-coding").json()
     assert body["summary"]["units_in_eval_window"] == 1
     assert body["summary"]["below_min_units"] is True
@@ -163,21 +175,21 @@ def test_collection_kpi_404() -> None:
 
 
 def test_overview_endpoint() -> None:
-    h = Harness(client=FakeClient(orders=[_order("o-1", 32)]), contract=_contract("vibe-coding"))
+    h = Harness(client=FakeClient(orders=[_order("o-1", 32, _recent(1))]), contract=_contract("vibe-coding"))
     body = h.client_app.get("/api/analytics/overview").json()
     assert body["revenue_12m"] == 32.0
 
 
 def test_recommendation_endpoint_below() -> None:
-    contract = _contract("vibe-coding", approved_at="2026-09-01T00:00:00Z")
-    h = Harness(client=FakeClient(orders=[_order("o-1", 32)]), contract=contract)
+    contract = _contract("vibe-coding", approved_at=_recent(30))
+    h = Harness(client=FakeClient(orders=[_order("o-1", 32, _recent(1))]), contract=contract)
     body = h.client_app.get("/api/analytics/collections/vibe-coding/recommendation").json()
     assert body["verdict"] == "retirement_recommended"
 
 
 def test_recommendation_endpoint_no_rec() -> None:
-    contract = _contract("vibe-coding", approved_at="2026-09-10T00:00:00Z")
-    h = Harness(client=FakeClient(orders=[_order("o-1", 32)]), contract=contract)
+    contract = _contract("vibe-coding", approved_at=_recent(1))
+    h = Harness(client=FakeClient(orders=[_order("o-1", 32, _recent(1))]), contract=contract)
     body = h.client_app.get("/api/analytics/collections/vibe-coding/recommendation").json()
     assert body["verdict"] == "no_recommendation"
 
