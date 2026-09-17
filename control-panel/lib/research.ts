@@ -144,14 +144,21 @@ export function parseLines(raw: string): string[] {
     .filter(Boolean);
 }
 
-/** Board image URL (same relative pattern as the QC render src). */
-export function boardImageUrl(slug: string, ref: string): string {
-  return `/api/collections/${slug}/board/${ref}`;
+/**
+ * Board image URL: absolute API origin (PBI-059 fix).
+ *
+ * Relative `/api/…` URLs resolve against the *panel* host, which serves no
+ * API routes in production (no Traefik path routing) — images 404 while
+ * JSON (fetched via API_BASE) works. Absolute URLs ride the same
+ * cross-subdomain session cookie the API calls already use.
+ */
+export function boardImageUrl(apiBase: string, slug: string, ref: string): string {
+  return `${apiBase}/api/collections/${slug}/board/${ref}`;
 }
 
-/** Same-origin inspiration asset URL. */
-export function inspirationFileUrl(slug: string, assetId: string): string {
-  return `/api/collections/${slug}/inspiration/${assetId}/file`;
+/** Same-origin inspiration asset URL (absolute API origin, see above). */
+export function inspirationFileUrl(apiBase: string, slug: string, assetId: string): string {
+  return `${apiBase}/api/collections/${slug}/inspiration/${assetId}/file`;
 }
 
 /**
@@ -245,6 +252,7 @@ export async function updateStyle(
  * the UI never invokes it without a File (server would 400 regardless).
  */
 export async function uploadInspirationAsset(
+  apiBase: string,
   slug: string,
   file: File,
   note: string,
@@ -254,7 +262,7 @@ export async function uploadInspirationAsset(
   form.append("file", file);
   if (note) form.append("note", note);
   if (sourceUrl) form.append("source_url", sourceUrl);
-  const response = await fetch(`/api/collections/${slug}/inspiration`, {
+  const response = await fetch(`${apiBase}/api/collections/${slug}/inspiration`, {
     method: "POST",
     credentials: "include",
     body: form,

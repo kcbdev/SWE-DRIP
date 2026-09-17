@@ -16,6 +16,7 @@ interface QueueItem {
 
 export default function DesignDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
   const { data: session } = authClient.useSession();
   const role = (session?.user as unknown as { role?: string } | undefined)?.role;
   const canDecide = role === "admin" || role === "operator";
@@ -74,7 +75,7 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
           <QcView
             design={design}
             calibration={calibration}
-            renderSrc={`/api/designs/${id}/render`}
+            renderSrc={`${apiBase}/api/designs/${id}/render`}
             canDecide={canDecide && gateId !== null}
             deciding={deciding}
             error={error}

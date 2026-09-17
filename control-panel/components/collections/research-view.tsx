@@ -22,6 +22,7 @@ import {
 export interface ResearchViewProps {
   slug: string;
   role: string | undefined;
+  apiBase: string;
   contract: CollectionContract;
   inspiration: InspirationListing;
   rotation: RotationQueue | null;
@@ -52,7 +53,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export function ResearchView(props: ResearchViewProps) {
-  const { slug, role, contract } = props;
+  const { slug, role, apiBase, contract } = props;
   const curate = canCurate(role);
   const decide = canDecideResearch(role);
 
@@ -120,7 +121,7 @@ export function ResearchView(props: ResearchViewProps) {
               <li key={ref}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={boardImageUrl(slug, ref)}
+                  src={boardImageUrl(apiBase, slug, ref)}
                   alt={`Mood board ${ref}`}
                   className="max-h-96 border border-border"
                 />
@@ -133,7 +134,7 @@ export function ResearchView(props: ResearchViewProps) {
               <li key={`run-${runBoardRef}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={boardImageUrl(slug, runBoardRef)}
+                  src={boardImageUrl(apiBase, slug, runBoardRef)}
                   alt={`In-flight board ${runBoardRef}`}
                   className="max-h-96 border border-border"
                 />
@@ -187,7 +188,7 @@ export function ResearchView(props: ResearchViewProps) {
                   <li key={asset.id} className="border border-border p-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={inspirationFileUrl(slug, asset.id)}
+                      src={inspirationFileUrl(apiBase, slug, asset.id)}
                       alt={asset.note || asset.filename}
                       className="max-h-48 border border-border"
                     />

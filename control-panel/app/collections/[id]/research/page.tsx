@@ -36,6 +36,7 @@ const TERMINAL = new Set(["complete", "failed"]);
 
 export default function CollectionResearchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
   const { data: session } = authClient.useSession();
   const role = (session?.user as unknown as { role?: string } | undefined)?.role;
 
@@ -139,6 +140,7 @@ export default function CollectionResearchPage({ params }: { params: Promise<{ i
             <ResearchView
               slug={id}
               role={role}
+              apiBase={apiBase}
               contract={record.contract}
               inspiration={inspiration}
               rotation={rotation}
@@ -159,7 +161,7 @@ export default function CollectionResearchPage({ params }: { params: Promise<{ i
                 })
               }
               onUpload={(file, note, sourceUrl) =>
-                void act(() => uploadInspirationAsset(id, file, note, sourceUrl))
+                void act(() => uploadInspirationAsset(apiBase, id, file, note, sourceUrl))
               }
               onAddLink={(url, note) => void act(() => addInspirationLink(id, url, note))}
               onDeleteAsset={(assetId) => void act(() => deleteInspirationAsset(id, assetId))}

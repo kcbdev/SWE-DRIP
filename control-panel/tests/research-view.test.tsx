@@ -100,6 +100,7 @@ function baseProps(overrides: Record<string, unknown> = {}) {
   return {
     slug: "vibe",
     role: "admin",
+    apiBase: "http://localhost:8001",
     contract: contract(),
     inspiration,
     rotation,
@@ -138,6 +139,12 @@ describe("ResearchView", () => {
     render(<ResearchView {...baseProps()} />);
     expect(screen.getByAltText("Mood board board.png")).toBeTruthy();
     expect(screen.getByText(/board v1/)).toBeTruthy();
+  });
+
+  it("image URLs ride the absolute API origin (panel host serves no /api)", () => {
+    render(<ResearchView {...baseProps()} />);
+    const img = screen.getByAltText("Mood board board.png") as HTMLImageElement;
+    expect(img.src).toBe("http://localhost:8001/api/collections/vibe/board/board.png");
   });
 
   it("shows the empty-board hint when no refs exist", () => {
