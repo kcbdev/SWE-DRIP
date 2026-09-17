@@ -2,6 +2,8 @@
 
 import { use, useEffect, useState } from "react";
 
+import Link from "next/link";
+
 import { AppShell } from "@/components/app-shell";
 import { CollectionDetail } from "@/components/collections/collection-detail";
 import { apiFetch } from "@/lib/api";
@@ -46,6 +48,11 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
     <AppShell>
       <div className="flex flex-col gap-4">
         <h1 className="font-sans text-2xl font-semibold">Collection</h1>
+        <p className="font-mono text-xs">
+          <Link className="text-primary" href={`/collections/${id}/research`}>
+            Open research view →
+          </Link>
+        </p>
         {record ? (
           <CollectionDetail
             record={record}

@@ -21,6 +21,13 @@ export interface CollectionContract {
   retired_at: string | null;
   survivor_products?: string[];
   slug?: string;
+  // V2 visual direction (collection-research spec C2, PBI-048): all optional
+  // so v1 contracts keep validating; the research view renders them.
+  style_descriptors?: string[];
+  mood_board?: string[];
+  inspiration_refs?: { url: string; note: string }[];
+  avoid?: string[];
+  board_version?: number;
 }
 
 export interface CollectionRecord {
