@@ -83,12 +83,14 @@ Backlog ignored until moved to `Todo` — only `Todo` issues are candidate featu
 | 46 | PBI-046 | operator-mcp | 045 | In Review | SWDRP-43 | ADR-006 + operator runbook + live MCP smoke (manual) |
 | 47 | PBI-047 | operator-mcp | 043 | In Review | SWDRP-47 | Operator token management UI (settings block + client config) |
 | 48 | PBI-048 | collection-research | 019 | Done | SWDRP-48 | Style repository (manageable YAML repo) + contract schema v2 |
-| 49 | PBI-049 | collection-research | 048 | In Review | SWDRP-49 | Inspiration ingest (assets + refs per draft) |
-| 50 | PBI-050 | collection-research | 049, 010, 038 | In Review | SWDRP-50 | Research graph (synthesize → board → draft → gate) |
-| 51 | PBI-051 | collection-research | 050, 022 | In Review | SWDRP-51 | Style-conformance QC + diversity check + rotation queue |
-| 52 | PBI-052 | collection-research | 049, 050 | Todo | SWDRP-52 | Research UI (board, inspiration, gate, styles manager; manual: UX) |
-| 53 | PBI-053 | collection-research | 049 | Todo | SWDRP-53 | Durable artifact storage (volumes + env roots + DEPLOY) |
-| 54 | PBI-054 | catalog-analytics | 030 | Done | (unsynced) | Deterministic analytics endpoint tests (live-clock time-bomb fix, test-only) |
+| 49 | PBI-049 | collection-research | 048 | Done | SWDRP-49 | Inspiration ingest (assets + refs per draft) |
+| 50 | PBI-050 | collection-research | 049, 010, 038 | Done | SWDRP-50 | Research graph (synthesize → board → draft → gate) |
+| 51 | PBI-051 | collection-research | 050, 022 | Done | SWDRP-51 | Style-conformance QC + diversity check + rotation queue |
+| 52 | PBI-052 | collection-research | 049, 050, 055, 056 | Blocked | SWDRP-52 | Research UI (board, inspiration, gate, styles manager; manual: UX) — waits on 055/056 APIs (pre-flight flag 2026-09-17) |
+| 53 | PBI-053 | collection-research | 049 | Active | SWDRP-53 | Durable artifact storage (volumes + env roots + DEPLOY) |
+| 54 | PBI-054 | catalog-analytics | 030 | Done | (unsynced, local-only) | Deterministic analytics endpoint tests (live-clock time-bomb fix, test-only) |
+| 55 | PBI-055 | collection-research | 050, 053 | Todo | SWDRP-54 | Research-run API (trigger/status/logs/gate/board-serve) |
+| 56 | PBI-056 | collection-research | 048, 053 | Todo | SWDRP-55 | Styles management API (list/create/edit, audited) |
 
 > **Epic: agent-control-plane** (specs/agent-control-plane/spec.md) reverses
 > pipeline-core C3: `pipeline/routing.py` is now the reviewed **defaults**, and an
@@ -162,10 +164,16 @@ graph TD
   PBI019 --> PBI048 --> PBI049 --> PBI050 --> PBI051
   PBI049 --> PBI052
   PBI050 --> PBI052
+  PBI055 --> PBI052
+  PBI056 --> PBI052
   PBI049 --> PBI053
+  PBI050 --> PBI055
+  PBI053 --> PBI055
+  PBI048 --> PBI056
+  PBI053 --> PBI056
 ```
 
-_Notes: PBI-004 and PBI-006 may run parallel to the auth chain; PBI-025 (reads) can start any time after PBI-002; pipeline node PBIs are strictly sequential (shared `pipeline/graph.py` assembly point); the operator-mcp chain (043→046) is strictly sequential (shared `api/app/mcp/server.py` assembly point); the collection-research chain (048→051) is strictly sequential (shared contract schema + rubric), with PBI-052 after 049/050 and PBI-053 after 049._
+_Notes: PBI-004 and PBI-006 may run parallel to the auth chain; PBI-025 (reads) can start any time after PBI-002; pipeline node PBIs are strictly sequential (shared `pipeline/graph.py` assembly point); the operator-mcp chain (043→046) is strictly sequential (shared `api/app/mcp/server.py` assembly point); the collection-research chain (048→051) is strictly sequential (shared contract schema + rubric), with PBI-053 after 049, PBI-055/056 after 053, and PBI-052 after 049/050/055/056 (APIs-first decision 2026-09-17)._
 
 ## Gate plan
 
